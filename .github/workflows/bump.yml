@@ -1,0 +1,57 @@
+name: Bump version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version type'
+        required: true
+        type: choice
+        options:
+          - dev
+          - rc
+          - final
+
+permissions:
+  contents: write          # push tag
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Import GPG key"
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.HOTHER_BOT_GPG_KEY }}
+          passphrase: ${{ secrets.HOTHER_BOT_GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+
+      - name: Configure Git
+        run: |
+          git config user.email "${{ steps.import-gpg.outputs.email }}"
+          git config user.name "${{ steps.import-gpg.outputs.name }}"
+          git config core.autocrlf false
+          git config commit.gpgsign true
+          git config tag.gpgsign true
+
+      - name: Setup Python and uv
+        uses: ./.github/actions/setup-python-uv
+        with:
+          install-dependencies: false
+
+      - name: Install release dependencies
+        run: |
+          uv venv
+          uv pip install packaging git-cliff
+
+      # run the same helper script
+      - name: Create release tag
+        run: python tools/release.py ${{ github.event.inputs.bump }}

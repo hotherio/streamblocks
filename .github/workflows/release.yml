@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog for release
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Update full changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: -o CHANGELOG.md
+
+      - name: Setup Python and uv
+        uses: ./.github/actions/setup-python-uv
+
+      - name: Build package
+        run: |
+          uv build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.git-cliff.outputs.content }}
+          files: dist/*
+          draft: false
+          prerelease: ${{ contains(github.ref, 'rc') || contains(github.ref, 'b') || contains(github.ref, 'a') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Optional: Publish to PyPI
+      # - name: Publish to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
+
+      # Dispatch to package registry
+      - name: Get package description
+        id: description
+        run: |
+          python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['description'])" > desc.txt
+          echo "value=$(cat desc.txt)" >> $GITHUB_OUTPUT
+
+      - name: Dispatch to package registry
+        run: |
+          curl -H "Accept: application/vnd.github.everest-preview+json" \
+          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          --request POST \
+          --data '{"event_type": "new_release", "client_payload": { "package_name": "${{ vars.PKG_NAME }}", "version": "${{ github.ref_name }}", "author": "${{ github.repository_owner }}", "short_desc": "${{ steps.description.outputs.value }}", "long_desc": "${{ steps.description.outputs.value }}", "homepage": "https://github.com/${{ github.repository }}/", "link": "https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}" }}' \
+          https://api.github.com/repos/${{ vars.PKG_REGISTRY }}/dispatches
