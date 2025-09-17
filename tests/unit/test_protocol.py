@@ -85,10 +85,12 @@ class TestBlockSyntaxProtocol:
         assert syntax.name == "mock_syntax"
         assert syntax.detect_line("!!test").is_opening is True
         assert syntax.detect_line("normal").is_opening is False
-        assert syntax.should_accumulate_metadata(BlockCandidate()) is False
+        # Create a mock candidate with required arguments
+        mock_candidate = BlockCandidate(syntax, start_line=1)
+        assert syntax.should_accumulate_metadata(mock_candidate) is False
 
         # Parse result
-        result = syntax.parse_block(BlockCandidate())
+        result = syntax.parse_block(mock_candidate)
         assert result.success is True
         assert result.metadata.id == "test"
         assert result.content.body == "test content"
