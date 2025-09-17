@@ -1,9 +1,34 @@
-# CHANGE-ME | Python Library Template
+# StreamBlocks
 
+Real-time extraction and processing of structured blocks from text streams.
+
+## Overview
+
+StreamBlocks is a Python 3.13+ library designed to detect, extract, and process structured blocks from streaming text data. It provides a pluggable architecture for different block syntaxes with type-safe metadata and content parsing.
+
+## Features
+
+- **Async-first design** for real-time stream processing
+- **Multiple syntax support** with three built-in syntaxes
+- **Type-safe** metadata and content models using Pydantic
+- **Zero-copy** processing on the hot path
+- **Extensible** - easily add custom block syntaxes
+- **Performance optimized** with configurable buffering
 
 ## Installation
 
+```bash
+pip install streamblocks
+```
 
+## Quick Start
+
+```python
+import asyncio
+from streamblocks import StreamBlockProcessor, BlockRegistry
+
+# More examples coming as implementation progresses
+```
 
 ## Documentation
 
@@ -104,7 +129,7 @@ The SHA must be:
 #### How it Works
 
 - **Development releases** (`dev`): Increments patch version and adds `-dev` suffix
-- **Release candidates** (`rc`): Removes `-dev` and adds `rc` suffix  
+- **Release candidates** (`rc`): Removes `-dev` and adds `rc` suffix
 - **Final releases** (`final`): Uses git-cliff to analyze commits and automatically bumps major/minor/patch based on conventional commits
 
 The release process:
