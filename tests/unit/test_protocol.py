@@ -1,6 +1,5 @@
 """Tests for BlockSyntax protocol definition."""
 
-
 from pydantic import BaseModel
 
 # Import BlockCandidate locally to avoid circular import issues
@@ -183,10 +182,10 @@ class TestBlockSyntaxProtocol:
         # Import abstractmethod to verify decorators
 
         # Check that required methods are abstract
-        assert hasattr(BlockSyntax.name, '__isabstractmethod__')
-        assert hasattr(BlockSyntax.detect_line, '__isabstractmethod__')
-        assert hasattr(BlockSyntax.should_accumulate_metadata, '__isabstractmethod__')
-        assert hasattr(BlockSyntax.parse_block, '__isabstractmethod__')
+        assert hasattr(BlockSyntax.name, "__isabstractmethod__")
+        assert hasattr(BlockSyntax.detect_line, "__isabstractmethod__")
+        assert hasattr(BlockSyntax.should_accumulate_metadata, "__isabstractmethod__")
+        assert hasattr(BlockSyntax.parse_block, "__isabstractmethod__")
 
         # validate_block should NOT be abstract (has default implementation)
-        assert not hasattr(BlockSyntax.validate_block, '__isabstractmethod__')
+        assert not hasattr(BlockSyntax.validate_block, "__isabstractmethod__")
