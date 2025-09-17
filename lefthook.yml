@@ -52,6 +52,7 @@ pre-commit:
           python -c "import yaml; yaml.safe_load(open('$file'))"
         done
       glob: "*.{yml,yaml}"
+      exclude: "mkdocs.yml"
 
     check-toml:
       run: |

@@ -28,7 +28,7 @@ def rev_list(ref: str) -> list[str]:
     return cmd(f"git rev-list {ref}").splitlines()
 
 
-def assert_valid_sha(sha: str):
+def assert_valid_sha(sha: str) -> None:
     """SHA must be reachable from HEAD and not older than last tag."""
     if sha not in rev_list("HEAD"):
         sys.exit(f"{sha} is not reachable from HEAD")
@@ -116,7 +116,7 @@ def next_version(current: Version, stage: str, bump: str) -> str:
     return f"{major}.{minor}.{patch}"
 
 
-def main():
+def main() -> None:
     if len(sys.argv) < 2 or sys.argv[1] not in {"dev", "rc", "final"}:  # noqa: PLR2004
         sys.exit("usage: hatch release {dev|rc|final} [SHA]")
 
