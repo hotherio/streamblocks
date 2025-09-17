@@ -73,7 +73,7 @@ doc = [
 
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py313"
 
 [tool.ruff.lint]
@@ -112,8 +112,9 @@ known-first-party = ["streamblocks"]
 quote-style = "double"
 indent-style = "space"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/**/*" = ["PLR2004"]
+"src/streamblocks/core/processor.py" = ["PLR0912", "PLR0915"]  # Complex stream processing logic
 
 [tool.mypy]
 python_version = "3.13"

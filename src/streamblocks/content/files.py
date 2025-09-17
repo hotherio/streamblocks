@@ -35,18 +35,14 @@ class ActionCode(StrEnum):
 class FileOperation(BaseModel):
     """Represents a single file operation."""
 
-    action: Literal["create", "edit", "delete"] = Field(
-        ..., description="The type of file operation"
-    )
+    action: Literal["create", "edit", "delete"] = Field(..., description="The type of file operation")
     path: str = Field(..., description="Path to the file")
 
 
 class FileOperationsContent(BaseContent):
     """Content model for file operations blocks."""
 
-    operations: list[FileOperation] = Field(
-        default_factory=list, description="List of file operations"
-    )
+    operations: list[FileOperation] = Field(default_factory=list, description="List of file operations")
 
     @classmethod
     def parse(cls, text: str) -> FileOperationsContent:
@@ -97,9 +93,5 @@ class FileOperationsMetadata(BaseModel):
     """Metadata model for file operations blocks."""
 
     id: str = Field(..., description="Block identifier")
-    block_type: Literal["files_operations"] = Field(
-        default="files_operations", description="Type of block"
-    )
-    description: str | None = Field(
-        default=None, description="Optional description of the operations"
-    )
+    block_type: Literal["files_operations"] = Field(default="files_operations", description="Type of block")
+    description: str | None = Field(default=None, description="Optional description of the operations")

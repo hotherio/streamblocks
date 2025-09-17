@@ -40,9 +40,7 @@ class FileOpsSyntax:
         """Check if still accumulating metadata."""
         return candidate.state == BlockState.ACCUMULATING_METADATA
 
-    def parse_block(
-        self, candidate: BlockCandidate
-    ) -> ParseResult[FileOperationsMetadata, FileOperationsContent]:
+    def parse_block(self, candidate: BlockCandidate) -> ParseResult[FileOperationsMetadata, FileOperationsContent]:
         """Parse the block into metadata and content."""
         try:
             # Parse metadata from YAML-like format
@@ -65,9 +63,7 @@ class FileOpsSyntax:
         except Exception as e:
             return ParseResult(success=False, error=str(e))
 
-    def validate_block(
-        self, metadata: FileOperationsMetadata, content: FileOperationsContent
-    ) -> bool:
+    def validate_block(self, metadata: FileOperationsMetadata, content: FileOperationsContent) -> bool:
         """Validate block."""
         return True
 
@@ -156,9 +152,7 @@ class TestModelsIntegration:
         assert block.metadata.id == "test123"
         assert len(block.content.operations) == 1
         assert block.line_start == 1
-        assert (
-            block.line_end == EXPECTED_LINE_COUNT
-        )  # 4 lines total (!! files, id:, ---, src/main.py:E)
+        assert block.line_end == EXPECTED_LINE_COUNT  # 4 lines total (!! files, id:, ---, src/main.py:E)
 
     def test_registry_with_multiple_syntaxes(self):
         """Test registry managing multiple syntax types."""
@@ -172,9 +166,7 @@ class TestModelsIntegration:
             def name(self) -> str:
                 return "patch"
 
-            def detect_line(
-                self, line: str, context: BlockCandidate | None = None
-            ) -> DetectionResult:
+            def detect_line(self, line: str, context: BlockCandidate | None = None) -> DetectionResult:
                 if line.strip() == "!! patch":
                     return DetectionResult(is_opening=True)
                 return DetectionResult()
@@ -182,9 +174,7 @@ class TestModelsIntegration:
             def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
                 return False
 
-            def parse_block(
-                self, candidate: BlockCandidate
-            ) -> ParseResult[PatchMetadata, PatchContent]:
+            def parse_block(self, candidate: BlockCandidate) -> ParseResult[PatchMetadata, PatchContent]:
                 # Simplified parsing
                 return ParseResult(
                     success=True,
@@ -210,12 +200,8 @@ class TestModelsIntegration:
         patch_syntax = PatchSyntax()
 
         # Register syntaxes
-        registry.register_syntax(
-            file_ops_syntax, block_types=["files_operations"], priority=HIGH_PRIORITY
-        )
-        registry.register_syntax(
-            patch_syntax, block_types=["patch", "diff"], priority=MEDIUM_PRIORITY
-        )
+        registry.register_syntax(file_ops_syntax, block_types=["files_operations"], priority=HIGH_PRIORITY)
+        registry.register_syntax(patch_syntax, block_types=["patch", "diff"], priority=MEDIUM_PRIORITY)
 
         # Test retrieval
         all_syntaxes = registry.get_syntaxes()

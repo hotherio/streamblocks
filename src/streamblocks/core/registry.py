@@ -187,11 +187,7 @@ class BlockRegistry:
         Returns:
             Dictionary mapping syntax names to opening patterns
         """
-        return {
-            name: entry.opening_pattern
-            for name, entry in self._entries.items()
-            if entry.opening_pattern
-        }
+        return {name: entry.opening_pattern for name, entry in self._entries.items() if entry.opening_pattern}
 
     def get_closing_patterns(self) -> dict[str, re.Pattern[str]]:
         """Get all compiled closing patterns.
@@ -199,11 +195,7 @@ class BlockRegistry:
         Returns:
             Dictionary mapping syntax names to closing patterns
         """
-        return {
-            name: entry.closing_pattern
-            for name, entry in self._entries.items()
-            if entry.closing_pattern
-        }
+        return {name: entry.closing_pattern for name, entry in self._entries.items() if entry.closing_pattern}
 
     def has_syntax(self, name: str) -> bool:
         """Check if a syntax is registered.
@@ -239,9 +231,7 @@ class BlockRegistry:
         """
         self._validators[block_type].append(validator)
 
-    def validate_block(
-        self, block_type: BlockType, metadata: BaseModel, content: BaseModel
-    ) -> tuple[bool, list[str]]:
+    def validate_block(self, block_type: BlockType, metadata: BaseModel, content: BaseModel) -> tuple[bool, list[str]]:
         """Validate a block using registered validators.
 
         Args:

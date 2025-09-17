@@ -27,9 +27,7 @@ if TYPE_CHECKING:
 FRONTMATTER_DELIMITER = "---"
 
 
-class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel](
-    FrontmatterSyntax[TMetadata, TContent]
-):
+class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel](FrontmatterSyntax[TMetadata, TContent]):
     """Delimiter frontmatter syntax parser.
 
     This is a generic syntax parser for delimiter-based blocks with YAML frontmatter.

@@ -27,9 +27,7 @@ if TYPE_CHECKING:
 BACKTICK_COUNT = 3
 
 
-class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel](
-    FrontmatterSyntax[TMetadata, TContent]
-):
+class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel](FrontmatterSyntax[TMetadata, TContent]):
     """Markdown frontmatter syntax parser.
 
     This is a generic syntax parser for markdown fence blocks with YAML frontmatter.
@@ -113,13 +111,13 @@ class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel](
                 return DetectionResult(is_opening=True)
         # Inside a block
         elif isinstance(context, BlockCandidate):
-            if context.state.value == "accumulating_metadata":
-                # Check for metadata section boundaries
+            if context.state.value == "header_detected":
+                # Check for first frontmatter boundary after opening fence
                 if self._is_frontmatter_boundary(line):
-                    if not context.metadata_lines:
-                        # First --- marks start of metadata
-                        return DetectionResult(is_metadata_boundary=True)
-                    # Second --- marks end of metadata
+                    return DetectionResult(is_metadata_boundary=True)
+            elif context.state.value == "accumulating_metadata":
+                # Check for second frontmatter boundary
+                if self._is_frontmatter_boundary(line):
                     return DetectionResult(is_metadata_boundary=True)
             elif context.state.value == "accumulating_content" and line.strip() == self._fence:
                 return DetectionResult(is_closing=True)

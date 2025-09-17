@@ -50,9 +50,7 @@ class TestStreamEvent:
 
     def test_stream_event_creation(self):
         """Test creating a basic stream event."""
-        event: StreamEvent[BaseModel, BaseModel] = StreamEvent(
-            type=EventType.RAW_TEXT, data="Hello, world!"
-        )
+        event: StreamEvent[BaseModel, BaseModel] = StreamEvent(type=EventType.RAW_TEXT, data="Hello, world!")
         assert event.type == EventType.RAW_TEXT
         assert event.data == "Hello, world!"
         assert event.metadata is None
@@ -90,9 +88,7 @@ class TestStreamEvent:
             body: str
 
         # StreamEvent can be parameterized with these types
-        event: StreamEvent[TestMetadata, TestContent] = StreamEvent(
-            type=EventType.RAW_TEXT, data="test"
-        )
+        event: StreamEvent[TestMetadata, TestContent] = StreamEvent(type=EventType.RAW_TEXT, data="test")
         assert event.data == "test"
 
 
@@ -154,9 +150,7 @@ class TestParseResult:
 
     def test_parse_result_failure(self):
         """Test failed parse result."""
-        result: ParseResult[BaseModel, BaseModel] = ParseResult(
-            success=False, error="Invalid YAML format"
-        )
+        result: ParseResult[BaseModel, BaseModel] = ParseResult(success=False, error="Invalid YAML format")
         assert result.success is False
         assert result.metadata is None
         assert result.content is None

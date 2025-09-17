@@ -85,9 +85,7 @@ class BaseSyntax(ABC, Generic[TMetadata, TContent]):
         """Create a failed parse result with error message."""
         return ParseResult[TMetadata, TContent](success=False, error=error)
 
-    def _create_success_result(
-        self, metadata: TMetadata, content: TContent
-    ) -> ParseResult[TMetadata, TContent]:
+    def _create_success_result(self, metadata: TMetadata, content: TContent) -> ParseResult[TMetadata, TContent]:
         """Create a successful parse result."""
         return ParseResult[TMetadata, TContent](success=True, metadata=metadata, content=content)
 

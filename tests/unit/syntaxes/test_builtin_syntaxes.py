@@ -315,8 +315,7 @@ class TestMarkdownFrontmatterSyntaxRenamed:
         """Test detection of opening code fence."""
         result = self.syntax.detect_line("```python", None)
         assert result.is_opening
-        assert result.metadata
-        assert result.metadata["language"] == "python"
+        # No metadata extraction for language - not in spec
 
     def test_detect_closing_fence(self) -> None:
         """Test detection of closing code fence."""
@@ -335,12 +334,10 @@ class TestMarkdownFrontmatterSyntaxRenamed:
         candidate.lines = ["```python", "def hello():", "    print('Hello')", "```"]
         candidate.metadata_lines = []
         candidate.content_lines = ["def hello():", "    print('Hello')"]
-        candidate.metadata = {"language": "python"}
 
         result = self.syntax.parse_block(candidate)
         assert result.success
         assert result.metadata
-        assert result.metadata.language == "python"
         assert result.content
         assert result.content.text == "def hello():\n    print('Hello')"
         # Note: line_count was part of old MarkdownCodeContent, not the generic model

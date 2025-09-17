@@ -43,9 +43,7 @@ async def split_frontmatter_stream(
             min_lines_for_frontmatter = 2
             if len(lines) >= min_lines_for_frontmatter and lines[0].rstrip() == "---":
                 try:
-                    close_idx = next(
-                        i for i, line in enumerate(lines[1:], 1) if line.rstrip() == "---"
-                    )
+                    close_idx = next(i for i, line in enumerate(lines[1:], 1) if line.rstrip() == "---")
                 except StopIteration:
                     continue  # still waiting for closing ---
 

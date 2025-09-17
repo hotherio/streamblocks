@@ -53,9 +53,7 @@ class MockSyntax:
         return False
 
     def parse_block(self, candidate: BlockCandidate) -> ParseResult[SampleMetadata, SampleContent]:
-        return ParseResult(
-            success=True, metadata=SampleMetadata(id="test"), content=SampleContent(body="test")
-        )
+        return ParseResult(success=True, metadata=SampleMetadata(id="test"), content=SampleContent(body="test"))
 
     def validate_block(self, metadata: SampleMetadata, content: SampleContent) -> bool:
         return True

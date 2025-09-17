@@ -22,9 +22,7 @@ if TYPE_CHECKING:
 DELIMITER_PARTS_MIN = 2
 
 
-class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel](
-    DelimiterSyntax[TMetadata, TContent]
-):
+class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel](DelimiterSyntax[TMetadata, TContent]):
     """Delimiter preamble syntax parser.
 
     This is a generic syntax parser for delimiter-based blocks with inline metadata.

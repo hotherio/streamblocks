@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 from textwrap import dedent
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from pydantic import BaseModel
@@ -35,9 +35,7 @@ def escape_delimiter(delimiter: str) -> str:
     return re.escape(delimiter)
 
 
-def build_delimiter_pattern(
-    prefix: str, suffix: str | None = None, capture_middle: bool = True
-) -> str:
+def build_delimiter_pattern(prefix: str, suffix: str | None = None, capture_middle: bool = True) -> str:
     """Build a regex pattern for delimiter-based markers.
 
     Args:
@@ -103,7 +101,7 @@ def parse_inline_metadata(line: str, delimiter: str = ":") -> dict[str, str]:
         return {}
 
     # Common pattern: first part after prefix is ID
-    metadata = {}
+    metadata: dict[str, Any] = {}
     start_idx = 0
 
     # Try to intelligently parse based on common patterns
@@ -153,14 +151,12 @@ def parse_yaml_metadata(yaml_text: str) -> dict[str, Any]:
             return {}
         if not isinstance(data, dict):
             raise ValueError(f"Expected dict, got {type(data).__name__}")
-        return data
+        return cast(dict[str, Any], data)
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML: {e}") from e
 
 
-def extract_key_value_pairs(
-    text: str, separator: str = "=", line_delimiter: str = "\n"
-) -> dict[str, str]:
+def extract_key_value_pairs(text: str, separator: str = "=", line_delimiter: str = "\n") -> dict[str, str]:
     """Extract key-value pairs from text.
 
     Args:
@@ -175,7 +171,7 @@ def extract_key_value_pairs(
         >>> extract_key_value_pairs("name=test\ntype=shell")
         {'name': 'test', 'type': 'shell'}
     """
-    pairs = {}
+    pairs: dict[str, str] = {}
     for line in text.strip().split(line_delimiter):
         line_stripped = line.strip()
         if separator in line_stripped:
@@ -199,7 +195,7 @@ def strip_markers(content: str, prefix: str, suffix: str | None = None) -> str:
         Content with markers stripped
     """
     lines = content.split("\n")
-    result = []
+    result: list[str] = []
 
     for line in lines:
         stripped = line.strip()

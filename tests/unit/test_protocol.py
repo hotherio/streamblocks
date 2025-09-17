@@ -56,9 +56,7 @@ class TestBlockSyntaxProtocol:
             def name(self) -> str:
                 return "mock_syntax"
 
-            def detect_line(
-                self, line: str, context: BlockCandidate | None = None
-            ) -> DetectionResult:
+            def detect_line(self, line: str, context: BlockCandidate | None = None) -> DetectionResult:
                 if line.startswith("!!"):
                     return DetectionResult(is_opening=True)
                 return DetectionResult()
@@ -66,9 +64,7 @@ class TestBlockSyntaxProtocol:
             def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
                 return False
 
-            def parse_block(
-                self, candidate: BlockCandidate
-            ) -> ParseResult[TestMetadata, TestContent]:
+            def parse_block(self, candidate: BlockCandidate) -> ParseResult[TestMetadata, TestContent]:
                 return ParseResult(
                     success=True,
                     metadata=TestMetadata(id="test", type="mock"),
@@ -135,9 +131,7 @@ class TestBlockSyntaxProtocol:
             def name(self) -> str:
                 return "minimal"
 
-            def detect_line(
-                self, line: str, context: BlockCandidate | None = None
-            ) -> DetectionResult:
+            def detect_line(self, line: str, context: BlockCandidate | None = None) -> DetectionResult:
                 return DetectionResult()
 
             def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:

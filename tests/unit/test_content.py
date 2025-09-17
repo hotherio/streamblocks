@@ -226,9 +226,7 @@ class TestPatchMetadata:
 
     def test_metadata_with_description(self):
         """Test patch metadata with description."""
-        metadata = PatchMetadata(
-            id="patch123", file_path="src/main.py", description="Fix typo in function name"
-        )
+        metadata = PatchMetadata(id="patch123", file_path="src/main.py", description="Fix typo in function name")
 
         assert metadata.description == "Fix typo in function name"
 
