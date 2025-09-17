@@ -22,9 +22,9 @@ from streamblocks.core.types import (
 )
 from streamblocks.syntaxes.abc import BaseSyntax, DelimiterSyntax, FrontmatterSyntax
 from streamblocks.syntaxes.builtin import (
-    DelimiterBlockSyntax,
-    MarkdownCodeSyntax,
-    YAMLFrontmatterSyntax,
+    DelimiterFrontmatterSyntax,
+    DelimiterPreambleSyntax,
+    MarkdownFrontmatterSyntax,
 )
 from streamblocks.syntaxes.utils import (
     build_delimiter_pattern,
@@ -52,9 +52,9 @@ __all__ = [
     "FrontmatterSyntax",
     "DelimiterSyntax",
     # Built-in syntaxes
-    "YAMLFrontmatterSyntax",
-    "DelimiterBlockSyntax",
-    "MarkdownCodeSyntax",
+    "DelimiterPreambleSyntax",
+    "MarkdownFrontmatterSyntax",
+    "DelimiterFrontmatterSyntax",
     # Pattern helpers
     "escape_delimiter",
     "build_delimiter_pattern",

@@ -143,7 +143,7 @@ venvPath = ".venv"
 
 typeCheckingMode = "strict"
 reportPossiblyUnboundVariable = true
-reportUnnecessaryTypeIgnore = true
+# reportUnnecessaryTypeIgnore = true  # Not supported in basedpyright
 reportMissingTypeStubs = true
 reportUnknownParameterType = "error"
 reportUnknownMemberType = "error"

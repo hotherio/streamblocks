@@ -1,137 +1,196 @@
-"""YAML frontmatter syntax implementation.
+"""Delimiter frontmatter syntax implementation.
 
 This syntax handles blocks in the format:
+!!start
 ---
-key: value
 metadata: here
 ---
-Content goes here
+content
+!!end
 """
 
 from __future__ import annotations
 
-from typing import Any
+import re
+from typing import TYPE_CHECKING, Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
 
+from streamblocks.core.types import DetectionResult
 from streamblocks.syntaxes.abc import FrontmatterSyntax
 
-
-class YAMLMetadata(BaseModel):
-    """Metadata model for YAML frontmatter blocks."""
-
-    model_config = ConfigDict(extra="allow", validate_assignment=True)
-
-    id: str | None = Field(None, description="Optional block identifier")
-    type: str | None = Field(None, description="Block type or category")
-    title: str | None = Field(None, description="Block title")
-    author: str | None = Field(None, description="Block author")
-    tags: list[str] = Field(default_factory=list, description="Block tags")
-    extra_fields: dict[str, Any] = Field(default_factory=dict, description="Additional fields")
-
-    def __init__(self, **data: Any) -> None:
-        """Initialize with dynamic field handling."""
-        # Known fields
-        known_fields = {"id", "type", "title", "author", "tags"}
-
-        # Separate known and extra fields
-        known_data = {k: v for k, v in data.items() if k in known_fields}
-        extra_data = {k: v for k, v in data.items() if k not in known_fields}
-
-        # Initialize with known fields
-        super().__init__(**known_data)
-
-        # Store extra fields
-        self.extra_fields = extra_data
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 
-class YAMLContent(BaseModel):
-    """Content model for YAML frontmatter blocks."""
-
-    model_config = ConfigDict(validate_assignment=True)
-
-    text: str = Field(description="The content text")
-    format: str = Field(default="markdown", description="Content format")
-
-    @property
-    def lines(self) -> list[str]:
-        """Get content as list of lines."""
-        return self.text.splitlines()
-
-    @property
-    def is_empty(self) -> bool:
-        """Check if content is empty."""
-        return not self.text.strip()
+# Constants
+FRONTMATTER_DELIMITER = "---"
 
 
-class YAMLFrontmatterSyntax(FrontmatterSyntax[YAMLMetadata, YAMLContent]):
-    """YAML frontmatter syntax parser.
+class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel](
+    FrontmatterSyntax[TMetadata, TContent]
+):
+    """Delimiter frontmatter syntax parser.
 
-    Handles blocks like:
+    This is a generic syntax parser for delimiter-based blocks with YAML frontmatter.
+    Users must provide their own metadata and content model classes.
+
+    Format:
+    !!start
     ---
-    id: my-block
-    type: document
-    tags: [python, example]
+    key: value
     ---
-    # My Document
-    This is the content...
+    content
+    !!end
+
+    Example usage:
+    ```python
+    class MyMetadata(BaseModel):
+        id: str
+        type: str
+        name: str | None = None
+
+    class MyContent(BaseModel):
+        text: str
+
+    syntax = DelimiterFrontmatterSyntax(
+        metadata_class=MyMetadata,
+        content_class=MyContent,
+        start_delimiter="!!start",
+        end_delimiter="!!end"
+    )
+    ```
     """
+
+    def __init__(
+        self,
+        metadata_class: type[TMetadata],
+        content_class: type[TContent],
+        start_delimiter: str = "!!start",
+        end_delimiter: str = "!!end",
+    ) -> None:
+        """Initialize with user-provided model classes.
+
+        Args:
+            metadata_class: Pydantic model class for metadata
+            content_class: Pydantic model class for content
+            start_delimiter: Start delimiter (default: "!!start")
+            end_delimiter: End delimiter (default: "!!end")
+        """
+        self.metadata_class = metadata_class
+        self.content_class = content_class
+        self._start_delimiter = start_delimiter
+        self._end_delimiter = end_delimiter
+        self._frontmatter_pattern = re.compile(rf"^{re.escape(FRONTMATTER_DELIMITER)}\s*$")
 
     @property
     def name(self) -> str:
         """Syntax identifier."""
-        return "yaml-frontmatter"
+        return f"delimiter_frontmatter_{self._start_delimiter}"
 
-    def parse_metadata(self, yaml_text: str) -> YAMLMetadata:
-        """Parse YAML text into metadata model."""
+    @property
+    def frontmatter_delimiter(self) -> str:
+        """Get frontmatter delimiter."""
+        return FRONTMATTER_DELIMITER
+
+    def detect_line(self, line: str, context: Any = None) -> DetectionResult:
+        """Detect delimiter markers and frontmatter boundaries."""
+        from streamblocks.core.models import BlockCandidate
+
+        stripped = line.strip()
+
+        if context is None:
+            # Looking for opening
+            if stripped == self._start_delimiter:
+                return DetectionResult(is_opening=True)
+        # Inside a block
+        elif isinstance(context, BlockCandidate):
+            if context.state.value == "header_detected":
+                # After !!start, check for frontmatter start
+                if self._is_frontmatter_boundary(line):
+                    return DetectionResult(is_metadata_boundary=True)
+                # No frontmatter, move directly to content
+                return DetectionResult()
+            if context.state.value == "accumulating_metadata":
+                # Check for metadata end
+                if self._is_frontmatter_boundary(line):
+                    return DetectionResult(is_metadata_boundary=True)
+            elif context.state.value == "accumulating_content" and stripped == self._end_delimiter:
+                return DetectionResult(is_closing=True)
+
+        return DetectionResult()
+
+    def _is_frontmatter_boundary(self, line: str) -> bool:
+        """Check if line is a frontmatter boundary (---)."""
+        return self._frontmatter_pattern.match(line.strip()) is not None
+
+    def should_accumulate_metadata(self, candidate: Any) -> bool:
+        """Check if we should accumulate metadata lines."""
+        from streamblocks.core.models import BlockCandidate
+
+        if isinstance(candidate, BlockCandidate):
+            # We accumulate metadata between the --- delimiters
+            return candidate.state.value in ["header_detected", "accumulating_metadata"]
+        return False
+
+    def parse_metadata(self, yaml_text: str) -> TMetadata:
+        """Parse YAML metadata into user's metadata model."""
         if not yaml_text.strip():
-            # Empty metadata section
-            return YAMLMetadata()
+            # Try to create empty metadata
+            return self.metadata_class()
 
-        # Parse YAML
         try:
             data = yaml.safe_load(yaml_text)
             if data is None:
-                return YAMLMetadata()
+                return self.metadata_class()
             if not isinstance(data, dict):
-                raise ValueError(f"Expected dict, got {type(data).__name__}")
-            return YAMLMetadata(**data)
+                # If user's metadata model can handle non-dict data, let it try
+                return self.metadata_class(data)  # type: ignore[call-arg]
+            return self.metadata_class(**data)
         except yaml.YAMLError as e:
+            # Let user's model handle invalid data or raise
             raise ValueError(f"Invalid YAML metadata: {e}") from e
 
-    def parse_content(self, content_text: str) -> YAMLContent:
-        """Parse content text into content model."""
-        # Try to detect format from metadata or content
-        format_hint = "markdown"  # Default
+    def parse_content(self, content_text: str) -> TContent:
+        """Parse content into user's content model."""
+        # Try different initialization strategies
+        if hasattr(self.content_class, "parse"):
+            # If content class has a parse method, use it
+            return self.content_class.parse(content_text)  # type: ignore[attr-defined, no-any-return]
 
-        # Simple format detection based on content
-        if content_text.strip():
-            lines = content_text.strip().splitlines()
-            if lines and lines[0].startswith("```"):
-                format_hint = "code"
-            elif any(line.startswith("#") for line in lines[:5]):
-                format_hint = "markdown"
-            elif content_text.strip().startswith("<"):
-                format_hint = "html"
+        # Try common field names
+        init_kwargs: dict[str, Any] = {}
+        if hasattr(self.content_class, "model_fields"):
+            fields = self.content_class.model_fields
+            # Try common content field names
+            for field_name in ["text", "content", "raw", "body", "data"]:
+                if field_name in fields:
+                    init_kwargs[field_name] = content_text
+                    break
 
-        return YAMLContent(text=content_text, format=format_hint)
+        if not init_kwargs:
+            # Fallback: try to initialize with positional argument
+            try:
+                return self.content_class(content_text)  # type: ignore[call-arg]
+            except Exception:
+                # Last resort: provide with common field name
+                init_kwargs = {"text": content_text}
+
+        return self.content_class(**init_kwargs)
+
+    def get_opening_pattern(self) -> str | None:
+        """Pattern for opening delimiter."""
+        return rf"^{re.escape(self._start_delimiter)}$"
+
+    def get_closing_pattern(self) -> str | None:
+        """Pattern for closing delimiter."""
+        return rf"^{re.escape(self._end_delimiter)}$"
 
     def get_block_type_hints(self) -> list[str]:
         """Get list of block types this syntax typically produces."""
-        return ["document", "metadata", "frontmatter", "yaml"]
+        return ["delimiter", "frontmatter", "document"]
 
-    def validate_block(self, metadata: YAMLMetadata, content: YAMLContent) -> bool:
+    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
         """Validate parsed block."""
-        # Basic validation - at least one of metadata or content should be non-empty
-        has_metadata = bool(
-            metadata.id
-            or metadata.type
-            or metadata.title
-            or metadata.author
-            or metadata.tags
-            or metadata.extra_fields
-        )
-        has_content = not content.is_empty
-
-        return has_metadata or has_content
+        # Delegate validation to user's models
+        return True

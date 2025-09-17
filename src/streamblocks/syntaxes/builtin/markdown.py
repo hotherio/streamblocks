@@ -1,280 +1,202 @@
-"""Markdown code block syntax implementation.
+"""Markdown frontmatter syntax implementation.
 
 This syntax handles blocks in the format:
-```language
-code content
+```[info]
+---
+metadata: here
+---
+content
 ```
 """
 
 from __future__ import annotations
 
-import contextlib
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict, Field
+import yaml
 
-from streamblocks.core.types import BlockState, DetectionResult
-from streamblocks.syntaxes.abc import BaseSyntax
+from streamblocks.core.types import DetectionResult
+from streamblocks.syntaxes.abc import FrontmatterSyntax
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
 
 # Constants
 BACKTICK_COUNT = 3
-MIN_INFO_STRING_LENGTH = 1
 
 
-class MarkdownCodeMetadata(BaseModel):
-    """Metadata model for markdown code blocks."""
+class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel](
+    FrontmatterSyntax[TMetadata, TContent]
+):
+    """Markdown frontmatter syntax parser.
 
-    model_config = ConfigDict(validate_assignment=True)
+    This is a generic syntax parser for markdown fence blocks with YAML frontmatter.
+    Users must provide their own metadata and content model classes.
 
-    language: str | None = Field(None, description="Programming language")
-    filename: str | None = Field(None, description="Optional filename")
-    title: str | None = Field(None, description="Optional title")
-    line_numbers: bool = Field(False, description="Whether to show line numbers")
-    highlight_lines: list[int] = Field(default_factory=list, description="Lines to highlight")
-    attributes: dict[str, str] = Field(default_factory=dict, description="Additional attributes")
-
-
-class MarkdownCodeContent(BaseModel):
-    """Content model for markdown code blocks."""
-
-    model_config = ConfigDict(validate_assignment=True)
-
-    code: str = Field(description="The code content")
-    line_count: int = Field(default=0, description="Number of lines")
-    has_trailing_newline: bool = Field(True, description="Whether code ends with newline")
-
-    def __init__(self, **data: Any) -> None:
-        """Initialize with computed fields."""
-        super().__init__(**data)
-        if "line_count" not in data and "code" in data:
-            self.line_count = len(data["code"].splitlines())
-        if "has_trailing_newline" not in data and "code" in data:
-            self.has_trailing_newline = data["code"].endswith("\n")
-
-
-class MarkdownCodeSyntax(BaseSyntax[MarkdownCodeMetadata, MarkdownCodeContent]):
-    """Markdown code block syntax parser.
-
-    Handles blocks like:
-    ```python
-    def hello():
-        print("Hello, World!")
+    Format:
+    ```[info_string]
+    ---
+    key: value
+    ---
+    content
     ```
 
-    Or with additional metadata:
-    ```javascript {filename: "app.js", highlight: [2, 3]}
-    const app = express();
-    app.get('/', handler);
-    app.listen(3000);
+    Example usage:
+    ```python
+    class MyMetadata(BaseModel):
+        id: str
+        type: str
+        title: str | None = None
+
+    class MyContent(BaseModel):
+        text: str
+        format: str = "markdown"
+
+    syntax = MarkdownFrontmatterSyntax(
+        metadata_class=MyMetadata,
+        content_class=MyContent,
+        fence="```",
+        info_string=None
+    )
     ```
     """
+
+    def __init__(
+        self,
+        metadata_class: type[TMetadata],
+        content_class: type[TContent],
+        fence: str = "```",
+        info_string: str | None = None,
+    ) -> None:
+        """Initialize with user-provided model classes.
+
+        Args:
+            metadata_class: Pydantic model class for metadata
+            content_class: Pydantic model class for content
+            fence: Fence marker (default: "```")
+            info_string: Optional info string to match after fence
+        """
+        self.metadata_class = metadata_class
+        self.content_class = content_class
+        self._fence = fence
+        self._info_string = info_string
+        self._fence_pattern = self._build_fence_pattern()
+        self._frontmatter_pattern = re.compile(r"^---\s*$")
+
+    def _build_fence_pattern(self) -> re.Pattern[str]:
+        """Build regex pattern for fence detection."""
+        pattern_str = rf"^{re.escape(self._fence)}"
+        if self._info_string:
+            pattern_str += re.escape(self._info_string)
+        return re.compile(pattern_str)
 
     @property
     def name(self) -> str:
         """Syntax identifier."""
-        return "markdown-code"
+        suffix = f"_{self._info_string}" if self._info_string else ""
+        return f"markdown_frontmatter{suffix}"
+
+    @property
+    def frontmatter_delimiter(self) -> str:
+        """Get frontmatter delimiter."""
+        return "---"
 
     def detect_line(self, line: str, context: Any = None) -> DetectionResult:
-        """Detect markdown code block boundaries."""
+        """Detect markdown fence markers and frontmatter boundaries."""
         from streamblocks.core.models import BlockCandidate
 
-        stripped = line.strip()
-
-        # Check for code fence
-        if not self._is_code_fence(stripped):
-            return DetectionResult()
-
-        # Opening fence (no context)
         if context is None:
-            # Extract language and metadata from info string
-            info_string = self._extract_info_string(stripped)
-            metadata = self._parse_info_string(info_string) if info_string else {}
-            return DetectionResult(is_opening=True, metadata=metadata)
-
-        # Closing fence (in content accumulation)
-        if isinstance(context, BlockCandidate) and context.state == BlockState.ACCUMULATING_CONTENT:
-            return DetectionResult(is_closing=True)
+            # Looking for opening fence
+            if self._fence_pattern.match(line.strip()):
+                return DetectionResult(is_opening=True)
+        # Inside a block
+        elif isinstance(context, BlockCandidate):
+            if context.state.value == "accumulating_metadata":
+                # Check for metadata section boundaries
+                if self._is_frontmatter_boundary(line):
+                    if not context.metadata_lines:
+                        # First --- marks start of metadata
+                        return DetectionResult(is_metadata_boundary=True)
+                    # Second --- marks end of metadata
+                    return DetectionResult(is_metadata_boundary=True)
+            elif context.state.value == "accumulating_content" and line.strip() == self._fence:
+                return DetectionResult(is_closing=True)
 
         return DetectionResult()
 
+    def _is_frontmatter_boundary(self, line: str) -> bool:
+        """Check if line is a frontmatter boundary (---)."""
+        return self._frontmatter_pattern.match(line.strip()) is not None
+
     def should_accumulate_metadata(self, candidate: Any) -> bool:
-        """Markdown code blocks have inline metadata only."""
+        """Check if we should accumulate metadata lines."""
+        from streamblocks.core.models import BlockCandidate
+
+        if isinstance(candidate, BlockCandidate):
+            # We accumulate metadata after the opening fence until we hit the second ---
+            return candidate.state.value in ["header_detected", "accumulating_metadata"]
         return False
 
-    def parse_block(self, candidate: Any) -> Any:
-        """Parse markdown code block into metadata and content."""
-        from streamblocks.core.models import BlockCandidate
-        from streamblocks.core.types import ParseResult
-
-        if not isinstance(candidate, BlockCandidate):
-            return ParseResult[MarkdownCodeMetadata, MarkdownCodeContent](
-                success=False,
-                error="Invalid candidate type"
-            )
+    def parse_metadata(self, yaml_text: str) -> TMetadata:
+        """Parse YAML metadata into user's metadata model."""
+        if not yaml_text.strip():
+            # Try to create empty metadata
+            return self.metadata_class()
 
         try:
-            # Parse metadata from the stored metadata dict
-            metadata = self._create_metadata(candidate.metadata)
+            data = yaml.safe_load(yaml_text)
+            if data is None:
+                return self.metadata_class()
+            if not isinstance(data, dict):
+                # If user's metadata model can handle non-dict data, let it try
+                return self.metadata_class(data)  # type: ignore[call-arg]
+            return self.metadata_class(**data)
+        except yaml.YAMLError as e:
+            # Let user's model handle invalid data or raise
+            raise ValueError(f"Invalid YAML metadata: {e}") from e
 
-            # Get code content (excluding fence lines)
-            code_lines = candidate.content_lines
-            code = "\n".join(code_lines)
+    def parse_content(self, content_text: str) -> TContent:
+        """Parse content into user's content model."""
+        # Try different initialization strategies
+        if hasattr(self.content_class, "parse"):
+            # If content class has a parse method, use it
+            return self.content_class.parse(content_text)  # type: ignore[attr-defined, no-any-return]
 
-            # Create content model
-            content = MarkdownCodeContent(code=code)
+        # Try common field names
+        init_kwargs: dict[str, Any] = {}
+        if hasattr(self.content_class, "model_fields"):
+            fields = self.content_class.model_fields
+            # Try common content field names
+            for field_name in ["text", "content", "raw", "body", "data"]:
+                if field_name in fields:
+                    init_kwargs[field_name] = content_text
+                    break
 
-            # Validate
-            if not self.validate_block(metadata, content):
-                return ParseResult[MarkdownCodeMetadata, MarkdownCodeContent](
-                    success=False,
-                    error="Block validation failed"
-                )
+        if not init_kwargs:
+            # Fallback: try to initialize with positional argument
+            try:
+                return self.content_class(content_text)  # type: ignore[call-arg]
+            except Exception:
+                # Last resort: empty initialization
+                init_kwargs = {"text": content_text}
 
-            return ParseResult[MarkdownCodeMetadata, MarkdownCodeContent](
-                success=True,
-                metadata=metadata,
-                content=content
-            )
-
-        except Exception as e:
-            return ParseResult[MarkdownCodeMetadata, MarkdownCodeContent](
-                success=False,
-                error=f"Parse error: {e}"
-            )
+        return self.content_class(**init_kwargs)
 
     def get_opening_pattern(self) -> str | None:
-        """Pattern for opening code fence."""
-        return r"^```.*$"
+        """Pattern for opening fence."""
+        return rf"^{re.escape(self._fence)}.*$"
 
     def get_closing_pattern(self) -> str | None:
-        """Pattern for closing code fence."""
-        return r"^```\s*$"
+        """Pattern for closing fence."""
+        return rf"^{re.escape(self._fence)}\s*$"
 
     def get_block_type_hints(self) -> list[str]:
         """Get list of block types this syntax typically produces."""
-        return ["code", "markdown-code", "fenced-code"]
+        return ["markdown", "document", "frontmatter"]
 
-    def validate_block(self, metadata: MarkdownCodeMetadata, content: MarkdownCodeContent) -> bool:
+    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
         """Validate parsed block."""
-        # Code blocks are generally valid as long as they parse
+        # Delegate validation to user's models
         return True
-
-    # Helper methods
-
-    def _is_code_fence(self, line: str) -> bool:
-        """Check if line is a code fence (```)."""
-        return line.startswith("```")
-
-    def _extract_info_string(self, fence_line: str) -> str:
-        """Extract info string from opening fence line."""
-        # Remove the ``` prefix
-        if fence_line.startswith("```"):
-            return fence_line[BACKTICK_COUNT:].strip()
-        return ""
-
-    def _parse_info_string(self, info_string: str) -> dict[str, Any]:
-        """Parse info string into metadata components."""
-        if not info_string:
-            return {}
-
-        metadata: dict[str, Any] = {}
-
-        # Common patterns:
-        # 1. Simple: "python"
-        # 2. With filename: "python filename.py"
-        # 3. With attributes: "python {highlight: [1, 2]}"
-        # 4. Complex: "python filename.py {highlight: [1, 2], title: 'Example'}"
-
-        # Check for attributes in curly braces
-        attr_match = re.search(r"\{(.+)\}$", info_string)
-        if attr_match:
-            # Extract and parse attributes
-            attr_str = attr_match.group(1)
-            info_string = info_string[:attr_match.start()].strip()
-
-            # Simple attribute parsing (not full JSON)
-            # Parse by manually tracking brackets
-            try:
-                i = 0
-                while i < len(attr_str):
-                    # Find key
-                    key_start = i
-                    while i < len(attr_str) and attr_str[i] not in ":,}":
-                        i += 1
-
-                    if i >= len(attr_str) or attr_str[i] != ":":
-                        break
-
-                    key = attr_str[key_start:i].strip().strip("'\"")
-                    i += 1  # Skip ':'
-
-                    # Find value - handle arrays specially
-                    while i < len(attr_str) and attr_str[i] == " ":
-                        i += 1
-
-                    value_start = i
-                    if i < len(attr_str) and attr_str[i] == "[":
-                        # Array value - find matching ]
-                        bracket_count = 1
-                        i += 1
-                        while i < len(attr_str) and bracket_count > 0:
-                            if attr_str[i] == "[":
-                                bracket_count += 1
-                            elif attr_str[i] == "]":
-                                bracket_count -= 1
-                            i += 1
-                    else:
-                        # Regular value - find next comma or end
-                        while i < len(attr_str) and attr_str[i] not in ",}":
-                            i += 1
-
-                    value = attr_str[value_start:i].strip().strip("'\"")
-
-                    # Skip comma if present
-                    while i < len(attr_str) and attr_str[i] in ", ":
-                        i += 1
-
-                    # Process the key-value pair
-                    if key == "highlight":
-                        if value.startswith("[") and value.endswith("]"):
-                            numbers = value[1:-1].split(",")
-                            metadata["highlight_lines"] = [int(n.strip()) for n in numbers if n.strip().isdigit()]
-                        elif value.strip():
-                            with contextlib.suppress(ValueError):
-                                metadata["highlight_lines"] = [int(value.strip())]
-                    elif key == "line-numbers":
-                        metadata["line_numbers"] = value.lower() in ("true", "yes", "1")
-                    elif key == "title":
-                        metadata["title"] = value
-                    else:
-                        if "attributes" not in metadata:
-                            metadata["attributes"] = {}
-                        metadata["attributes"][key] = value
-            except Exception:
-                # Ignore parsing errors in attributes
-                pass
-
-        # Parse remaining info string (language and optional filename)
-        parts = info_string.split(None, 1)  # Split on first whitespace
-
-        if parts:
-            # First part is always language
-            metadata["language"] = parts[0]
-
-            # Second part (if any) is typically filename
-            if len(parts) > 1:
-                metadata["filename"] = parts[1]
-
-        return metadata
-
-    def _create_metadata(self, metadata_dict: dict[str, Any]) -> MarkdownCodeMetadata:
-        """Create metadata model from parsed dictionary."""
-        return MarkdownCodeMetadata(
-            language=metadata_dict.get("language"),
-            filename=metadata_dict.get("filename"),
-            title=metadata_dict.get("title"),
-            line_numbers=metadata_dict.get("line_numbers", False),
-            highlight_lines=metadata_dict.get("highlight_lines", []),
-            attributes=metadata_dict.get("attributes", {})
-        )

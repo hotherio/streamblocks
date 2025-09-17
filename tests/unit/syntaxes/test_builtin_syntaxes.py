@@ -1,44 +1,169 @@
-"""Tests for built-in syntax implementations."""
+"""Tests for built-in syntax implementations with hardcoded models (legacy).
 
+NOTE: This test file uses the old approach with hardcoded models.
+See test_generic_syntaxes.py for the new approach with user-provided models.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from streamblocks.core.models import BlockCandidate
 from streamblocks.core.types import BlockState
 from streamblocks.syntaxes.builtin import (
-    DelimiterBlockSyntax,
-    MarkdownCodeSyntax,
-    YAMLFrontmatterSyntax,
+    DelimiterFrontmatterSyntax,
+    DelimiterPreambleSyntax,
+    MarkdownFrontmatterSyntax,
 )
 
 
-class TestYAMLFrontmatterSyntax:
-    """Tests for YAML frontmatter syntax parser."""
+# Legacy test models (matching the old hardcoded models)
+class YAMLMetadata(BaseModel):
+    """Metadata model for YAML frontmatter blocks."""
+
+    model_config = ConfigDict(extra="allow", validate_assignment=True)
+
+    id: str | None = Field(None, description="Optional block identifier")
+    type: str | None = Field(None, description="Block type or category")
+    title: str | None = Field(None, description="Block title")
+    author: str | None = Field(None, description="Block author")
+    tags: list[str] = Field(default_factory=list, description="Block tags")
+    extra_fields: dict[str, Any] = Field(default_factory=dict, description="Additional fields")
+
+    def __init__(self, **data: Any) -> None:
+        """Initialize with dynamic field handling."""
+        # Known fields
+        known_fields = {"id", "type", "title", "author", "tags"}
+
+        # Separate known and extra fields
+        known_data = {k: v for k, v in data.items() if k in known_fields}
+        extra_data = {k: v for k, v in data.items() if k not in known_fields}
+
+        # Initialize with known fields
+        super().__init__(**known_data)
+
+        # Store extra fields
+        self.extra_fields = extra_data
+
+
+class YAMLContent(BaseModel):
+    """Content model for YAML frontmatter blocks."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    text: str = Field(description="The content text")
+    format: str = Field(default="markdown", description="Content format")
+
+    @property
+    def lines(self) -> list[str]:
+        """Get content as list of lines."""
+        return self.text.splitlines()
+
+    @property
+    def is_empty(self) -> bool:
+        """Check if content is empty."""
+        return not self.text.strip()
+
+
+class DelimiterMetadata(BaseModel):
+    """Metadata model for delimiter-based blocks."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    hash_id: str = Field(description="Block hash identifier")
+    block_type: str = Field(default="block", description="Block type")
+    params: str | None = Field(None, description="Optional parameters")
+    language: str | None = Field(None, description="Language hint for code blocks")
+    attributes: dict[str, str] = Field(default_factory=dict, description="Additional attributes")
+
+
+class DelimiterContent(BaseModel):
+    """Content model for delimiter-based blocks."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    text: str = Field(description="The content text")
+    is_code: bool = Field(default=False, description="Whether content is code")
+    line_count: int = Field(default=0, description="Number of content lines")
+
+    def __init__(self, **data: Any) -> None:
+        """Initialize with computed fields."""
+        super().__init__(**data)
+        if "line_count" not in data and "text" in data:
+            self.line_count = len(data["text"].splitlines())
+
+
+class MarkdownCodeMetadata(BaseModel):
+    """Metadata model for markdown code blocks."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    language: str | None = Field(None, description="Programming language")
+    filename: str | None = Field(None, description="Optional filename")
+    title: str | None = Field(None, description="Optional title")
+    line_numbers: bool = Field(False, description="Whether to show line numbers")
+    highlight_lines: list[int] = Field(default_factory=list, description="Lines to highlight")
+    attributes: dict[str, str] = Field(default_factory=dict, description="Additional attributes")
+
+
+class MarkdownCodeContent(BaseModel):
+    """Content model for markdown code blocks."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    code: str = Field(description="The code content")
+    line_count: int = Field(default=0, description="Number of lines")
+    has_trailing_newline: bool = Field(True, description="Whether code ends with newline")
+
+    def __init__(self, **data: Any) -> None:
+        """Initialize with computed fields."""
+        super().__init__(**data)
+        if "line_count" not in data and "code" in data:
+            self.line_count = len(data["code"].splitlines())
+        if "has_trailing_newline" not in data and "code" in data:
+            self.has_trailing_newline = data["code"].endswith("\n")
+
+
+class TestDelimiterFrontmatterSyntax:
+    """Tests for delimiter frontmatter syntax parser (formerly YAML frontmatter)."""
 
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.syntax = YAMLFrontmatterSyntax()
+        self.syntax = DelimiterFrontmatterSyntax(
+            metadata_class=YAMLMetadata,
+            content_class=YAMLContent,
+        )
 
     def test_detect_opening_delimiter(self) -> None:
         """Test detection of opening delimiter."""
-        result = self.syntax.detect_line("---", None)
+        result = self.syntax.detect_line("!!start", None)
         assert result.is_opening
         assert not result.is_closing
 
-    def test_detect_closing_delimiter_in_metadata(self) -> None:
-        """Test detection of closing delimiter in metadata state."""
+    def test_detect_closing_delimiter(self) -> None:
+        """Test detection of closing delimiter."""
         candidate = BlockCandidate(syntax=self.syntax, start_line=1)
-        candidate.state = BlockState.ACCUMULATING_METADATA
-        candidate.lines = ["---"]
-        candidate.metadata_lines = []
-        candidate.content_lines = []
-        result = self.syntax.detect_line("---", candidate)
-        assert result.is_metadata_boundary
-        assert not result.is_closing
+        candidate.state = BlockState.ACCUMULATING_CONTENT
+        candidate.lines = ["!!start", "---", "title: Test", "---", "content"]
+        candidate.metadata_lines = ["title: Test"]
+        candidate.content_lines = ["content"]
+        result = self.syntax.detect_line("!!end", candidate)
+        assert result.is_closing
 
     def test_parse_simple_frontmatter(self) -> None:
         """Test parsing simple YAML frontmatter."""
         candidate = BlockCandidate(syntax=self.syntax, start_line=1)
         candidate.state = BlockState.COMPLETED
-        candidate.lines = ["---", "title: Test Document", "type: article", "---", "# Content", "Hello world"]
+        candidate.lines = [
+            "!!start",
+            "---",
+            "title: Test Document",
+            "type: article",
+            "---",
+            "# Content",
+            "Hello world",
+            "!!end",
+        ]
         candidate.metadata_lines = ["title: Test Document", "type: article"]
         candidate.content_lines = ["# Content", "Hello world"]
 
@@ -54,7 +179,15 @@ class TestYAMLFrontmatterSyntax:
         """Test parsing with tags and extra fields."""
         candidate = BlockCandidate(syntax=self.syntax, start_line=1)
         candidate.state = BlockState.COMPLETED
-        candidate.lines = ["---", "tags: [python, testing]", "custom_field: value", "---", "Content"]
+        candidate.lines = [
+            "!!start",
+            "---",
+            "tags: [python, testing]",
+            "custom_field: value",
+            "---",
+            "Content",
+            "!!end",
+        ]
         candidate.metadata_lines = ["tags: [python, testing]", "custom_field: value"]
         candidate.content_lines = ["Content"]
 
@@ -68,7 +201,7 @@ class TestYAMLFrontmatterSyntax:
         """Test handling empty metadata section."""
         candidate = BlockCandidate(syntax=self.syntax, start_line=1)
         candidate.state = BlockState.COMPLETED
-        candidate.lines = ["---", "---", "Just content"]
+        candidate.lines = ["!!start", "---", "---", "Just content", "!!end"]
         candidate.metadata_lines = []
         candidate.content_lines = ["Just content"]
 
@@ -81,30 +214,39 @@ class TestYAMLFrontmatterSyntax:
         """Test handling of invalid YAML metadata."""
         candidate = BlockCandidate(syntax=self.syntax, start_line=1)
         candidate.state = BlockState.COMPLETED
-        candidate.lines = ["---", "invalid: yaml: syntax:", "---"]
+        candidate.lines = ["!!start", "---", "invalid: yaml: syntax:", "---", "!!end"]
         candidate.metadata_lines = ["invalid: yaml: syntax:"]
         candidate.content_lines = []
 
         result = self.syntax.parse_block(candidate)
         assert not result.success
+        assert result.error is not None
         assert "Invalid YAML" in result.error
 
 
-class TestDelimiterBlockSyntax:
-    """Tests for delimiter block syntax parser."""
+class TestDelimiterPreambleSyntax:
+    """Tests for delimiter preamble syntax parser."""
 
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.syntax = DelimiterBlockSyntax()
+
+        # Need to define metadata for delimiter preamble
+        class PreambleMetadata(BaseModel):
+            id: str = Field(description="Block ID")
+            type: str = Field(default="block", description="Block type")
+
+        self.syntax = DelimiterPreambleSyntax(
+            metadata_class=PreambleMetadata,
+            content_class=DelimiterContent,
+        )
 
     def test_detect_opening_with_metadata(self) -> None:
         """Test detection of opening delimiter with inline metadata."""
-        result = self.syntax.detect_line("!!block123:shell:bash", None)
+        result = self.syntax.detect_line("!!block123:shell", None)
         assert result.is_opening
         assert result.metadata
-        assert result.metadata["hash_id"] == "block123"
-        assert result.metadata["block_type"] == "shell"
-        assert result.metadata["params"] == "bash"
+        assert "_raw_preamble" in result.metadata
+        assert result.metadata["_raw_preamble"] == "block123:shell"
 
     def test_detect_closing_delimiter(self) -> None:
         """Test detection of closing delimiter."""
@@ -113,63 +255,61 @@ class TestDelimiterBlockSyntax:
         candidate.lines = ["!!block123:shell"]
         candidate.metadata_lines = []
         candidate.content_lines = ["echo test"]
-        candidate.metadata = {"hash_id": "block123"}
-        result = self.syntax.detect_line("!!block123:end", candidate)
+        result = self.syntax.detect_line("!!end", candidate)
         assert result.is_closing
 
     def test_parse_simple_block(self) -> None:
         """Test parsing simple delimiter block."""
         candidate = BlockCandidate(syntax=self.syntax, start_line=1)
         candidate.state = BlockState.COMPLETED
-        candidate.lines = ["!!abc123:python", "print('Hello')", "!!abc123:end"]
+        candidate.lines = ["!!abc123:python", "print('Hello')", "!!end"]
         candidate.metadata_lines = []
         candidate.content_lines = ["print('Hello')"]
-        candidate.metadata = {"hash_id": "abc123", "block_type": "python"}
+        candidate.metadata = {"_raw_preamble": "abc123:python"}
 
         result = self.syntax.parse_block(candidate)
         assert result.success
         assert result.metadata
-        assert result.metadata.hash_id == "abc123"
-        assert result.metadata.block_type == "python"
+        assert result.metadata.id == "abc123"
+        assert result.metadata.type == "python"
         assert result.content
         assert result.content.text == "print('Hello')"
 
-    def test_extract_inline_metadata_variations(self) -> None:
-        """Test various inline metadata formats."""
-        # Simple format
-        meta = self.syntax._extract_inline_metadata("!!block123")
-        assert meta["hash_id"] == "block123"
-
-        # With type
-        meta = self.syntax._extract_inline_metadata("!!block123:code")
-        assert meta["hash_id"] == "block123"
-        assert meta["block_type"] == "code"
-
-        # With type and params
-        meta = self.syntax._extract_inline_metadata("!!block123:shell:bash")
-        assert meta["hash_id"] == "block123"
-        assert meta["block_type"] == "shell"
-        assert meta["params"] == "bash"
-
-    def test_invalid_hash_id(self) -> None:
-        """Test validation of invalid hash IDs."""
+    def test_parse_preamble(self) -> None:
+        """Test preamble parsing."""
         candidate = BlockCandidate(syntax=self.syntax, start_line=1)
         candidate.state = BlockState.COMPLETED
-        candidate.lines = ["!!invalid hash:code", "content", "!!invalid hash:end"]
+        candidate.lines = ["!!test123:block", "content", "!!end"]
         candidate.metadata_lines = []
         candidate.content_lines = ["content"]
-        candidate.metadata = {"hash_id": "invalid hash", "block_type": "code"}
+        candidate.metadata = {"_raw_preamble": "test123:block"}
 
         result = self.syntax.parse_block(candidate)
-        assert not result.success
+        assert result.success
+        assert result.metadata is not None
+        assert result.metadata.id == "test123"
+        assert result.metadata.type == "block"
 
 
-class TestMarkdownCodeSyntax:
-    """Tests for markdown code syntax parser."""
+class TestMarkdownFrontmatterSyntaxRenamed:
+    """Tests for markdown frontmatter syntax parser (formerly markdown code)."""
 
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.syntax = MarkdownCodeSyntax()
+
+        # Define test metadata/content models
+        class MarkdownMetadata(BaseModel):
+            id: str | None = None
+            type: str | None = None
+            language: str | None = None
+
+        class MarkdownContent(BaseModel):
+            text: str
+
+        self.syntax = MarkdownFrontmatterSyntax(
+            metadata_class=MarkdownMetadata,
+            content_class=MarkdownContent,
+        )
 
     def test_detect_opening_fence(self) -> None:
         """Test detection of opening code fence."""
@@ -202,32 +342,15 @@ class TestMarkdownCodeSyntax:
         assert result.metadata
         assert result.metadata.language == "python"
         assert result.content
-        assert result.content.code == "def hello():\n    print('Hello')"
-        assert result.content.line_count == 2
+        assert result.content.text == "def hello():\n    print('Hello')"
+        # Note: line_count was part of old MarkdownCodeContent, not the generic model
 
-    def test_parse_with_filename(self) -> None:
-        """Test parsing code block with filename."""
+    def test_detect_without_metadata(self) -> None:
+        """Test detection without inline metadata."""
+        # MarkdownFrontmatterSyntax doesn't extract metadata from opening line
         result = self.syntax.detect_line("```javascript app.js", None)
-        assert result.metadata["language"] == "javascript"
-        assert result.metadata["filename"] == "app.js"
-
-    def test_parse_info_string_variations(self) -> None:
-        """Test parsing various info string formats."""
-        # With attributes
-        meta = self.syntax._parse_info_string("python {highlight: [1, 2, 3]}")
-        assert meta["language"] == "python"
-        assert meta["highlight_lines"] == [1, 2, 3]
-
-        # With filename and attributes
-        meta = self.syntax._parse_info_string("javascript app.js {title: 'Example'}")
-        assert meta["language"] == "javascript"
-        assert meta["filename"] == "app.js"
-        assert meta["title"] == "Example"
-
-        # With line numbers
-        meta = self.syntax._parse_info_string("python {line-numbers: true}")
-        assert meta["language"] == "python"
-        assert meta["line_numbers"] is True
+        assert result.is_opening
+        assert result.metadata is None  # No inline metadata in this syntax
 
     def test_empty_code_block(self) -> None:
         """Test handling empty code block."""
@@ -241,5 +364,4 @@ class TestMarkdownCodeSyntax:
         result = self.syntax.parse_block(candidate)
         assert result.success
         assert result.content
-        assert result.content.code == ""
-        assert result.content.line_count == 0
+        assert result.content.text == ""

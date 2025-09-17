@@ -1,82 +1,96 @@
-"""Delimiter-based block syntax implementation.
+"""Delimiter preamble syntax implementation.
 
 This syntax handles blocks in the format:
 !!block123:type:params
 Content goes here
-!!block123:end
+!!end
 """
 
 from __future__ import annotations
 
-import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict, Field
-
+from streamblocks.core.models import BlockCandidate
+from streamblocks.core.types import BlockState, DetectionResult
 from streamblocks.syntaxes.abc import DelimiterSyntax
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
 
 # Constants
 DELIMITER_PARTS_MIN = 2
-INLINE_METADATA_PARTS = 3
 
 
-class DelimiterMetadata(BaseModel):
-    """Metadata model for delimiter-based blocks."""
+class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel](
+    DelimiterSyntax[TMetadata, TContent]
+):
+    """Delimiter preamble syntax parser.
 
-    model_config = ConfigDict(validate_assignment=True)
+    This is a generic syntax parser for delimiter-based blocks with inline metadata.
+    Users must provide their own metadata and content model classes.
 
-    hash_id: str = Field(description="Block hash identifier")
-    block_type: str = Field(default="block", description="Block type")
-    params: str | None = Field(None, description="Optional parameters")
-    language: str | None = Field(None, description="Language hint for code blocks")
-    attributes: dict[str, str] = Field(default_factory=dict, description="Additional attributes")
+    Format:
+    !!id:type[:params...]
+    content
+    !!end
 
+    Example usage:
+    ```python
+    class MyMetadata(BaseModel):
+        id: str
+        type: str
+        params: str | None = None
 
-class DelimiterContent(BaseModel):
-    """Content model for delimiter-based blocks."""
+    class MyContent(BaseModel):
+        text: str
 
-    model_config = ConfigDict(validate_assignment=True)
-
-    text: str = Field(description="The content text")
-    is_code: bool = Field(default=False, description="Whether content is code")
-    line_count: int = Field(default=0, description="Number of content lines")
-
-    def __init__(self, **data: Any) -> None:
-        """Initialize with computed fields."""
-        super().__init__(**data)
-        if "line_count" not in data and "text" in data:
-            self.line_count = len(data["text"].splitlines())
-
-
-class DelimiterBlockSyntax(DelimiterSyntax[DelimiterMetadata, DelimiterContent]):
-    """Delimiter-based block syntax parser.
-
-    Handles blocks like:
-    !!block123:shell:bash
-    echo "Hello World"
-    !!block123:end
-
-    Or simpler forms:
-    !!abc123:python
-    print("Hello")
-    !!abc123:end
+    syntax = DelimiterPreambleSyntax(
+        metadata_class=MyMetadata,
+        content_class=MyContent,
+        prefix="!!",
+        end_suffix=":end"
+    )
+    ```
     """
+
+    def __init__(
+        self,
+        metadata_class: type[TMetadata],
+        content_class: type[TContent],
+        prefix: str = "!!",
+        end_suffix: str = ":end",
+    ) -> None:
+        """Initialize with user-provided model classes.
+
+        Args:
+            metadata_class: Pydantic model class for metadata
+            content_class: Pydantic model class for content
+            prefix: Delimiter prefix (default: "!!")
+            end_suffix: Suffix for end delimiter (default: ":end")
+        """
+        self.metadata_class = metadata_class
+        self.content_class = content_class
+        self._prefix = prefix
+        self._end_suffix = end_suffix
 
     @property
     def name(self) -> str:
         """Syntax identifier."""
-        return "delimiter-block"
+        return f"delimiter_preamble_{self._prefix}"
 
     @property
     def delimiter_prefix(self) -> str:
         """Prefix for block delimiters."""
-        return "!!"
+        return self._prefix
 
-    def detect_line(self, line: str, context: Any = None) -> Any:
+    @property
+    def end_suffix(self) -> str:
+        """Suffix for end delimiter."""
+        return self._end_suffix
+
+    def detect_line(self, line: str, context: Any = None) -> DetectionResult:
         """Enhanced detection for delimiter blocks."""
-        from streamblocks.core.models import BlockCandidate
-        from streamblocks.core.types import BlockState, DetectionResult
-
         stripped = line.strip()
 
         # Check for opening marker
@@ -84,102 +98,105 @@ class DelimiterBlockSyntax(DelimiterSyntax[DelimiterMetadata, DelimiterContent])
             if stripped.startswith(self.delimiter_prefix):
                 # Extract metadata from opening line
                 metadata = self._extract_inline_metadata(stripped)
-                if metadata.get("hash_id"):
+                if metadata:
                     return DetectionResult(is_opening=True, metadata=metadata)
             return DetectionResult()
 
         # Check for closing marker
-        if isinstance(context, BlockCandidate) and context.state == BlockState.ACCUMULATING_CONTENT:
-            # Get hash from candidate metadata
-            hash_id = context.metadata.get("hash_id", "")
-            if hash_id:
-                expected_closing = f"{self.delimiter_prefix}{hash_id}{self.end_suffix}"
-                if stripped == expected_closing:
-                    return DetectionResult(is_closing=True)
+        if (
+            isinstance(context, BlockCandidate)
+            and context.state == BlockState.ACCUMULATING_CONTENT
+            and (stripped == f"{self.delimiter_prefix}end" or stripped.endswith(self.end_suffix))
+        ):
+            return DetectionResult(is_closing=True)
 
         return DetectionResult()
 
-    def _extract_inline_metadata(self, opening_line: str) -> dict[str, str]:
+    def _extract_inline_metadata(self, opening_line: str) -> dict[str, Any]:
         """Extract metadata from opening delimiter line."""
         # Remove prefix
         line = opening_line.strip()
         if line.startswith(self.delimiter_prefix):
-            line = line[len(self.delimiter_prefix):]
+            line = line[len(self.delimiter_prefix) :]
 
-        # Split by colon
-        parts = line.split(":")
-        metadata: dict[str, str] = {}
+        # Check if this is just "end" marker
+        if line == "end" or line.endswith(self.end_suffix):
+            return {}
 
-        if len(parts) >= 1:
-            # First part is always the hash ID
-            metadata["hash_id"] = parts[0]
+        # Parse the preamble - implementation depends on user's metadata model
+        # We'll provide the raw preamble data and let the metadata class handle it
+        return {"_raw_preamble": line}
 
-        if len(parts) >= DELIMITER_PARTS_MIN:
-            # Second part is the block type
-            metadata["block_type"] = parts[1]
-
-        if len(parts) >= INLINE_METADATA_PARTS:
-            # Third part and beyond are parameters
-            metadata["params"] = ":".join(parts[2:])
-
-            # Special handling for common patterns
-            if metadata["block_type"] in ["code", "shell", "python", "javascript"]:
-                # For code blocks, params often indicate language
-                metadata["language"] = parts[2] if len(parts) > 2 else metadata["block_type"]
-
-        return metadata
-
-    def parse_metadata_dict(self, metadata_dict: dict[str, str]) -> DelimiterMetadata:
+    def parse_metadata_dict(self, metadata_dict: dict[str, Any]) -> TMetadata:
         """Convert metadata dictionary to typed metadata model."""
-        # Required field
-        hash_id = metadata_dict.get("hash_id", "")
-        if not hash_id:
-            raise ValueError("Missing required hash_id in metadata")
+        # Handle raw preamble parsing
+        if "_raw_preamble" in metadata_dict:
+            preamble = metadata_dict.pop("_raw_preamble")
+            # Basic parsing strategy: split by colons
+            parts = preamble.split(":")
 
-        # Build metadata object
-        return DelimiterMetadata(
-            hash_id=hash_id,
-            block_type=metadata_dict.get("block_type", "block"),
-            params=metadata_dict.get("params"),
-            language=metadata_dict.get("language"),
-            attributes={k: v for k, v in metadata_dict.items()
-                       if k not in ["hash_id", "block_type", "params", "language"]}
-        )
+            # Try to map common patterns to metadata fields
+            # This is a best-effort approach - users can override for custom parsing
+            if hasattr(self.metadata_class, "model_fields"):
+                fields = self.metadata_class.model_fields
+                if "id" in fields and len(parts) >= 1:
+                    metadata_dict["id"] = parts[0]
+                if "type" in fields and len(parts) >= DELIMITER_PARTS_MIN:
+                    metadata_dict["type"] = parts[1]
+                # Any remaining parts could be params, args, etc.
+                if len(parts) > DELIMITER_PARTS_MIN:
+                    # Look for common field names
+                    for field_name in ["params", "args", "options", "extra"]:
+                        if field_name in fields:
+                            metadata_dict[field_name] = ":".join(parts[2:])
+                            break
 
-    def parse_content(self, content_text: str) -> DelimiterContent:
+        # Let the metadata class handle validation
+        return self.metadata_class(**metadata_dict)
+
+    def parse_content(self, content_text: str) -> TContent:
         """Parse content text into content model."""
-        # Detect if content looks like code
-        is_code = False
+        # Try different initialization strategies
+        if hasattr(self.content_class, "parse"):
+            # If content class has a parse method, use it
+            return self.content_class.parse(content_text)  # type: ignore[attr-defined, no-any-return]
 
-        if content_text.strip():
-            # Simple heuristics for code detection
-            lines = content_text.splitlines()
-            code_indicators = [
-                any("import " in line or "from " in line for line in lines[:10]),
-                any("function " in line or "def " in line for line in lines[:10]),
-                any(line.strip().endswith(";") for line in lines[:10]),
-                any(line.strip().endswith("{") for line in lines[:10]),
-            ]
-            is_code = any(code_indicators)
+        # Try common field names
+        init_kwargs: dict[str, Any] = {}
+        if hasattr(self.content_class, "model_fields"):
+            fields = self.content_class.model_fields
+            # Try common content field names
+            for field_name in ["text", "content", "raw", "body", "data"]:
+                if field_name in fields:
+                    init_kwargs[field_name] = content_text
+                    break
 
-        return DelimiterContent(
-            text=content_text,
-            is_code=is_code
-        )
+        if not init_kwargs:
+            # Fallback: try to initialize with positional argument
+            try:
+                return self.content_class(content_text)  # type: ignore[call-arg]
+            except Exception:
+                # Last resort: empty initialization
+                init_kwargs = {}
+
+        return self.content_class(**init_kwargs)
 
     def get_block_type_hints(self) -> list[str]:
         """Get list of block types this syntax typically produces."""
-        return ["block", "code", "shell", "output", "data"]
+        # Try to infer from metadata class
+        if hasattr(self.metadata_class, "model_fields"):
+            fields = self.metadata_class.model_fields
+            if "type" in fields:
+                # Could potentially extract literal types or enums here
+                return ["block"]
+        return ["block"]
 
     def supports_nested_blocks(self) -> bool:
-        """Delimiter blocks can support nesting with different hash IDs."""
+        """Delimiter blocks can support nesting with different IDs."""
         return True
 
-    def validate_block(self, metadata: DelimiterMetadata, content: DelimiterContent) -> bool:
+    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
         """Validate parsed block."""
-        # Must have a hash ID
-        if not metadata.hash_id:
-            return False
-
-        # Hash ID should be alphanumeric (with optional dashes/underscores)
-        return bool(re.match("^[a-zA-Z0-9_-]+$", metadata.hash_id))
+        # Delegate validation to user's models
+        # The models themselves should have validators
+        return True
