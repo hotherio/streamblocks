@@ -1,5 +1,7 @@
 """Core types and protocols for StreamBlocks."""
 
+from .models import Block, BlockCandidate
+from .registry import BlockRegistry
 from .types import (
     BlockState,
     BlockSyntax,
@@ -16,4 +18,7 @@ __all__ = [
     "DetectionResult",
     "ParseResult",
     "BlockSyntax",
+    "BlockCandidate",
+    "Block",
+    "BlockRegistry",
 ]
