@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import BaseModel, Field
 
@@ -46,18 +46,18 @@ class FileOperationsContent(BaseContent):
         operations = []
 
         for line in text.strip().split("\n"):
-            line = line.strip()
-            if not line:
+            stripped_line = line.strip()
+            if not stripped_line:
                 continue
 
             # Split on last colon to handle paths with colons
-            if ":" not in line:
-                raise ValueError(f"Invalid file operation format: {line}")
+            if ":" not in stripped_line:
+                raise ValueError(f"Invalid file operation format: {stripped_line}")
 
             # Find the last colon
-            last_colon_idx = line.rfind(":")
-            path = line[:last_colon_idx].strip()
-            action_code = line[last_colon_idx + 1 :].strip().upper()
+            last_colon_idx = stripped_line.rfind(":")
+            path = stripped_line[:last_colon_idx].strip()
+            action_code = stripped_line[last_colon_idx + 1 :].strip().upper()
 
             # Map action codes
             action_map = {"C": "create", "E": "edit", "D": "delete"}
@@ -65,7 +65,8 @@ class FileOperationsContent(BaseContent):
             if action_code not in action_map:
                 raise ValueError(f"Unknown action code: {action_code}")
 
-            operations.append(FileOperation(action=action_map[action_code], path=path))
+            action = cast(Literal["create", "edit", "delete"], action_map[action_code])
+            operations.append(FileOperation(action=action, path=path))
 
         return cls(operations=operations)
 
