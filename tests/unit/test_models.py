@@ -1,10 +1,27 @@
 """Tests for block models."""
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from streamblocks.core import Block, BlockCandidate, BlockState
 from streamblocks.core.types import DetectionResult, ParseResult
+
+# Test constants
+HASH_LENGTH = 8
+HASH_INPUT_LENGTH = 64
+TEST_CANDIDATE_SIZE = 3
+LARGE_CONTENT_LINES = 1000
+LARGE_CONTENT_NEWLINES = 999
+BLOCK_LINE_START = 10
+BLOCK_LINE_END = 13
+BLOCK_LINE_END_ALT = 3
+BLOCK_LINE_START_LARGE = 100
+BLOCK_LINE_END_LARGE = 106
+BLOCK_LINE_START_REF = 5
+BLOCK_LINE_END_REF = 8
+PRIORITY_HIGH = 10
+PRIORITY_MEDIUM = 50
+PRIORITY_LOW = 90
 
 
 # Test models
@@ -39,6 +56,21 @@ class MockSyntax:
         return ParseResult(
             success=True, metadata=SampleMetadata(id="test"), content=SampleContent(body="test")
         )
+
+    def validate_block(self, metadata: SampleMetadata, content: SampleContent) -> bool:
+        return True
+
+    def get_opening_pattern(self) -> str | None:
+        return None
+
+    def get_closing_pattern(self) -> str | None:
+        return None
+
+    def supports_nested_blocks(self) -> bool:
+        return False
+
+    def get_block_type_hints(self) -> list[str]:
+        return []
 
 
 class TestBlockCandidate:
@@ -127,7 +159,7 @@ class TestBlockCandidate:
         hash2 = candidate.compute_hash()
 
         assert hash1 == hash2
-        assert len(hash1) == 8
+        assert len(hash1) == HASH_LENGTH
         assert all(c in "0123456789abcdef" for c in hash1)
 
     def test_compute_hash_different_content(self):
@@ -148,11 +180,11 @@ class TestBlockCandidate:
 
         # Create candidate with long content
         candidate1 = BlockCandidate(syntax, start_line=1)
-        candidate1.add_line("A" * 100)
+        candidate1.add_line("A" * BLOCK_LINE_START_LARGE)
 
         # Create candidate with same first 64 chars
         candidate2 = BlockCandidate(syntax, start_line=1)
-        candidate2.add_line("A" * 64 + "B" * 36)
+        candidate2.add_line("A" * HASH_INPUT_LENGTH + "B" * 36)
 
         # Hashes should be the same since first 64 chars match
         assert candidate1.compute_hash() == candidate2.compute_hash()
@@ -178,15 +210,15 @@ class TestBlockCandidate:
         candidate = BlockCandidate(syntax, start_line=1)
 
         # Add many lines
-        for i in range(1000):
+        for i in range(LARGE_CONTENT_LINES):
             candidate.add_line(f"Line {i}")
 
-        assert len(candidate.lines) == 1000
-        assert candidate.raw_text.count("\n") == 999
+        assert len(candidate.lines) == LARGE_CONTENT_LINES
+        assert candidate.raw_text.count("\n") == LARGE_CONTENT_NEWLINES
 
         # Hash should still work
         hash_id = candidate.compute_hash()
-        assert len(hash_id) == 8
+        assert len(hash_id) == HASH_LENGTH
 
 
 class TestBlock:
@@ -211,8 +243,8 @@ class TestBlock:
         assert block.metadata.id == "test123"
         assert block.content.body == "Test body"
         assert block.raw_text == "!! test\nid: test123\n---\nTest body"
-        assert block.line_start == 10
-        assert block.line_end == 13
+        assert block.line_start == BLOCK_LINE_START
+        assert block.line_end == BLOCK_LINE_END
         assert block.hash_id == "abc12345"
 
     def test_serialization(self):
@@ -237,7 +269,7 @@ class TestBlock:
         assert block_dict["metadata"]["id"] == "test123"
         assert block_dict["content"]["body"] == "Test body"
         assert block_dict["line_start"] == 1
-        assert block_dict["line_end"] == 3
+        assert block_dict["line_end"] == BLOCK_LINE_END_ALT
         assert block_dict["hash_id"] == "12345678"
 
         # Convert to JSON
@@ -283,8 +315,8 @@ class TestBlock:
             metadata=metadata,
             content=content,
             raw_text="alt block",
-            line_start=5,
-            line_end=8,
+            line_start=BLOCK_LINE_START_REF,
+            line_end=BLOCK_LINE_END_REF,
             hash_id="alt12345",
         )
 
@@ -298,15 +330,15 @@ class TestBlock:
         content = SampleContent(body="Test body")
 
         # Missing required field should raise error
-        with pytest.raises(ValueError):
-            Block[SampleMetadata, SampleContent](
-                # Missing syntax_name
+        with pytest.raises(ValidationError):
+            Block[SampleMetadata, SampleContent](  # type: ignore[call-arg]
+                syntax_name="test",
                 metadata=metadata,
                 content=content,
                 raw_text="raw",
                 line_start=1,
                 line_end=3,
-                hash_id="12345678",
+                # Missing hash_id - this should cause validation error
             )
 
     def test_immutability(self):

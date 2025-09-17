@@ -16,10 +16,10 @@ class TestEventType:
 
     def test_event_type_values(self):
         """Test that all event types have correct values."""
-        assert EventType.RAW_TEXT == "raw_text"
-        assert EventType.BLOCK_DELTA == "block_delta"
-        assert EventType.BLOCK_EXTRACTED == "block_extracted"
-        assert EventType.BLOCK_REJECTED == "block_rejected"
+        assert EventType.RAW_TEXT.value == "raw_text"
+        assert EventType.BLOCK_DELTA.value == "block_delta"
+        assert EventType.BLOCK_EXTRACTED.value == "block_extracted"
+        assert EventType.BLOCK_REJECTED.value == "block_rejected"
 
     def test_event_type_is_str_enum(self):
         """Test that EventType inherits from StrEnum."""
@@ -32,13 +32,13 @@ class TestBlockState:
 
     def test_block_state_values(self):
         """Test that all block states have correct values."""
-        assert BlockState.SEARCHING == "searching"
-        assert BlockState.HEADER_DETECTED == "header_detected"
-        assert BlockState.ACCUMULATING_METADATA == "accumulating_metadata"
-        assert BlockState.ACCUMULATING_CONTENT == "accumulating_content"
-        assert BlockState.CLOSING_DETECTED == "closing_detected"
-        assert BlockState.REJECTED == "rejected"
-        assert BlockState.COMPLETED == "completed"
+        assert BlockState.SEARCHING.value == "searching"
+        assert BlockState.HEADER_DETECTED.value == "header_detected"
+        assert BlockState.ACCUMULATING_METADATA.value == "accumulating_metadata"
+        assert BlockState.ACCUMULATING_CONTENT.value == "accumulating_content"
+        assert BlockState.CLOSING_DETECTED.value == "closing_detected"
+        assert BlockState.REJECTED.value == "rejected"
+        assert BlockState.COMPLETED.value == "completed"
 
     def test_block_state_is_str_enum(self):
         """Test that BlockState inherits from StrEnum."""
@@ -50,7 +50,9 @@ class TestStreamEvent:
 
     def test_stream_event_creation(self):
         """Test creating a basic stream event."""
-        event = StreamEvent(type=EventType.RAW_TEXT, data="Hello, world!")
+        event: StreamEvent[BaseModel, BaseModel] = StreamEvent(
+            type=EventType.RAW_TEXT, data="Hello, world!"
+        )
         assert event.type == EventType.RAW_TEXT
         assert event.data == "Hello, world!"
         assert event.metadata is None
@@ -58,19 +60,21 @@ class TestStreamEvent:
     def test_stream_event_with_metadata(self):
         """Test creating stream event with metadata."""
         metadata = {"line_number": 42, "syntax": "test"}
-        event = StreamEvent(type=EventType.BLOCK_DELTA, data="Block content", metadata=metadata)
+        event: StreamEvent[BaseModel, BaseModel] = StreamEvent(
+            type=EventType.BLOCK_DELTA, data="Block content", metadata=metadata
+        )
         assert event.metadata == metadata
 
     def test_stream_event_serialization(self):
         """Test that stream events can be serialized."""
-        event = StreamEvent(
+        event: StreamEvent[BaseModel, BaseModel] = StreamEvent(
             type=EventType.BLOCK_EXTRACTED, data="Test data", metadata={"key": "value"}
         )
         json_data = event.model_dump_json()
         assert isinstance(json_data, str)
 
         # Can reconstruct from JSON
-        reconstructed = StreamEvent.model_validate_json(json_data)
+        reconstructed = StreamEvent[BaseModel, BaseModel].model_validate_json(json_data)
         assert reconstructed.type == event.type
         assert reconstructed.data == event.data
         assert reconstructed.metadata == event.metadata
@@ -150,7 +154,9 @@ class TestParseResult:
 
     def test_parse_result_failure(self):
         """Test failed parse result."""
-        result = ParseResult(success=False, error="Invalid YAML format")
+        result: ParseResult[BaseModel, BaseModel] = ParseResult(
+            success=False, error="Invalid YAML format"
+        )
         assert result.success is False
         assert result.metadata is None
         assert result.content is None
@@ -169,5 +175,7 @@ class TestParseResult:
         result: ParseResult[TestMetadata, TestContent] = ParseResult(
             success=True, metadata=TestMetadata(version=1), content=TestContent(lines=["a", "b"])
         )
+        assert result.metadata is not None
+        assert result.content is not None
         assert result.metadata.version == 1
         assert result.content.lines == ["a", "b"]

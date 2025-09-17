@@ -1,9 +1,15 @@
 """Tests for BlockRegistry."""
 
 import pytest
+from pydantic import BaseModel
 
 from streamblocks.core import BlockCandidate, BlockRegistry
 from streamblocks.core.types import DetectionResult, ParseResult
+
+# Test constants
+EXPECTED_SYNTAX_COUNT = 3
+EXPECTED_TYPE_B_COUNT = 2
+EXPECTED_TYPE_C_COUNT = 2
 
 
 class MockSyntax:
@@ -22,8 +28,23 @@ class MockSyntax:
     def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
         return False
 
-    def parse_block(self, candidate: BlockCandidate) -> ParseResult:
-        return ParseResult(success=False)
+    def parse_block(self, candidate: BlockCandidate) -> ParseResult[BaseModel, BaseModel]:
+        return ParseResult[BaseModel, BaseModel](success=False)
+
+    def validate_block(self, metadata: object, content: object) -> bool:
+        return True
+
+    def get_opening_pattern(self) -> str | None:
+        return None
+
+    def get_closing_pattern(self) -> str | None:
+        return None
+
+    def supports_nested_blocks(self) -> bool:
+        return False
+
+    def get_block_type_hints(self) -> list[str]:
+        return []
 
 
 class TestBlockRegistry:
@@ -33,10 +54,9 @@ class TestBlockRegistry:
         """Test registry initialization."""
         registry = BlockRegistry()
 
-        assert registry._syntaxes == {}
-        assert registry._block_types == {}
-        assert registry._validators == {}
-        assert registry._priority_order == []
+        # Use public methods to verify initial state
+        assert registry.get_syntaxes() == []
+        assert not registry.has_syntax("any_syntax")
 
     def test_register_syntax_basic(self):
         """Test basic syntax registration."""
@@ -45,9 +65,10 @@ class TestBlockRegistry:
 
         registry.register_syntax(syntax)
 
-        assert "test_syntax" in registry._syntaxes
-        assert registry._syntaxes["test_syntax"] is syntax
-        assert "test_syntax" in registry._priority_order
+        # Use public methods to verify registration
+        assert registry.has_syntax("test_syntax")
+        found = registry.get_syntax_by_name("test_syntax")
+        assert found is syntax
 
     def test_register_syntax_with_block_types(self):
         """Test registering syntax with block types."""
@@ -56,10 +77,13 @@ class TestBlockRegistry:
 
         registry.register_syntax(syntax, block_types=["type1", "type2"])
 
-        assert "type1" in registry._block_types
-        assert "type2" in registry._block_types
-        assert syntax in registry._block_types["type1"]
-        assert syntax in registry._block_types["type2"]
+        # Use public methods to verify block type registration
+        type1_syntaxes = registry.get_syntaxes_for_block_type("type1")
+        type2_syntaxes = registry.get_syntaxes_for_block_type("type2")
+        assert len(type1_syntaxes) == 1
+        assert len(type2_syntaxes) == 1
+        assert type1_syntaxes[0].name == "test_syntax"
+        assert type2_syntaxes[0].name == "test_syntax"
 
     def test_register_duplicate_name_raises(self):
         """Test that registering duplicate name raises error."""
@@ -82,17 +106,17 @@ class TestBlockRegistry:
         syntax2 = MockSyntax("syntax2")
         syntax3 = MockSyntax("syntax3")
 
-        # Register in specific order
-        registry.register_syntax(syntax2)
-        registry.register_syntax(syntax1)
-        registry.register_syntax(syntax3)
+        # Register with default priority (should maintain order by name)
+        registry.register_syntax(syntax2, priority=50)
+        registry.register_syntax(syntax1, priority=50)
+        registry.register_syntax(syntax3, priority=50)
 
         syntaxes = registry.get_syntaxes()
 
-        assert len(syntaxes) == 3
-        # Order should match registration order (simplified version)
-        assert syntaxes[0].name == "syntax2"
-        assert syntaxes[1].name == "syntax1"
+        assert len(syntaxes) == EXPECTED_SYNTAX_COUNT
+        # With same priority, should be ordered by name
+        assert syntaxes[0].name == "syntax1"
+        assert syntaxes[1].name == "syntax2"
         assert syntaxes[2].name == "syntax3"
 
     def test_get_syntax_by_name(self):
@@ -129,12 +153,12 @@ class TestBlockRegistry:
 
         # Test type_b: syntax1 and syntax2
         type_b_syntaxes = registry.get_syntaxes_for_block_type("type_b")
-        assert len(type_b_syntaxes) == 2
+        assert len(type_b_syntaxes) == EXPECTED_TYPE_B_COUNT
         assert {s.name for s in type_b_syntaxes} == {"syntax1", "syntax2"}
 
         # Test type_c: syntax2 and syntax3
         type_c_syntaxes = registry.get_syntaxes_for_block_type("type_c")
-        assert len(type_c_syntaxes) == 2
+        assert len(type_c_syntaxes) == EXPECTED_TYPE_C_COUNT
         assert {s.name for s in type_c_syntaxes} == {"syntax2", "syntax3"}
 
         # Test unknown type
@@ -142,21 +166,25 @@ class TestBlockRegistry:
         assert unknown_syntaxes == []
 
     def test_priority_ordering(self):
-        """Test priority ordering (simplified version)."""
+        """Test priority ordering."""
         registry = BlockRegistry()
 
-        # Register with different priorities (parameter is accepted but not used yet)
+        # Register with different priorities (lower number = higher priority)
         syntax1 = MockSyntax("high_priority")
         syntax2 = MockSyntax("medium_priority")
         syntax3 = MockSyntax("low_priority")
 
-        registry.register_syntax(syntax1, priority=10)
-        registry.register_syntax(syntax2, priority=50)
+        # Register in reverse priority order
         registry.register_syntax(syntax3, priority=90)
+        registry.register_syntax(syntax2, priority=50)
+        registry.register_syntax(syntax1, priority=10)
 
-        # In this simplified version, order matches registration order
+        # Should be sorted by priority
         syntaxes = registry.get_syntaxes()
-        assert len(syntaxes) == 3
+        assert len(syntaxes) == EXPECTED_SYNTAX_COUNT
+        assert syntaxes[0].name == "high_priority"  # priority 10
+        assert syntaxes[1].name == "medium_priority"  # priority 50
+        assert syntaxes[2].name == "low_priority"  # priority 90
 
     def test_empty_registry(self):
         """Test operations on empty registry."""
@@ -181,11 +209,33 @@ class TestBlockRegistry:
             assert syntaxes[0].name == "multi_type_syntax"
 
     def test_placeholder_methods(self):
-        """Test that placeholder methods exist and don't crash."""
+        """Test enhanced methods."""
         registry = BlockRegistry()
+        syntax = MockSyntax("test")
 
-        # These should not raise errors
+        # Create test models
+        class TestMeta(BaseModel):
+            id: str = "test"
+
+        class TestContent(BaseModel):
+            data: str = "test"
+
+        # Test validator methods
         registry.register_validator("test_type", lambda x, y: True)
-        assert registry.validate_block("test_type", {}, {}) is True
-        registry.unregister_syntax("nonexistent")
+        is_valid, errors = registry.validate_block("test_type", TestMeta(), TestContent())
+        assert is_valid is True
+        assert errors == []
+
+        # Test unregister (should raise for nonexistent)
+        registry.register_syntax(syntax)
+        registry.unregister_syntax("test")
+        assert not registry.has_syntax("test")
+
+        # Test unregister nonexistent raises
+        with pytest.raises(KeyError):
+            registry.unregister_syntax("nonexistent")
+
+        # Test clear
+        registry.register_syntax(MockSyntax("test2"))
         registry.clear()
+        assert len(registry.get_syntaxes()) == 0

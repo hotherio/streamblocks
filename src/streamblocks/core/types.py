@@ -153,3 +153,35 @@ class BlockSyntax(Protocol[TMetadata, TContent]):
         Default implementation accepts all parsed blocks.
         """
         return True
+
+    # Optional performance optimization methods
+
+    def get_opening_pattern(self) -> str | None:
+        """Get regex pattern for quickly matching opening markers.
+
+        Returns None if no optimization is possible.
+        This allows stream processors to pre-filter lines.
+        """
+        return None
+
+    def get_closing_pattern(self) -> str | None:
+        """Get regex pattern for quickly matching closing markers.
+
+        Returns None if no optimization is possible.
+        This helps quickly identify block boundaries.
+        """
+        return None
+
+    def supports_nested_blocks(self) -> bool:
+        """Check if this syntax supports nested blocks.
+
+        Default is False. Override to enable nested block support.
+        """
+        return False
+
+    def get_block_type_hints(self) -> list[str]:
+        """Get list of block types this syntax typically produces.
+
+        Used for registry optimization and documentation.
+        """
+        return []

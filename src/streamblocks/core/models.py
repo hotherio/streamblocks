@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -30,20 +30,21 @@ class BlockCandidate:
         current_section: Current section being accumulated ("header", "metadata", "content")
     """
 
-    def __init__(self, syntax: BlockSyntax, start_line: int) -> None:
+    def __init__(self, syntax: BlockSyntax[Any, Any], start_line: int) -> None:
         """Initialize a new block candidate.
 
         Args:
             syntax: The BlockSyntax instance that detected this block
             start_line: The line number where this block starts
         """
-        self.syntax = syntax
+        self.syntax: BlockSyntax[Any, Any] = syntax
         self.start_line = start_line
         self.lines: list[str] = []
         self.state = BlockState.HEADER_DETECTED
         self.metadata_lines: list[str] = []
         self.content_lines: list[str] = []
         self.current_section: str = "header"
+        self.metadata: dict[str, Any] = {}  # Inline metadata from detection
 
     def add_line(self, line: str) -> None:
         """Add a line to this candidate.

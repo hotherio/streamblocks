@@ -9,6 +9,15 @@ from streamblocks.content import (
 from streamblocks.core import Block, BlockCandidate, BlockRegistry, BlockState
 from streamblocks.core.types import DetectionResult, ParseResult
 
+# Test constants
+EXPECTED_OPERATIONS_COUNT = 3
+EXPECTED_LINE_COUNT = 4
+EXPECTED_REGISTRY_COUNT = 2
+BLOCK_START_LINE = 100
+BLOCK_END_LINE = 106
+HIGH_PRIORITY = 10
+MEDIUM_PRIORITY = 20
+
 
 class FileOpsSyntax:
     """Example syntax for file operations blocks."""
@@ -38,7 +47,7 @@ class FileOpsSyntax:
         try:
             # Parse metadata from YAML-like format
             metadata_text = "\n".join(candidate.metadata_lines)
-            metadata_dict = {}
+            metadata_dict: dict[str, str] = {}
             for line in metadata_text.split("\n"):
                 if ":" in line:
                     key, value = line.split(":", 1)
@@ -55,6 +64,28 @@ class FileOpsSyntax:
             return ParseResult(success=True, metadata=metadata, content=content)
         except Exception as e:
             return ParseResult(success=False, error=str(e))
+
+    def validate_block(
+        self, metadata: FileOperationsMetadata, content: FileOperationsContent
+    ) -> bool:
+        """Validate block."""
+        return True
+
+    def get_opening_pattern(self) -> str | None:
+        """Get opening pattern."""
+        return r"^!! files$"
+
+    def get_closing_pattern(self) -> str | None:
+        """Get closing pattern."""
+        return r"^!!$"
+
+    def supports_nested_blocks(self) -> bool:
+        """Check nested blocks support."""
+        return False
+
+    def get_block_type_hints(self) -> list[str]:
+        """Get block type hints."""
+        return ["files_operations", "files"]
 
 
 class TestModelsIntegration:
@@ -84,9 +115,11 @@ class TestModelsIntegration:
         result = syntax.parse_block(candidate)
 
         assert result.success
+        assert result.metadata is not None
+        assert result.content is not None
         assert result.metadata.id == "update-config"
         assert result.metadata.description == "Update configuration files"
-        assert len(result.content.operations) == 3
+        assert len(result.content.operations) == EXPECTED_OPERATIONS_COUNT
 
     def test_block_creation_from_candidate(self):
         """Test creating Block from parsed BlockCandidate."""
@@ -105,6 +138,8 @@ class TestModelsIntegration:
         # Parse block
         result = syntax.parse_block(candidate)
         assert result.success
+        assert result.metadata is not None
+        assert result.content is not None
 
         # Create Block
         block = Block[FileOperationsMetadata, FileOperationsContent](
@@ -121,7 +156,9 @@ class TestModelsIntegration:
         assert block.metadata.id == "test123"
         assert len(block.content.operations) == 1
         assert block.line_start == 1
-        assert block.line_end == 4  # 4 lines total (!! files, id:, ---, src/main.py:E)
+        assert (
+            block.line_end == EXPECTED_LINE_COUNT
+        )  # 4 lines total (!! files, id:, ---, src/main.py:E)
 
     def test_registry_with_multiple_syntaxes(self):
         """Test registry managing multiple syntax types."""
@@ -155,15 +192,34 @@ class TestModelsIntegration:
                     content=PatchContent(diff="@@ -1,1 +1,1 @@\n-old\n+new"),
                 )
 
+            def validate_block(self, metadata: PatchMetadata, content: PatchContent) -> bool:
+                return True
+
+            def get_opening_pattern(self) -> str | None:
+                return None
+
+            def get_closing_pattern(self) -> str | None:
+                return None
+
+            def supports_nested_blocks(self) -> bool:
+                return False
+
+            def get_block_type_hints(self) -> list[str]:
+                return []
+
         patch_syntax = PatchSyntax()
 
         # Register syntaxes
-        registry.register_syntax(file_ops_syntax, block_types=["files_operations"], priority=10)
-        registry.register_syntax(patch_syntax, block_types=["patch", "diff"], priority=20)
+        registry.register_syntax(
+            file_ops_syntax, block_types=["files_operations"], priority=HIGH_PRIORITY
+        )
+        registry.register_syntax(
+            patch_syntax, block_types=["patch", "diff"], priority=MEDIUM_PRIORITY
+        )
 
         # Test retrieval
         all_syntaxes = registry.get_syntaxes()
-        assert len(all_syntaxes) == 2
+        assert len(all_syntaxes) == EXPECTED_REGISTRY_COUNT
 
         # Test by block type
         file_syntaxes = registry.get_syntaxes_for_block_type("files_operations")
@@ -225,6 +281,8 @@ class TestModelsIntegration:
         # Parse and create block
         result = syntax.parse_block(candidate)
         assert result.success
+        assert result.metadata is not None
+        assert result.content is not None
 
         block = Block[FileOperationsMetadata, FileOperationsContent](
             syntax_name=syntax.name,
@@ -239,9 +297,9 @@ class TestModelsIntegration:
         # Verify final block
         assert block.metadata.id == "refactor-2024"
         assert block.metadata.description == "Major refactoring"
-        assert len(block.content.operations) == 3
+        assert len(block.content.operations) == EXPECTED_OPERATIONS_COUNT
         assert block.content.operations[0].action == "delete"
         assert block.content.operations[1].action == "create"
         assert block.content.operations[2].action == "edit"
-        assert block.line_start == 100
-        assert block.line_end == 106  # Adjusted since we don't include closing !!
+        assert block.line_start == BLOCK_START_LINE
+        assert block.line_end == BLOCK_END_LINE  # Adjusted since we don't include closing !!

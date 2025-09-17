@@ -66,7 +66,7 @@ class FileOperationsContent(BaseContent):
         Raises:
             ValueError: If text contains invalid operations
         """
-        operations = []
+        operations: list[FileOperation] = []
 
         for line in text.strip().split("\n"):
             stripped_line = line.strip()

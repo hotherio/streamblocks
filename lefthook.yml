@@ -18,6 +18,10 @@ pre-commit:
       run: mypy {staged_files}
       glob: "*.py"
 
+    pyright:
+      glob: "*.py"
+      run: basedpyright {staged_files}
+
     # Non-Python file checks
     trailing-whitespace:
       run: |

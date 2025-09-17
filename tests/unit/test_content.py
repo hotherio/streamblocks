@@ -1,6 +1,7 @@
 """Tests for content models."""
 
 import pytest
+from pydantic import ValidationError
 
 from streamblocks.content import (
     FileOperation,
@@ -9,6 +10,10 @@ from streamblocks.content import (
     PatchContent,
     PatchMetadata,
 )
+
+# Test constants
+EXPECTED_OPERATIONS_COUNT = 3
+EXPECTED_OPERATIONS_WITH_EMPTY_LINES = 2
 
 
 class TestFileOperationsContent:
@@ -24,7 +29,7 @@ class TestFileOperationsContent:
 
         content = FileOperationsContent.parse(text)
 
-        assert len(content.operations) == 3
+        assert len(content.operations) == EXPECTED_OPERATIONS_COUNT
 
         assert content.operations[0].path == "src/main.py"
         assert content.operations[0].action == "edit"
@@ -47,7 +52,7 @@ class TestFileOperationsContent:
 
         content = FileOperationsContent.parse(text)
 
-        assert len(content.operations) == 2
+        assert len(content.operations) == EXPECTED_OPERATIONS_WITH_EMPTY_LINES
         assert content.operations[0].path == "file1.txt"
         assert content.operations[1].path == "file2.txt"
 
@@ -229,5 +234,5 @@ class TestPatchMetadata:
 
     def test_metadata_requires_file_path(self):
         """Test that file_path is required."""
-        with pytest.raises(ValueError):
-            PatchMetadata(id="patch123")  # Missing file_path
+        with pytest.raises(ValidationError):
+            PatchMetadata(id="patch123", file_path=None)  # type: ignore  # Test invalid file_path
