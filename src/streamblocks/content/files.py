@@ -2,11 +2,34 @@
 
 from __future__ import annotations
 
-from typing import Literal, cast
+from enum import StrEnum
+from typing import Final, Literal
 
 from pydantic import BaseModel, Field
 
 from .base import BaseContent
+
+type _ActionName = Literal["create", "edit", "delete"]
+
+# Mapping from action codes to action names (type-checked by mypy)
+_ACTION_MAP: Final[dict[str, _ActionName]] = {
+    "C": "create",
+    "E": "edit",
+    "D": "delete",
+}
+
+
+class ActionCode(StrEnum):
+    """Action codes for file operations."""
+
+    CREATE = "C"
+    EDIT = "E"
+    DELETE = "D"
+
+    @property
+    def action_name(self) -> _ActionName:
+        """Get the action name for this code."""
+        return _ACTION_MAP[self.value]
 
 
 class FileOperation(BaseModel):
@@ -57,16 +80,15 @@ class FileOperationsContent(BaseContent):
             # Find the last colon
             last_colon_idx = stripped_line.rfind(":")
             path = stripped_line[:last_colon_idx].strip()
-            action_code = stripped_line[last_colon_idx + 1 :].strip().upper()
+            action_code_str = stripped_line[last_colon_idx + 1 :].strip().upper()
 
-            # Map action codes
-            action_map = {"C": "create", "E": "edit", "D": "delete"}
+            # Validate and get action code
+            try:
+                action_code = ActionCode(action_code_str)
+            except ValueError:
+                raise ValueError(f"Unknown action code: {action_code_str}") from None
 
-            if action_code not in action_map:
-                raise ValueError(f"Unknown action code: {action_code}")
-
-            action = cast(Literal["create", "edit", "delete"], action_map[action_code])
-            operations.append(FileOperation(action=action, path=path))
+            operations.append(FileOperation(action=action_code.action_name, path=path))
 
         return cls(operations=operations)
 
