@@ -181,13 +181,12 @@ class TestBlockSyntaxProtocol:
     def test_protocol_abstract_methods(self):
         """Test that abstract methods are properly defined."""
         # Import abstractmethod to verify decorators
-        from abc import abstractmethod
-        
+
         # Check that required methods are abstract
         assert hasattr(BlockSyntax.name, '__isabstractmethod__')
         assert hasattr(BlockSyntax.detect_line, '__isabstractmethod__')
         assert hasattr(BlockSyntax.should_accumulate_metadata, '__isabstractmethod__')
         assert hasattr(BlockSyntax.parse_block, '__isabstractmethod__')
-        
+
         # validate_block should NOT be abstract (has default implementation)
         assert not hasattr(BlockSyntax.validate_block, '__isabstractmethod__')

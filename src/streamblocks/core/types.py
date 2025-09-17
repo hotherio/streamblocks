@@ -4,7 +4,7 @@ This module defines the foundational types and protocols used throughout
 the StreamBlocks library. These include:
 
 - Event types and states for stream processing
-- Data models for detection and parsing results  
+- Data models for detection and parsing results
 - The BlockSyntax protocol for implementing custom syntaxes
 
 All types are designed to be type-safe and work with Python 3.13+.
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 TMetadata = TypeVar("TMetadata", bound=BaseModel)
 """Type variable for block metadata - must be a Pydantic BaseModel."""
 
-TContent = TypeVar("TContent", bound=BaseModel)  
+TContent = TypeVar("TContent", bound=BaseModel)
 """Type variable for block content - must be a Pydantic BaseModel."""
 
 
