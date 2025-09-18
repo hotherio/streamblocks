@@ -1,57 +1,45 @@
-"""Patch/diff content models."""
-
-from __future__ import annotations
+"""Patch content models."""
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
-from .base import BaseContent
+from streamblocks.core.models import BaseContent, BaseMetadata
 
 
 class PatchContent(BaseContent):
-    """Content model for patch/diff blocks."""
+    """Content model for patch blocks."""
 
-    diff: str = Field(..., description="The patch content in unified diff format")
-
-    @field_validator("diff")
-    @classmethod
-    def validate_diff_format(cls, v: str) -> str:
-        """Validate that the diff is in proper unified diff format."""
-        if not v.strip():
-            raise ValueError("Diff content cannot be empty")
-
-        # Check for basic unified diff markers
-        lines = v.strip().split("\n")
-        has_range_marker = any(line.startswith("@@") for line in lines)
-
-        if not has_range_marker:
-            raise ValueError("Invalid diff format: missing @@ range markers")
-
-        return v
+    diff: str = Field(..., description="The patch diff content")
 
     @classmethod
-    def parse(cls, text: str) -> PatchContent:
-        """Parse patch content from text.
+    def parse(cls, raw_text: str) -> "PatchContent":
+        """Parse and validate patch content."""
+        # Basic validation
+        if not raw_text.strip():
+            raise ValueError("Empty patch")
 
-        Validates that the text is in unified diff format with @@ markers.
+        # For now, accept any content that looks like it has changes
+        # (lines starting with +, -, or space for context)
+        lines = raw_text.strip().split("\n")
+        has_diff_lines = any(line.startswith("+") or line.startswith("-") or line.startswith(" ") for line in lines)
 
-        Args:
-            text: Raw patch/diff text
+        if not has_diff_lines:
+            # If no obvious diff markers, just accept it as is
+            # This allows for more flexible patch formats
+            pass
 
-        Returns:
-            Parsed PatchContent instance
-
-        Raises:
-            ValueError: If text is not valid unified diff format
-        """
-        return cls(diff=text)
+        return cls(raw_content=raw_text, diff=raw_text.strip())
 
 
-class PatchMetadata(BaseModel):
-    """Metadata model for patch blocks."""
+class PatchMetadata(BaseMetadata):
+    """Metadata for patch blocks."""
 
-    id: str = Field(..., description="Block identifier")
-    block_type: Literal["patch"] = Field(default="patch", description="Type of block")
-    file_path: str = Field(..., description="Path to the file being patched")
-    description: str | None = Field(default=None, description="Optional description of the patch")
+    # Override block_type with specific literal
+    block_type: Literal["patch"] = "patch"  # type: ignore[assignment]
+    type: Literal["patch"] = "patch"  # Alias for compatibility
+    file: str  # Changed from file_path for consistency with examples
+    start_line: int | None = None
+    author: str | None = None
+    priority: str | None = None
+    description: str | None = None

@@ -1,22 +1,20 @@
-"""Base content models for StreamBlocks."""
+"""Base content models."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BaseContent(BaseModel):
-    """Base class for content models with common parsing interface."""
+    """Base class for content models."""
 
-    @classmethod
-    def parse(cls, text: str) -> "BaseContent":
-        """Parse text into content model.
+    raw: str = Field(default="", description="Raw text content")
+    text: str = Field(default="", description="Text content (alias for raw)")
 
-        Args:
-            text: Raw text to parse
-
-        Returns:
-            Parsed content model instance
-
-        Raises:
-            ValueError: If text cannot be parsed
-        """
-        raise NotImplementedError("Subclasses must implement parse method")
+    def __init__(self, **data: object) -> None:
+        """Initialize content, handling both 'raw' and 'text' fields."""
+        # If 'text' is provided but not 'raw', copy it
+        if "text" in data and "raw" not in data:
+            data["raw"] = data["text"]
+        # If 'raw' is provided but not 'text', copy it
+        elif "raw" in data and "text" not in data:
+            data["text"] = data["raw"]
+        super().__init__(**data)
