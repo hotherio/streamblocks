@@ -1,1 +1,1 @@
-"""StreamBlocks test suite."""
+"""Tests for StreamBlocks."""
