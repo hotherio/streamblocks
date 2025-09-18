@@ -1,28 +1,20 @@
-"""Stream processing engine for block extraction."""
+"""Stream processing engine for StreamBlocks."""
 
 from __future__ import annotations
 
 from collections import deque
 from collections.abc import AsyncGenerator, AsyncIterator
-from typing import TYPE_CHECKING
+from typing import Any
 
 from streamblocks.core.models import Block, BlockCandidate
+from streamblocks.core.registry import BlockRegistry
 from streamblocks.core.types import BlockState, EventType, StreamEvent
-
-if TYPE_CHECKING:
-
-    from streamblocks.core.registry import BlockRegistry
 
 
 class StreamBlockProcessor:
-    """Main stream processor that coordinates syntax detection and block extraction.
+    """Main stream processing engine.
 
-    This processor handles:
-    - Async stream processing with proper line accumulation
-    - Multiple concurrent block candidates
-    - Event emission for all processing stages
-    - Size limit enforcement
-    - Graceful error recovery
+    Completely syntax-agnostic - delegates all syntax-specific logic to BlockSyntax implementations.
     """
 
     def __init__(
@@ -32,7 +24,7 @@ class StreamBlockProcessor:
         max_line_length: int = 16_384,
         max_block_size: int = 1_048_576,  # 1MB
     ) -> None:
-        """Initialize stream processor.
+        """Initialize the stream processor.
 
         Args:
             registry: Block registry with syntax definitions
@@ -44,268 +36,247 @@ class StreamBlockProcessor:
         self.lines_buffer = lines_buffer
         self.max_line_length = max_line_length
         self.max_block_size = max_block_size
+
+        # Processing state
         self._buffer: deque[str] = deque(maxlen=lines_buffer)
         self._candidates: list[BlockCandidate] = []
         self._line_counter = 0
         self._accumulated_text: list[str] = []
 
     async def process_stream(
-        self, stream: AsyncIterator[str]
-    ) -> AsyncGenerator[StreamEvent]:
-        """Process an async stream of text chunks.
+        self,
+        stream: AsyncIterator[str],
+    ) -> AsyncGenerator[StreamEvent[Any, Any]]:
+        """Process stream and yield events.
 
         Args:
             stream: Async iterator yielding text chunks
 
         Yields:
-            StreamEvent: Processing events (RAW_TEXT, BLOCK_DELTA, etc.)
+            StreamEvent objects for different processing stages
         """
-        incomplete_line = ""
-
         async for chunk in stream:
-            # Add chunk to accumulated text
-            text_to_process = incomplete_line + chunk
+            # Accumulate chunks until we have complete lines
+            self._accumulated_text.append(chunk)
 
-            # Split into lines, keeping the last incomplete line
-            lines = text_to_process.splitlines(True)
+            # Check if we have complete lines
+            text = "".join(self._accumulated_text)
+            lines = text.split("\n")
 
-            # Check if last line is complete
-            incomplete_line = lines.pop() if lines and not lines[-1].endswith(("\n", "\r\n", "\r")) else ""
+            # Keep incomplete line for next iteration
+            if not text.endswith("\n"):
+                self._accumulated_text = [lines[-1]]
+                lines = lines[:-1]
+            else:
+                self._accumulated_text = []
 
             # Process complete lines
             for line in lines:
-                # Remove line ending
-                line_content = line.rstrip('\r\n')
-
                 # Enforce max line length
-                if len(line_content) > self.max_line_length:
-                    line_content = line_content[:self.max_line_length]
+                truncated_line = line[: self.max_line_length] if len(line) > self.max_line_length else line
 
                 self._line_counter += 1
 
-                # Process the line and yield events
-                async for event in self._process_line(line_content):
+                # Process line through detection pipeline
+                async for event in self._process_line(truncated_line):
                     yield event
 
-        # Process any remaining incomplete line
-        if incomplete_line:
-            self._line_counter += 1
-            async for event in self._process_line(incomplete_line):
-                yield event
-
-        # Flush remaining candidates
+        # Flush remaining candidates at stream end
         async for event in self._flush_candidates():
             yield event
 
-    async def _process_line(self, line: str) -> AsyncGenerator[StreamEvent]:
-        """Process a single line of text.
+    async def _process_line(
+        self,
+        line: str,
+    ) -> AsyncGenerator[StreamEvent[Any, Any]]:
+        """Process a single line through detection.
 
         Args:
-            line: Line content (without line ending)
+            line: Line to process
 
         Yields:
-            StreamEvent: Processing events
+            StreamEvent objects
         """
         # Add to buffer
         self._buffer.append(line)
 
-        # Check active candidates first
-        handled = False
-        candidates_to_remove = []
+        # First, check active candidates
+        handled_by_candidate = False
 
-        for i, candidate in enumerate(self._candidates):
-            # Get syntax
-            syntax = candidate.syntax
-
-            # Check if this line affects this candidate
-            detection = syntax.detect_line(line, candidate)
+        for candidate in list(self._candidates):
+            # Let the syntax check this line in context
+            detection = candidate.syntax.detect_line(line, candidate)
 
             if detection.is_closing:
-                # Block is complete
-                candidate.lines.append(line)
-                candidate.state = BlockState.COMPLETED
+                # Found closing marker
+                candidate.add_line(line)
+                candidate.state = BlockState.CLOSING_DETECTED
 
-                # Try to extract the block
+                # Try to extract block
                 event = await self._try_extract_block(candidate)
                 if event:
                     yield event
+                    self._candidates.remove(candidate)
+                    handled_by_candidate = True
                 else:
-                    # Failed to extract, create rejection
-                    yield self._create_rejection_event(
-                        candidate, "Failed to parse block"
-                    )
-
-                candidates_to_remove.append(i)
-                handled = True
+                    # Validation failed, reject
+                    yield self._create_rejection_event(candidate, "Validation failed")
+                    self._candidates.remove(candidate)
+                    handled_by_candidate = True
 
             elif detection.is_metadata_boundary:
-                # Handle metadata boundary
-                candidate.lines.append(line)
+                # Syntax detected a metadata boundary
+                candidate.add_line(line)
+                # Syntax may update candidate.current_section internally
 
-                # Transition state based on current state
-                if candidate.state == BlockState.HEADER_DETECTED:
-                    candidate.state = BlockState.ACCUMULATING_METADATA
-                elif candidate.state == BlockState.ACCUMULATING_METADATA:
-                    candidate.state = BlockState.ACCUMULATING_CONTENT
-
-                handled = True
-
-            elif detection.metadata:
-                # Store metadata
-                candidate.lines.append(line)
-                if candidate.metadata is None:
-                    candidate.metadata = {}
-                candidate.metadata.update(detection.metadata)
-                handled = True
-
-            elif candidate.state in [
-                BlockState.HEADER_DETECTED,
-                BlockState.ACCUMULATING_METADATA,
-                BlockState.ACCUMULATING_CONTENT,
-            ]:
-                # Regular line for this candidate
-                candidate.lines.append(line)
-
-                # Add to appropriate section
-                if candidate.state == BlockState.ACCUMULATING_METADATA:
-                    candidate.metadata_lines.append(line)
-                elif candidate.state == BlockState.ACCUMULATING_CONTENT:
-                    candidate.content_lines.append(line)
-
-                # Check size limits
-                current_size = sum(len(l) for l in candidate.lines)
-                if current_size > self.max_block_size:
-                    yield self._create_rejection_event(
-                        candidate, f"Block too large (>{self.max_block_size} bytes)"
-                    )
-                    candidates_to_remove.append(i)
-                else:
-                    # Emit BLOCK_DELTA event
-                    yield StreamEvent(
-                        type=EventType.BLOCK_DELTA,
-                        content=line,
-                        line_number=self._line_counter,
-                        metadata={
-                            "syntax": syntax.name,
-                            "start_line": candidate.start_line,
-                            "current_line": self._line_counter,
-                            "section": "metadata" if candidate.state == BlockState.ACCUMULATING_METADATA else "content",
-                            "partial_block": {
-                                "delta": line,
-                                "accumulated": "\n".join(candidate.lines),
-                            },
+                # Emit delta event
+                yield StreamEvent(
+                    type=EventType.BLOCK_DELTA,
+                    data=line,
+                    metadata={
+                        "syntax": candidate.syntax.name,
+                        "start_line": candidate.start_line,
+                        "current_line": self._line_counter,
+                        "section": candidate.current_section,
+                        "partial_block": {
+                            "delta": line,
+                            "accumulated": candidate.raw_text,
                         },
+                    },
+                )
+                handled_by_candidate = True
+
+            else:
+                # Regular line inside block
+                candidate.add_line(line)
+
+                # Check size limit
+                if len(candidate.raw_text) > self.max_block_size:
+                    yield self._create_rejection_event(
+                        candidate,
+                        "Block size exceeded",
                     )
+                    self._candidates.remove(candidate)
+                    handled_by_candidate = True
+                    continue
 
-                handled = True
+                # The syntax's detect_line may have updated internal state
+                # (e.g., added to metadata_lines or content_lines)
 
-        # Remove completed/rejected candidates
-        for i in reversed(candidates_to_remove):
-            self._candidates.pop(i)
+                # Emit delta event
+                yield StreamEvent(
+                    type=EventType.BLOCK_DELTA,
+                    data=line,
+                    metadata={
+                        "syntax": candidate.syntax.name,
+                        "start_line": candidate.start_line,
+                        "current_line": self._line_counter,
+                        "section": candidate.current_section,
+                        "partial_block": {
+                            "delta": line,
+                            "accumulated": candidate.raw_text,
+                        },
+                    },
+                )
+                handled_by_candidate = True
 
-        # If not handled by any candidate, check for new blocks
-        if not handled:
-            # Try each syntax in priority order
-            syntaxes = self.registry.get_syntaxes_by_priority()
+        # If not handled by any candidate, check for new block openings
+        if not handled_by_candidate:
+            opening_found = False
 
-            for syntax in syntaxes:
+            for syntax in self.registry.get_syntaxes():
                 detection = syntax.detect_line(line, None)
 
                 if detection.is_opening:
-                    # Create new candidate
-                    candidate = BlockCandidate(
-                        syntax=syntax,
-                        start_line=self._line_counter,
-                    )
-                    candidate.lines.append(line)
-                    candidate.state = BlockState.HEADER_DETECTED
+                    # Start new candidate
+                    candidate = BlockCandidate(syntax, self._line_counter)
+                    candidate.add_line(line)
 
-                    # Store inline metadata if any
+                    # If syntax provided inline metadata, store it
                     if detection.metadata:
-                        candidate.metadata = detection.metadata.copy()
+                        # This is for syntaxes like DelimiterPreamble
+                        # that extract metadata from the opening line
+                        candidate.metadata_lines = [str(detection.metadata)]
 
                     self._candidates.append(candidate)
-                    handled = True
-                    break
+                    opening_found = True
+                    break  # First matching syntax wins
 
-        # If still not handled, emit as raw text
-        if not handled:
-            yield StreamEvent(
-                type=EventType.RAW_TEXT,
-                content=line,
-                line_number=self._line_counter,
-                metadata={"line_number": self._line_counter},
-            )
+            # If no candidates and no openings, emit raw text
+            if not opening_found:
+                yield StreamEvent(
+                    type=EventType.RAW_TEXT,
+                    data=line,
+                    metadata={"line_number": self._line_counter},
+                )
 
     async def _try_extract_block(
-        self, candidate: BlockCandidate
-    ) -> StreamEvent | None:
-        """Try to extract and validate a block from a candidate.
+        self,
+        candidate: BlockCandidate,
+    ) -> StreamEvent[Any, Any] | None:
+        """Try to parse and validate a complete block.
 
         Args:
             candidate: Block candidate to extract
 
         Returns:
-            StreamEvent: BLOCK_EXTRACTED event or None if extraction failed
+            BLOCK_EXTRACTED event or None if extraction failed
         """
-        syntax = candidate.syntax
+        # Delegate parsing to the syntax
+        parse_result = candidate.syntax.parse_block(candidate)
 
-        try:
-            # Parse the block
-            result = syntax.parse_block(candidate)
-
-            if not result.success:
-                return None
-
-            # Validate with syntax
-            if not syntax.validate_block(result.metadata, result.content):
-                return None
-
-            # Create block instance
-            block = Block(
-                id=getattr(result.metadata, 'id', None),
-                type=getattr(result.metadata, 'type', 'unknown'),
-                syntax=syntax.name,
-                metadata=result.metadata,
-                content=result.content,
-                source_location=(candidate.start_line, self._line_counter),
-                raw_lines=candidate.lines.copy(),
-            )
-
-            # Validate with registry if block type is registered
-            if block.type and self.registry.is_block_type_registered(block.type):
-                is_valid, error = self.registry.validate_block(block)
-                if not is_valid:
-                    return None
-
-            # Create extracted event
-            return StreamEvent(
-                type=EventType.BLOCK_EXTRACTED,
-                content="\n".join(candidate.lines),
-                line_number=self._line_counter,
-                metadata={"extracted_block": block},
-            )
-
-        except Exception:
-            # Any exception during parsing/validation means extraction failed
+        if not parse_result.success:
             return None
 
+        metadata = parse_result.metadata
+        content = parse_result.content
+
+        if metadata is None or content is None:
+            return None
+
+        # Additional validation from syntax
+        if not candidate.syntax.validate_block(metadata, content):
+            return None
+
+        # Registry validation (user-defined validators)
+        block_type = getattr(metadata, "block_type", None) or getattr(metadata, "type", None)
+        if block_type and not self.registry.validate_block(block_type, metadata, content):
+            return None
+
+        # Create block
+        block = Block(
+            syntax_name=candidate.syntax.name,
+            metadata=metadata,
+            content=content,
+            raw_text=candidate.raw_text,
+            line_start=candidate.start_line,
+            line_end=self._line_counter,
+            hash_id=candidate.compute_hash(),
+        )
+
+        return StreamEvent(
+            type=EventType.BLOCK_EXTRACTED,
+            data=candidate.raw_text,
+            metadata={"extracted_block": block},
+        )
+
     def _create_rejection_event(
-        self, candidate: BlockCandidate, reason: str = "Validation failed"
-    ) -> StreamEvent:
-        """Create a BLOCK_REJECTED event.
+        self,
+        candidate: BlockCandidate,
+        reason: str = "Validation failed",
+    ) -> StreamEvent[Any, Any]:
+        """Create a rejection event.
 
         Args:
             candidate: Rejected candidate
-            reason: Rejection reason
+            reason: Reason for rejection
 
         Returns:
-            StreamEvent: Rejection event
+            BLOCK_REJECTED event
         """
         return StreamEvent(
             type=EventType.BLOCK_REJECTED,
-            content="\n".join(candidate.lines),
-            line_number=self._line_counter,
+            data=candidate.raw_text,
             metadata={
                 "reason": reason,
                 "syntax": candidate.syntax.name,
@@ -313,14 +284,15 @@ class StreamBlockProcessor:
             },
         )
 
-    async def _flush_candidates(self) -> AsyncGenerator[StreamEvent]:
-        """Flush all remaining candidates as rejected.
+    async def _flush_candidates(self) -> AsyncGenerator[StreamEvent[Any, Any]]:
+        """Flush remaining candidates as rejected.
 
         Yields:
-            StreamEvent: Rejection events for remaining candidates
+            Rejection events for remaining candidates
         """
         for candidate in self._candidates:
             yield self._create_rejection_event(
-                candidate, "Stream ended without closing marker"
+                candidate,
+                "Stream ended without closing marker",
             )
         self._candidates.clear()
