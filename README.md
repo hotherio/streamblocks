@@ -4,16 +4,13 @@ Real-time extraction and processing of structured blocks from text streams.
 
 ## Overview
 
-StreamBlocks is a Python 3.13+ library designed to detect, extract, and process structured blocks from streaming text data. It provides a pluggable architecture for different block syntaxes with type-safe metadata and content parsing.
+StreamBlocks is a Python 3.13+ library for detecting and extracting structured blocks from streaming text. It provides:
 
-## Features
-
-- **Async-first design** for real-time stream processing
-- **Multiple syntax support** with three built-in syntaxes
-- **Type-safe** metadata and content models using Pydantic
-- **Zero-copy** processing on the hot path
-- **Extensible** - easily add custom block syntaxes
-- **Performance optimized** with configurable buffering
+- **Pluggable syntax system** - Define your own block syntaxes or use built-in ones
+- **Async stream processing** - Process text streams line-by-line with full async support
+- **Type-safe metadata** - Use Pydantic models for block metadata and content
+- **Event-driven architecture** - React to block detection, updates, completion, and rejection
+- **Built-in syntaxes** - Delimiter preamble, Markdown frontmatter, and hybrid syntaxes
 
 ## Installation
 
@@ -25,200 +22,119 @@ pip install streamblocks
 
 ```python
 import asyncio
-from streamblocks import StreamBlockProcessor, BlockRegistry
+from streamblocks import (
+    BlockRegistry,
+    DelimiterPreambleSyntax,
+    StreamBlockProcessor,
+    EventType,
+)
+from streamblocks.content import FileOperationsContent, FileOperationsMetadata
 
-# More examples coming as implementation progresses
+async def main():
+    # Setup registry
+    registry = BlockRegistry()
+    
+    # Register a syntax
+    syntax = DelimiterPreambleSyntax(
+        metadata_class=FileOperationsMetadata,
+        content_class=FileOperationsContent,
+    )
+    registry.register_syntax(syntax, block_types=["files_operations"])
+    
+    # Create processor
+    processor = StreamBlockProcessor(registry)
+    
+    # Process a stream
+    async def text_stream():
+        text = """
+!!file01:files_operations
+src/main.py:C
+src/utils.py:E
+!!end
+"""
+        for line in text.strip().split("\n"):
+            yield line + "\n"
+    
+    # Handle events
+    async for event in processor.process_stream(text_stream()):
+        if event.type == EventType.BLOCK_EXTRACTED:
+            block = event.metadata["extracted_block"]
+            print(f"Extracted block: {block.metadata.id}")
+            for op in block.content.operations:
+                print(f"  - {op.action}: {op.path}")
+
+asyncio.run(main())
 ```
 
-## Documentation
+## Built-in Syntaxes
 
-To build and serve the documentation locally:
-
-1. Install the dependencies:
-```
-uv sync --group doc
-source .venv/bin/activate
-```
-
-2. Serve the documentation:
-```
-mkdocs serve
-```
-
-## Development
-
-### Installation
-
-The only command that should be necessary is:
-```
-uv sync --group dev
-source .venv/bin/activate
-lefthook install
-```
-
-It creates a virtual environment, install all dependencies required for development and install the library in editable mode.
-It also installs the Lefthook git hooks manager.
-
-### Git Hooks with Lefthook
-
-This project uses Lefthook for managing git hooks. Hooks are automatically installed when you run `make install-dev`.
-
-To run hooks manually:
-```
-# Run all pre-commit hooks
-lefthook run pre-commit
-
-# Run specific hook
-lefthook run pre-commit --commands ruff-check
-
-# Skip hooks for a single commit
-git commit --no-verify -m "emergency fix"
-```
-
-For local customization, copy `.lefthook-local.yml.example` to `.lefthook-local.yml` and modify as needed.
-
-
-### Tests
-
-uv run -m pytest
-
-### Coverage
-
-uv run python -m pytest src --cov=hother
-
-### Building the package
+### 1. Delimiter with Preamble
 
 ```
-uv build
+!!<id>:<type>[:param1:param2...]
+content
+!!end
 ```
 
-### Release process
+### 2. Markdown with Frontmatter
 
-This project uses Git tags for versioning with automatic semantic versioning based on conventional commits. Version numbers are automatically derived from Git tags using hatch-vcs.
-
-#### Quick Release Commands
-
-```bash
-# Check current version
-hatch version
-
-# Create development release (v1.0.0 → v1.0.1-dev1)
-hatch release dev
-
-# Create release candidate (v1.0.1-dev1 → v1.0.1rc1)
-hatch release rc
-
-# Create final release (v1.0.1rc1 → v1.0.1)
-hatch release final
+```markdown
+```[info_string]
+---
+key: value
+---
+content
+```
 ```
 
-#### Release from Specific Commit
-
-You can optionally specify a commit SHA to create a release from:
-```bash
-# Release from a specific commit
-hatch release dev abc123
-hatch release rc def456
-hatch release final 789xyz
-```
-
-The SHA must be:
-- Reachable from HEAD (on current branch history)
-- Not already included in a previous release
-
-#### How it Works
-
-- **Development releases** (`dev`): Increments patch version and adds `-dev` suffix
-- **Release candidates** (`rc`): Removes `-dev` and adds `rc` suffix
-- **Final releases** (`final`): Uses git-cliff to analyze commits and automatically bumps major/minor/patch based on conventional commits
-
-The release process:
-1. Analyzes commit history (for final releases)
-2. Calculates the next version number
-3. Creates and pushes the git tag
-4. GitHub Actions automatically builds and publishes the release
-
-#### Manual Tagging (Advanced)
-
-If needed, you can still create tags manually:
-```bash
-# Manual tag creation
-git tag -a v1.2.3 -m "Release v1.2.3"
-git push origin v1.2.3
-```
-
-### Changelog Management
-
-This project uses [git-cliff](https://git-cliff.org/) to automatically generate changelogs from conventional commits.
+### 3. Delimiter with Frontmatter
 
 ```
-# Generate/update CHANGELOG.md
-make changelog
-
-# Preview unreleased changes
-make changelog-unreleased
-
-# Get changelog for latest tag (used in releases)
-make changelog-tag
+!!start
+---
+key: value
+---
+content
+!!end
 ```
 
-The changelog is automatically updated and included in GitHub releases when you push a version tag.
+## Creating Custom Content Models
 
-Generate the licenses:
-```
-uvx pip-licenses --from=mixed --order count -f md --output-file licenses.md
-uvx pip-licenses --from=mixed --order count -f csv --output-file licenses.csv
-```
+```python
+from pydantic import BaseModel
+from typing import Literal
 
-Build the new documentation:
-```
-uv run mike deploy --push --update-aliases <version> latest
-mike set-default latest
-mike list
-```
-Checking the documentation locally
-```
-mike serve
-```
+class MyMetadata(BaseModel):
+    id: str
+    block_type: Literal["my_type"]
+    custom_field: str | None = None
 
-
-## Development practices
-
-### Branching & Pull-Requests
-
-Each git branch should have the format `<tag>/item_<id>` with eventually a descriptive suffix.
-
-We us a **Squash & Merge** approach.
-
-### Conventional Commits
-
-We use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
-
-Format: `<type>(<scope>): <subject>`
-
-`<scope>` is optional
-
-#### Example
-
-```
-feat: add hat wobble
-^--^  ^------------^
-|     |
-|     +-> Summary in present tense.
-|
-+-------> Type: chore, docs, feat, fix, refactor, style, or test.
+class MyContent(BaseModel):
+    data: str
+    
+    @classmethod
+    def parse(cls, raw_text: str) -> "MyContent":
+        # Custom parsing logic
+        return cls(data=raw_text.strip())
 ```
 
-More Examples:
+## Event Types
 
-- `feat`: (new feature for the user, not a new feature for build script)
-- `fix`: (bug fix for the user, not a fix to a build script)
-- `docs`: (changes to the documentation)
-- `style`: (formatting, missing semi colons, etc; no production code change)
-- `refactor`: (refactoring production code, eg. renaming a variable)
-- `test`: (adding missing tests, refactoring tests; no production code change)
-- `chore`: (updating grunt tasks etc; no production code change)
-- `build`: (changes in the build system)
-- `ci`: (changes in the CI/CD and deployment pipelines)
-- `perf`: (significant performance improvement)
-- `revert`: (revert a previous change)
+- `RAW_TEXT` - Non-block text passed through
+- `BLOCK_DELTA` - Partial block update (new line added)
+- `BLOCK_EXTRACTED` - Complete block successfully extracted
+- `BLOCK_REJECTED` - Block failed validation or stream ended
+
+## Custom Validators
+
+```python
+def my_validator(metadata: BaseModel, content: BaseModel) -> bool:
+    # Custom validation logic
+    return True
+
+registry.add_validator("my_type", my_validator)
+```
+
+## License
+
+MIT
