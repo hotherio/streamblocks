@@ -6,7 +6,7 @@ from typing import AsyncIterator, Literal
 from pydantic import BaseModel
 
 from streamblocks import (
-    BlockRegistry,
+    Registry,
     DelimiterPreambleSyntax,
     EventType,
     StreamBlockProcessor,
@@ -19,8 +19,8 @@ class SimplePatchMetadata(BaseModel):
 
     id: str
     block_type: Literal["patch"] = "patch"
-    param_0: str | None = None  # category
-    param_1: str | None = None  # priority
+    category: str | None = None
+    priority: str | None = None
 
     # Derived from content
     file: str = ""
@@ -162,15 +162,15 @@ That's all the patches for this update!
 
 async def main() -> None:
     """Main example function."""
-    # Setup registry
-    registry = BlockRegistry()
-
-    # Register delimiter preamble syntax for patches
+    # Create delimiter preamble syntax for patches
     patch_syntax = DelimiterPreambleSyntax(
+        name="patch_delimiter_syntax",
         metadata_class=SimplePatchMetadata,
         content_class=SimplePatchContent,
     )
-    registry.register_syntax(patch_syntax, block_types=["patch"], priority=1)
+    
+    # Create type-specific registry
+    registry = Registry(patch_syntax)
 
     # Add validators for patch quality
     def validate_patch_content(metadata: SimplePatchMetadata, content: SimplePatchContent) -> bool:

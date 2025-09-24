@@ -4,7 +4,7 @@ import asyncio
 from typing import AsyncIterator
 
 from streamblocks import (
-    BlockRegistry,
+    Registry,
     DelimiterPreambleSyntax,
     EventType,
     StreamBlockProcessor,
@@ -48,20 +48,13 @@ That's all folks!
 
 async def main() -> None:
     """Main example function."""
-    # Setup registry
-    registry = BlockRegistry()
+    # Create syntax with NO custom models - uses BaseMetadata and BaseContent
+    syntax = DelimiterPreambleSyntax(name="base_syntax")
     
-    # Register syntax with NO custom models - uses BaseMetadata and BaseContent
-    syntax = DelimiterPreambleSyntax()  # No parameters needed!
+    # Create type-specific registry
+    registry = Registry(syntax)
     
-    # Register for multiple block types at once
-    registry.register_syntax(
-        syntax, 
-        block_types=["notes", "tasks", "snippets", "unknown"],  # Can handle multiple types
-        priority=1
-    )
-    
-    # Create processor
+    # Create processor with the registry
     processor = StreamBlockProcessor(registry, lines_buffer=5)
     
     # Process stream
@@ -102,7 +95,7 @@ async def main() -> None:
     for i, block in enumerate(blocks_extracted, 1):
         print(f"  {i}. {block.metadata.id} ({block.metadata.block_type})")
     
-    print("\n✓ No custom models needed - just works!")
+    print("\n✓ Simple single-syntax processing - no custom models needed!")
 
 
 if __name__ == "__main__":

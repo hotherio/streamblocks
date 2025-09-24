@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import AsyncIterator
 
 from streamblocks import (
-    BlockRegistry,
+    Registry,
     DelimiterPreambleSyntax,
     EventType,
     StreamBlockProcessor,
@@ -19,15 +19,15 @@ This is some introductory text that will be passed through as raw text.
 
 !!file01:files_operations
 src/main.py:C
-src/utils.py:E
+src/utils.py:C
 tests/test_main.py:C
 !!end
 
 Here's some text between blocks.
 
 !!file02:files_operations:urgent
-config.yaml:E
-README.md:E
+config.yaml:C
+README.md:C
 old_file.py:D
 !!end
 
@@ -44,15 +44,15 @@ And some final text after all blocks.
 
 async def main() -> None:
     """Main example function."""
-    # Setup registry
-    registry = BlockRegistry()
-
-    # Register delimiter preamble syntax
+    # Create delimiter preamble syntax
     syntax = DelimiterPreambleSyntax(
+        name="files_operations_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
-    registry.register_syntax(syntax, block_types=["files_operations"], priority=1)
+    
+    # Create type-specific registry
+    registry = Registry(syntax)
 
     # Add a custom validator
     def no_root_delete(metadata: FileOperationsMetadata, content: FileOperationsContent) -> bool:

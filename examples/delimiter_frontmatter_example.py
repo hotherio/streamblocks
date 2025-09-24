@@ -1,4 +1,8 @@
-"""Example demonstrating DelimiterFrontmatterSyntax with YAML frontmatter."""
+"""Example demonstrating DelimiterFrontmatterSyntax with YAML frontmatter.
+
+This example shows how to use the delimiter+frontmatter syntax with the new
+single-syntax design. Each processor handles one syntax type.
+"""
 
 import asyncio
 from collections.abc import AsyncIterator
@@ -6,7 +10,7 @@ from collections.abc import AsyncIterator
 from pydantic import BaseModel
 
 from streamblocks import (
-    BlockRegistry,
+    Registry,
     DelimiterFrontmatterSyntax,
     EventType,
     StreamBlockProcessor,
@@ -19,10 +23,12 @@ class TaskMetadata(BaseModel):
 
     id: str
     block_type: str
+    title: str = "Untitled Task"
     priority: str = "medium"
     assignee: str | None = None
     due_date: str | None = None
     tags: list[str] = []
+    status: str = "todo"
 
 
 class TaskContent(BaseModel):
@@ -48,41 +54,22 @@ class TaskContent(BaseModel):
 
         return cls(description=description, subtasks=subtasks)
 
-# Custom content model for projects
-class ProjectMetadata(BaseModel):
-    """Metadata for project blocks."""
-
-    id: str
-    block_type: str
-    status: str = "planning"
-    team: str | None = None
-    start_date: str | None = None
-
-
-class ProjectContent(BaseModel):
-    """Content for project blocks."""
-
-    text: str
-
-    @classmethod
-    def parse(cls, raw_text: str) -> "ProjectContent":
-        """Parse project content."""
-        return cls(text=raw_text.strip())
-
 
 async def example_stream() -> AsyncIterator[str]:
     """Example stream with delimiter frontmatter blocks."""
     text = """
-Let's manage some tasks using our custom delimiter syntax.
+Let's manage some tasks using delimiter+frontmatter syntax.
 
 !!start
 ---
 id: task-001
 block_type: task
+title: Implement authentication
 priority: high
 assignee: alice
 due_date: "2024-01-15"
 tags: [backend, api, urgent]
+status: in_progress
 ---
 Implement user authentication API
 - Create JWT token generation
@@ -97,6 +84,7 @@ Here's another task with simpler metadata:
 ---
 id: task-002
 block_type: task
+title: Update documentation
 assignee: bob
 ---
 Update documentation
@@ -111,161 +99,125 @@ And a minimal task:
 ---
 id: task-003
 block_type: task
+title: Fix payment bug
+priority: urgent
 ---
 Fix critical bug in payment processing
 !!end
 
-Now let's use a custom delimiter for project blocks:
+Some text between blocks.
 
-##begin
+!!start
 ---
-id: proj-alpha
-block_type: project
-status: active
-team: engineering
-start_date: "2024-01-01"
+id: task-004
+block_type: task
+title: Performance optimization
+assignee: charlie
+tags: [performance, backend]
 ---
-Project Alpha: Next-gen platform
-- Microservices architecture
-- Real-time data processing
-- ML-powered insights
-##finish
+Optimize database queries
+- Add proper indexes
+- Implement query caching
+- Review N+1 queries
+!!end
 
-That's all the tasks and projects!
+That's all for now!
 """
-
-    # Chunk-based streaming with variable chunk sizes
-    chunk_sizes = [40, 60, 50, 70, 45, 55, 65]
-    i = 0
-    chunk_idx = 0
-
-    while i < len(text):
-        chunk_size = chunk_sizes[chunk_idx % len(chunk_sizes)]
+    # Simulate streaming
+    chunk_size = 50
+    for i in range(0, len(text), chunk_size):
         chunk = text[i : i + chunk_size]
         yield chunk
-        i += chunk_size
-        chunk_idx += 1
         await asyncio.sleep(0.01)
-
 
 
 async def main() -> None:
     """Main example function."""
-    # Setup registry
-    registry = BlockRegistry()
-
-    # Register delimiter frontmatter syntaxes
-    # 1. Standard !!start/!!end for tasks
+    print("=== DelimiterFrontmatterSyntax Example ===\n")
+    
+    # Create delimiter frontmatter syntax for tasks
+    # Using standard !!start/!!end delimiters
     task_syntax = DelimiterFrontmatterSyntax(
+        name="task_syntax",
         metadata_class=TaskMetadata,
         content_class=TaskContent,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
-    registry.register_syntax(task_syntax, block_types=["task"], priority=1)
-
-    # 2. Custom ##begin/##finish for projects
-    project_syntax = DelimiterFrontmatterSyntax(
-        metadata_class=ProjectMetadata,
-        content_class=ProjectContent,
-        start_delimiter="##begin",
-        end_delimiter="##finish",
-    )
-    registry.register_syntax(project_syntax, block_types=["project"], priority=1)
-
+    
+    # Create type-specific registry
+    registry = Registry(task_syntax)
+    
     # Add validators
     def validate_task_priority(metadata: TaskMetadata, content: TaskContent) -> bool:
         """Ensure high priority tasks have assignees."""
-        if metadata.priority == "high" and not metadata.assignee:
-            return False
-        return True
-
-    def validate_project(metadata: ProjectMetadata, content: ProjectContent) -> bool:
-        """Ensure active projects have teams."""
-        if metadata.status == "active" and not metadata.team:
+        if metadata.priority in ["high", "urgent"] and not metadata.assignee:
             return False
         return True
 
     registry.add_validator("task", validate_task_priority)
-    registry.add_validator("project", validate_project)
-
+    
     # Create processor
-    processor = StreamBlockProcessor(registry, lines_buffer=8)
-
+    processor = StreamBlockProcessor(registry, lines_buffer=10)
+    
     # Process stream
-    print("Processing delimiter frontmatter blocks...")
-    print("-" * 70)
-
+    print("Processing task blocks...\n")
+    
     blocks_extracted = []
-    blocks_rejected = []
-
+    
     async for event in processor.process_stream(example_stream()):
         if event.type == EventType.RAW_TEXT:
             # Raw text passed through
             if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
-
+                text = event.data.strip()
+                if len(text) > 60:
+                    text = text[:57] + "..."
+                print(f"[TEXT] {text}")
+        
         elif event.type == EventType.BLOCK_DELTA:
-            # Show section transitions
-            section = event.metadata.get("section", "unknown")
-            syntax = event.metadata["syntax"]
-
-            # Only show meaningful updates
-            if section == "metadata":
-                if event.data.strip() == "---":
-                    print(f"\n[DELTA] {syntax}: Entering metadata section")
-            elif section == "content" and "---" in event.data:
-                print(f"[DELTA] {syntax}: Entering content section")
-
+            # Skip deltas for cleaner output
+            pass
+        
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
             block = event.metadata["extracted_block"]
             blocks_extracted.append(block)
-
-            print(f"\n[BLOCK] Extracted: {block.metadata.id}")
-            print(f"        Type: {block.metadata.block_type}")
-            print(f"        Syntax: {block.syntax_name}")
-
-            if block.metadata.block_type == "task":
-                print(f"        Priority: {block.metadata.priority}")
-                print(f"        Assignee: {block.metadata.assignee or 'Unassigned'}")
-                if block.metadata.due_date:
-                    print(f"        Due: {block.metadata.due_date}")
-                if block.metadata.tags:
-                    print(f"        Tags: {', '.join(block.metadata.tags)}")
-                print(f"        Description: {block.content.description}")
-                if block.content.subtasks:
-                    print(f"        Subtasks: {len(block.content.subtasks)}")
-
-            elif block.metadata.block_type == "project":
-                print(f"        Status: {block.metadata.status}")
-                print(f"        Team: {block.metadata.team}")
-                if block.metadata.start_date:
-                    print(f"        Start: {block.metadata.start_date}")
-                # Show first line of content
-                first_line = block.content.text.split("\\n")[0]
-                print(f"        Title: {first_line}")
-
+            
+            metadata: TaskMetadata = block.metadata
+            content: TaskContent = block.content
+            
+            print(f"\n{'=' * 60}")
+            print(f"[TASK] {metadata.id} - {metadata.title}")
+            print(f"       Priority: {metadata.priority}")
+            print(f"       Status: {metadata.status}")
+            if metadata.assignee:
+                print(f"       Assignee: {metadata.assignee}")
+            if metadata.due_date:
+                print(f"       Due: {metadata.due_date}")
+            if metadata.tags:
+                print(f"       Tags: {', '.join(metadata.tags)}")
+            
+            print(f"\n       Description: {content.description}")
+            if content.subtasks:
+                print(f"       Subtasks:")
+                for subtask in content.subtasks:
+                    print(f"         - {subtask}")
+            print("=" * 60)
+        
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            blocks_rejected.append(event)
             reason = event.metadata["reason"]
-            syntax = event.metadata["syntax"]
-            print(f"\n[REJECT] {syntax} block rejected: {reason}")
-            lines = event.metadata.get("lines", ("?", "?"))
-            print(f"         Lines: {lines[0]}-{lines[1]}")
-
-    print("-" * 70)
-    print(f"\nTotal blocks extracted: {len(blocks_extracted)}")
-    print(f"Total blocks rejected: {len(blocks_rejected)}")
-
-    # Show task summary
-    tasks = [b for b in blocks_extracted if b.metadata.block_type == "task"]
-    if tasks:
-        print("\nTask Summary:")
-        for task in tasks:
-            status = "✓" if task.metadata.assignee else "⚠"
-            print(f"  {status} {task.metadata.id}: {task.content.description[:50]}...")
+            print(f"\n[REJECT] {reason}")
+    
+    print("\n\nEXTRACTED BLOCKS SUMMARY:")
+    print(f"Total blocks: {len(blocks_extracted)}")
+    print("\nTasks:")
+    for task in blocks_extracted:
+        print(f"  - [{task.metadata.priority.upper()}] {task.metadata.title}")
+        print(f"    Assignee: {task.metadata.assignee or 'Unassigned'}")
+        print(f"    Status: {task.metadata.status}")
+    
+    print("\n✓ DelimiterFrontmatterSyntax processing complete!")
 
 
 if __name__ == "__main__":

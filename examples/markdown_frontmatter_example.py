@@ -86,6 +86,7 @@ async def main() -> None:
     # Register markdown syntaxes with different info strings
     # 1. Generic patch syntax
     patch_syntax = MarkdownFrontmatterSyntax(
+        name="patch_syntax",
         metadata_class=PatchMetadata,
         content_class=PatchContent,
         fence="```",
@@ -95,6 +96,7 @@ async def main() -> None:
 
     # 2. YAML-specific syntax
     yaml_syntax = MarkdownFrontmatterSyntax(
+        name="yaml_syntax",
         metadata_class=PatchMetadata,
         content_class=PatchContent,
         fence="```",
@@ -104,6 +106,7 @@ async def main() -> None:
 
     # 3. Diff-specific syntax
     diff_syntax = MarkdownFrontmatterSyntax(
+        name="diff_syntax",
         metadata_class=PatchMetadata,
         content_class=PatchContent,
         fence="```",
