@@ -12,7 +12,7 @@ from streamblocks.core.models import BaseContent, BaseMetadata
 class FileOperation(BaseModel):
     """Single file operation."""
 
-    action: Literal["create", "edit", "delete"]
+    action: Literal["create", "delete"]
     path: str
 
 
@@ -27,7 +27,6 @@ class FileOperationsContent(BaseContent):
 
         Expected format:
         path/to/file.py:C
-        path/to/other.py:E
         path/to/delete.py:D
 
         Where C=create, E=edit, D=delete
@@ -41,7 +40,7 @@ class FileOperationsContent(BaseContent):
                 raise ValueError(f"Invalid format: {line}")
 
             path, action = line.rsplit(":", 1)
-            action_map = {"C": "create", "E": "edit", "D": "delete"}
+            action_map = {"C": "create", "D": "delete"}
 
             if action.upper() not in action_map:
                 raise ValueError(f"Unknown action: {action}")
@@ -68,3 +67,27 @@ class FileOperationsMetadata(BaseMetadata):
         if "block_type" not in data:
             data["block_type"] = "files_operations"
         super().__init__(**data)
+
+
+class FileContentMetadata(BaseMetadata):
+    """Metadata for file content blocks."""
+    
+    file: str  # Path to the file
+    description: str | None = None
+    
+    def __init__(self, **data):
+        # Set default block_type if not provided
+        if "block_type" not in data:
+            data["block_type"] = "file_content"
+        super().__init__(**data)
+
+
+class FileContentContent(BaseContent):
+    """Content model for file content blocks."""
+    
+    # The raw_content field from BaseContent contains the file contents
+    
+    @classmethod
+    def parse(cls, raw_text: str) -> FileContentContent:
+        """Parse file content - just stores the raw text."""
+        return cls(raw_content=raw_text)
