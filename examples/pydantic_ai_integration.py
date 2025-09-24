@@ -1,0 +1,281 @@
+#!/usr/bin/env python3
+"""Example demonstrating PydanticAI integration with StreamBlocks.
+
+This example shows how PydanticAI agents can transparently generate
+StreamBlocks-compatible output that is extracted in real-time.
+"""
+
+import asyncio
+import os
+from typing import AsyncIterator
+
+from streamblocks import (
+    Registry,
+    DelimiterFrontmatterSyntax,
+    EventType,
+    StreamBlockProcessor,
+)
+from streamblocks.content import (
+    FileOperationsContent,
+    FileOperationsMetadata,
+    FileContentContent,
+    FileContentMetadata,
+)
+
+# Check if pydantic-ai is installed
+try:
+    from pydantic_ai import Agent
+    from streamblocks.integrations.pydantic_ai import (
+        BlockAwareAgent,
+        AgentStreamProcessor,
+    )
+    PYDANTIC_AI_AVAILABLE = True
+except ImportError:
+    PYDANTIC_AI_AVAILABLE = False
+    print("pydantic-ai is not installed. Install with: pip install pydantic-ai")
+
+
+async def basic_example():
+    """Basic example: Agent generates text with embedded blocks."""
+
+    # Create syntax for file operations
+    file_ops_syntax = DelimiterFrontmatterSyntax(
+        name="file_operations_syntax",
+        metadata_class=FileOperationsMetadata,
+        content_class=FileOperationsContent,
+        start_delimiter="!!start",
+        end_delimiter="!!end"
+    )
+
+    # Create syntax for file content
+    file_content_syntax = DelimiterFrontmatterSyntax(
+        name="file_content_syntax",
+        metadata_class=FileContentMetadata,
+        content_class=FileContentContent,
+        start_delimiter="!!start",
+        end_delimiter="!!end"
+    )
+
+    # Create separate registries
+    file_ops_registry = Registry(file_ops_syntax)
+    file_content_registry = Registry(file_content_syntax)
+
+    # Create a block-aware agent with custom system prompt
+    system_prompt = """
+You are a helpful assistant that creates structured content using blocks.
+
+## Block Formats
+
+### 1. File Operations Block
+For listing files to create or delete:
+
+!!start
+---
+id: files_001
+block_type: files_operations
+description: Creating project structure
+---
+src/main.py:C
+src/utils.py:C
+tests/test_main.py:C
+README.md:C
+!!end
+
+Where: C=Create, D=Delete
+
+### 2. File Content Block
+For writing complete file contents:
+
+!!start
+---
+id: file_001
+block_type: file_content
+file: src/config.py
+description: Application configuration file
+---
+import os
+from pydantic import BaseSettings
+
+class Settings(BaseSettings):
+    app_name: str = "My Application"
+    debug: bool = os.getenv("DEBUG", "false").lower() == "true"
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+    
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+!!end
+
+Mix explanatory text with structured blocks as appropriate.
+"""
+
+    prompt = """Create a Python project structure for a simple FastAPI web API.
+
+Use blocks to:
+1. First list all files to create using a files_operations block
+2. Then provide the content for the main application file using a file_content block
+
+Make sure to include proper project structure with an app module and a simple FastAPI application."""
+
+    print("🤖 PydanticAI Agent with StreamBlocks Integration")
+    print("=" * 60)
+    print(f"Prompt: {prompt}")
+    print("=" * 60)
+
+    # Note: StreamBlocks design principle - one processor handles one syntax type
+    # For multiple block types, we demonstrate processing the raw stream multiple times
+    
+    # Get the raw stream from a standard PydanticAI agent
+    agent = Agent(model='openai:gpt-4o', system_prompt=system_prompt)
+    
+    print("\n[STREAMING] Receiving response from AI...")
+    raw_text = ""
+    async with agent.run_stream(prompt) as result:
+        async for delta in result.stream_text(delta=True):
+            raw_text += delta
+    
+    print("[COMPLETE] AI response received\n")
+    
+    # Helper to create a stream from text
+    async def text_stream():
+        yield raw_text
+    
+    # Collect all extracted blocks
+    extracted_blocks = []
+    
+    # Process stream for file operations blocks
+    print("📂 Processing for file operations blocks...")
+    file_ops_processor = StreamBlockProcessor(file_ops_registry)
+    
+    async for event in file_ops_processor.process_stream(text_stream()):
+        if event.type == EventType.BLOCK_EXTRACTED:
+            block = event.metadata["extracted_block"]
+            extracted_blocks.append(block)
+            print(f"\n📦 EXTRACTED BLOCK: {block.metadata.id}")
+            print(f"   Type: {block.metadata.block_type}")
+            print("   Operations:")
+            for op in block.content.operations:
+                icon = {"create": "✅", "edit": "📝", "delete": "❌"}.get(op.action, "❓")
+                print(f"     {icon} {op.action}: {op.path}")
+    
+    # Process same stream for file content blocks
+    print("\n📄 Processing for file content blocks...")
+    file_content_processor = StreamBlockProcessor(file_content_registry)
+    
+    async for event in file_content_processor.process_stream(text_stream()):
+        if event.type == EventType.BLOCK_EXTRACTED:
+            block = event.metadata["extracted_block"]
+            extracted_blocks.append(block)
+            print(f"\n📄 EXTRACTED BLOCK: {block.metadata.id}")
+            print(f"   Type: {block.metadata.block_type}")
+            print(f"   File: {block.metadata.file}")
+            if block.metadata.description:
+                print(f"   Description: {block.metadata.description}")
+            lines = block.content.raw_content.strip().split('\n')
+            print(f"   Content preview ({len(lines)} lines):")
+            preview_lines = 5
+            for i, line in enumerate(lines[:preview_lines]):
+                print(f"     {i+1}: {line}")
+            if len(lines) > preview_lines:
+                print(f"     ... and {len(lines) - preview_lines} more lines")
+
+    # Summary
+    print("\n" + "=" * 60)
+    print("Summary:")
+    print(f"  - Extracted {len(extracted_blocks)} blocks total")
+    
+    file_ops_count = sum(1 for b in extracted_blocks if b.metadata.block_type == "files_operations")
+    file_content_count = sum(1 for b in extracted_blocks if b.metadata.block_type == "file_content")
+    
+    print(f"  - {file_ops_count} file operations blocks")
+    print(f"  - {file_content_count} file content blocks")
+
+
+async def advanced_example_with_standard_agent():
+    """Advanced example: Using standard PydanticAI agent with StreamBlocks processor."""
+
+    # Create a standard PydanticAI agent
+    agent = Agent(
+        'openai:gpt-4o',
+        system_prompt="""
+You are a helpful assistant that creates structured content.
+
+When creating file operations, use this format:
+!!start
+---
+id: <unique_id>
+block_type: files_operations
+description: <what these operations do>
+---
+path/to/file:C  (C=Create, D=Delete)
+another/file:C
+!!end
+
+Mix explanatory text with structured blocks.
+"""
+    )
+
+    # Create StreamBlocks components
+    syntax = DelimiterFrontmatterSyntax(
+        name="files_operations_syntax",
+        metadata_class=FileOperationsMetadata,
+        content_class=FileOperationsContent,
+        start_delimiter="!!start",
+        end_delimiter="!!end"
+    )
+    registry = Registry(syntax)
+    processor = AgentStreamProcessor(registry)
+
+    prompt = "Create a README.md and setup.py for a Python package called 'example'."
+
+    print("\n🔄 Standard PydanticAI Agent + StreamBlocks Processor")
+    print("=" * 60)
+
+    # Stream from agent
+    async def agent_stream() -> AsyncIterator[str]:
+        async with agent.run_stream(prompt) as result:
+            async for text in result.stream_text():
+                yield text
+
+    # Process the stream through StreamBlocks
+    async for event in processor.process_agent_stream(agent_stream()):
+        if event.type == EventType.RAW_TEXT:
+            if event.data.strip():
+                print(f"[TEXT] {event.data.strip()}")
+
+        elif event.type == EventType.BLOCK_EXTRACTED:
+            block = event.metadata["extracted_block"]
+            print(f"\n📦 BLOCK: {block.metadata.id}")
+            for op in block.content.operations:
+                print(f"   - {op.action}: {op.path}")
+
+
+async def main():
+    """Run all examples."""
+
+    if not PYDANTIC_AI_AVAILABLE:
+        print("\n⚠️  pydantic-ai is required for this example.")
+        print("Install with: pip install pydantic-ai")
+        return
+
+    # Check for API key
+    if not os.getenv("OPENAI_API_KEY"):
+        print("\n⚠️  Please set OPENAI_API_KEY environment variable")
+        print("Or use a different model like 'anthropic:claude-3-5-sonnet-latest'")
+        return
+
+    print("StreamBlocks + PydanticAI Integration Examples")
+    print("=" * 60)
+
+    # Run examples
+    await basic_example()
+    print("\n" + "=" * 60)
+
+    #await advanced_example_with_standard_agent()
+
+    print("\n✅ Examples completed!")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
