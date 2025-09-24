@@ -4,22 +4,26 @@ from __future__ import annotations
 
 from collections import deque
 from collections.abc import AsyncGenerator, AsyncIterator
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from streamblocks.core.models import Block, BlockCandidate
-from streamblocks.core.registry import BlockRegistry
+from streamblocks.core.registry import Registry
 from streamblocks.core.types import BlockState, EventType, StreamEvent
 
+# Type variable for syntax types
+TSyntax = TypeVar("TSyntax")
 
-class StreamBlockProcessor:
-    """Main stream processing engine.
 
-    Completely syntax-agnostic - delegates all syntax-specific logic to BlockSyntax implementations.
+class StreamBlockProcessor(Generic[TSyntax]):
+    """Main stream processing engine for a single syntax type.
+
+    This processor works with exactly one syntax type, ensuring type safety
+    and simplified processing logic.
     """
 
     def __init__(
         self,
-        registry: BlockRegistry,
+        registry: Registry[TSyntax],
         lines_buffer: int = 5,
         max_line_length: int = 16_384,
         max_block_size: int = 1_048_576,  # 1MB
@@ -27,12 +31,13 @@ class StreamBlockProcessor:
         """Initialize the stream processor.
 
         Args:
-            registry: Block registry with syntax definitions
+            registry: Type-specific registry with a single syntax
             lines_buffer: Number of lines to keep in buffer
             max_line_length: Maximum line length before truncation
             max_block_size: Maximum block size in bytes
         """
         self.registry = registry
+        self.syntax = registry.syntax  # Direct access to the syntax
         self.lines_buffer = lines_buffer
         self.max_line_length = max_line_length
         self.max_block_size = max_block_size
@@ -184,23 +189,22 @@ class StreamBlockProcessor:
         if not handled_by_candidate:
             opening_found = False
 
-            for syntax in self.registry.get_syntaxes():
-                detection = syntax.detect_line(line, None)
+            # Check if this line opens a new block
+            detection = self.syntax.detect_line(line, None)
 
-                if detection.is_opening:
-                    # Start new candidate
-                    candidate = BlockCandidate(syntax, self._line_counter)
-                    candidate.add_line(line)
+            if detection.is_opening:
+                # Start new candidate
+                candidate = BlockCandidate(self.syntax, self._line_counter)
+                candidate.add_line(line)
 
-                    # If syntax provided inline metadata, store it
-                    if detection.metadata:
-                        # This is for syntaxes like DelimiterPreamble
-                        # that extract metadata from the opening line
-                        candidate.metadata_lines = [str(detection.metadata)]
+                # If syntax provided inline metadata, store it
+                if detection.metadata:
+                    # This is for syntaxes like DelimiterPreamble
+                    # that extract metadata from the opening line
+                    candidate.metadata_lines = [str(detection.metadata)]
 
-                    self._candidates.append(candidate)
-                    opening_found = True
-                    break  # First matching syntax wins
+                self._candidates.append(candidate)
+                opening_found = True
 
             # If no candidates and no openings, emit raw text
             if not opening_found:

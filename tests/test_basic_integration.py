@@ -22,6 +22,7 @@ async def test_basic_delimiter_preamble_syntax() -> None:
 
     # Register syntax
     syntax = DelimiterPreambleSyntax(
+        name="test_files_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
@@ -65,7 +66,7 @@ async def test_basic_delimiter_preamble_syntax() -> None:
     extracted_event = block_extracted_events[0]
     block = extracted_event.metadata["extracted_block"]
 
-    assert block.syntax_name == "delimiter_preamble_!!"
+    assert block.syntax_name == "test_files_syntax"
     assert block.metadata.id == "file01"
     assert block.metadata.block_type == "files_operations"
     assert len(block.content.operations) == 2
@@ -81,6 +82,7 @@ async def test_multiple_blocks() -> None:
     registry = BlockRegistry()
 
     syntax = DelimiterPreambleSyntax(
+        name="test_files_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
@@ -121,6 +123,7 @@ async def test_unclosed_block_rejection() -> None:
     registry = BlockRegistry()
 
     syntax = DelimiterPreambleSyntax(
+        name="test_files_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )

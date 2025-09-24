@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class MarkdownFrontmatterSyntax:
-    """Syntax 2: Markdown-style with YAML frontmatter.
+    """Syntax: Markdown-style with YAML frontmatter.
 
     Format:
     ```[info]
@@ -28,6 +28,7 @@ class MarkdownFrontmatterSyntax:
 
     def __init__(
         self,
+        name: str,
         metadata_class: type[TMetadata] | None = None,
         content_class: type[TContent] | None = None,
         fence: str = "```",
@@ -36,11 +37,13 @@ class MarkdownFrontmatterSyntax:
         """Initialize markdown frontmatter syntax.
 
         Args:
+            name: Unique name for this syntax instance
             metadata_class: Class for parsing metadata (defaults to BaseMetadata)
             content_class: Class for parsing content (defaults to BaseContent)
             fence: Fence string (e.g., "```")
             info_string: Optional info string after fence
         """
+        self._name = name
         self.metadata_class = metadata_class or BaseMetadata
         self.content_class = content_class or BaseContent
         self.fence = fence
@@ -58,8 +61,7 @@ class MarkdownFrontmatterSyntax:
     @property
     def name(self) -> str:
         """Get syntax name."""
-        suffix = f"_{self.info_string}" if self.info_string else ""
-        return f"markdown_frontmatter{suffix}"
+        return self._name
 
     def detect_line(self, line: str, candidate: BlockCandidate | None = None) -> DetectionResult:
         """Detect markdown fence markers and frontmatter boundaries."""

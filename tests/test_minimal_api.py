@@ -7,7 +7,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from streamblocks import (
-    BlockRegistry,
+    Registry,
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
     EventType,
@@ -20,11 +20,11 @@ from streamblocks.core.models import BaseContent, BaseMetadata
 @pytest.mark.asyncio
 async def test_minimal_api_no_models() -> None:
     """Test using syntax with no custom models."""
-    registry = BlockRegistry()
+    # Create syntax with no parameters - uses BaseMetadata and BaseContent
+    syntax = DelimiterPreambleSyntax(name="test_base_syntax")
     
-    # Register syntax with no parameters - uses BaseMetadata and BaseContent
-    syntax = DelimiterPreambleSyntax()
-    registry.register_syntax(syntax, block_types=["notes"], priority=1)
+    # Create type-specific registry
+    registry = Registry(syntax)
     
     processor = StreamBlockProcessor(registry)
     
@@ -63,11 +63,11 @@ No custom models needed.
 @pytest.mark.asyncio
 async def test_auto_populated_fields_delimiter_frontmatter() -> None:
     """Test that id and block_type are auto-populated for DelimiterFrontmatterSyntax."""
-    registry = BlockRegistry()
-    
     # Use base classes (no custom models)
-    syntax = DelimiterFrontmatterSyntax()
-    registry.register_syntax(syntax, block_types=["tasks"], priority=1)
+    syntax = DelimiterFrontmatterSyntax(name="test_frontmatter_syntax")
+    
+    # Create type-specific registry
+    registry = Registry(syntax)
     
     processor = StreamBlockProcessor(registry)
     
@@ -101,11 +101,11 @@ assignee: john
 @pytest.mark.asyncio
 async def test_auto_populated_fields_markdown() -> None:
     """Test that id and block_type are auto-populated for MarkdownFrontmatterSyntax."""
-    registry = BlockRegistry()
-    
     # Use base classes with info string
-    syntax = MarkdownFrontmatterSyntax(info_string="python")
-    registry.register_syntax(syntax, block_types=["python"], priority=1)
+    syntax = MarkdownFrontmatterSyntax(name="test_python_syntax", info_string="python")
+    
+    # Create type-specific registry
+    registry = Registry(syntax)
     
     processor = StreamBlockProcessor(registry)
     
@@ -145,9 +145,8 @@ async def test_custom_metadata_inherits_base() -> None:
         
         model_config = {"extra": "allow"}
     
-    registry = BlockRegistry()
-    syntax = DelimiterPreambleSyntax(metadata_class=CustomMetadata)
-    registry.register_syntax(syntax, block_types=["custom"], priority=1)
+    syntax = DelimiterPreambleSyntax(name="test_custom_syntax", metadata_class=CustomMetadata)
+    registry = Registry(syntax)
     
     processor = StreamBlockProcessor(registry)
     
@@ -210,9 +209,8 @@ async def test_custom_content_inherits_base() -> None:
             
             return cls(raw_content=raw_text, items=items)
     
-    registry = BlockRegistry()
-    syntax = DelimiterPreambleSyntax(content_class=TodoContent)
-    registry.register_syntax(syntax, block_types=["todos"], priority=1)
+    syntax = DelimiterPreambleSyntax(name="test_todo_syntax", content_class=TodoContent)
+    registry = Registry(syntax)
     
     processor = StreamBlockProcessor(registry)
     
@@ -255,54 +253,8 @@ async def test_custom_content_inherits_base() -> None:
     assert block.content.items[2].done is False
 
 
-@pytest.mark.asyncio
-async def test_multiple_syntaxes_same_block_type() -> None:
-    """Test that multiple syntaxes can handle the same block type."""
-    registry = BlockRegistry()
-    
-    # Register two syntaxes for "notes" block type
-    syntax1 = DelimiterPreambleSyntax()
-    syntax2 = MarkdownFrontmatterSyntax()
-    
-    registry.register_syntax(syntax1, block_types=["notes"], priority=2)
-    registry.register_syntax(syntax2, block_types=["notes"], priority=1)
-    
-    processor = StreamBlockProcessor(registry)
-    
-    async def mock_stream() -> Any:
-        text = """!!note01:notes
-Delimiter style note.
-!!end
-
-```
----
-id: note02
-block_type: notes
----
-Markdown style note.
-```"""
-        
-        for line in text.split("\n"):
-            yield line + "\n"
-    
-    extracted_blocks = []
-    async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.metadata["extracted_block"])
-    
-    assert len(extracted_blocks) == 2
-    
-    # First block uses delimiter syntax
-    assert extracted_blocks[0].syntax_name == "delimiter_preamble_!!"
-    assert extracted_blocks[0].metadata.id == "note01"
-    assert extracted_blocks[0].content.raw_content.strip() == "Delimiter style note."
-    
-    # Second block uses markdown syntax
-    assert extracted_blocks[1].syntax_name == "markdown_frontmatter"
-    # The YAML frontmatter should provide id and block_type
-    assert extracted_blocks[1].metadata.id == "note02"
-    assert extracted_blocks[1].metadata.block_type == "notes"
-    assert extracted_blocks[1].content.raw_content.strip() == "Markdown style note."
+# NOTE: The test for multiple syntaxes handling the same block type
+# has been removed as the new design supports only one syntax per processor.
 
 
 if __name__ == "__main__":

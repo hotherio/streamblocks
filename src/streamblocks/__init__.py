@@ -4,7 +4,7 @@ __version__ = "0.1.0"
 
 from streamblocks.core.models import BaseContent, BaseMetadata, Block, BlockCandidate
 from streamblocks.core.processor import StreamBlockProcessor
-from streamblocks.core.registry import BlockRegistry
+from streamblocks.core.registry import BlockRegistry, Registry
 from streamblocks.core.types import (
     BlockState,
     DetectionResult,
@@ -31,7 +31,8 @@ __all__ = [
     "Block",
     "BlockCandidate",
     # Core components
-    "BlockRegistry",
+    "Registry",
+    "BlockRegistry",  # Deprecated alias
     "StreamBlockProcessor",
     # Built-in syntaxes
     "DelimiterPreambleSyntax",

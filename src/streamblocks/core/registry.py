@@ -1,9 +1,9 @@
-"""Registry for block syntaxes and validators."""
+"""Type-specific registry for StreamBlocks."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -13,46 +13,35 @@ if TYPE_CHECKING:
 type BlockType = str
 type ValidatorFunc = Callable[[BaseModel, BaseModel], bool]
 
+# Type variable for syntax types
+TSyntax = TypeVar("TSyntax", bound="BlockSyntax[Any, Any]")
 
-class BlockRegistry:
-    """Registry for block syntaxes and parsers."""
 
-    def __init__(self) -> None:
-        """Initialize an empty registry."""
-        self._syntaxes: dict[str, BlockSyntax[Any, Any]] = {}
-        self._block_types: dict[BlockType, list[BlockSyntax[Any, Any]]] = {}
-        self._validators: dict[BlockType, list[ValidatorFunc]] = {}
-        self._priority_order: list[str] = []  # Syntax names in priority order
-        self._syntax_priorities: dict[str, int] = {}  # Syntax name to priority
+class Registry(Generic[TSyntax]):
+    """Type-specific registry for a single syntax type.
 
-    def register_syntax(
-        self,
-        syntax: BlockSyntax[Any, Any],
-        block_types: list[BlockType] | None = None,
-        priority: int = 100,
-    ) -> None:
-        """Register a syntax parser.
+    This registry holds exactly one syntax instance and its associated validators.
+    Each registry is parameterized by the syntax type, ensuring type safety.
+
+    Example:
+        >>> syntax = DelimiterPreambleSyntax(...)
+        >>> registry = Registry(syntax)
+        >>> registry.add_validator("files_operations", my_validator)
+    """
+
+    def __init__(self, syntax: TSyntax) -> None:
+        """Initialize registry with a single syntax instance.
 
         Args:
-            syntax: The syntax implementation
-            block_types: Block types this syntax can handle
-            priority: Lower number = higher priority for detection
+            syntax: The syntax instance for this registry
         """
-        if syntax.name in self._syntaxes:
-            raise ValueError(f"Syntax '{syntax.name}' already registered")
+        self._syntax = syntax
+        self._validators: dict[BlockType, list[ValidatorFunc]] = {}
 
-        self._syntaxes[syntax.name] = syntax
-        self._syntax_priorities[syntax.name] = priority
-
-        # Map block types to syntaxes
-        if block_types:
-            for bt in block_types:
-                if bt not in self._block_types:
-                    self._block_types[bt] = []
-                self._block_types[bt].append(syntax)
-
-        # Update priority order
-        self._update_priority_order()
+    @property
+    def syntax(self) -> TSyntax:
+        """Get the syntax instance."""
+        return self._syntax
 
     def add_validator(
         self,
@@ -68,20 +57,6 @@ class BlockRegistry:
         if block_type not in self._validators:
             self._validators[block_type] = []
         self._validators[block_type].append(validator)
-
-    def get_syntaxes(self) -> list[BlockSyntax[Any, Any]]:
-        """Get all registered syntaxes in priority order."""
-        return [self._syntaxes[name] for name in self._priority_order if name in self._syntaxes]
-
-    def get_syntax_by_name(self, name: str) -> BlockSyntax[Any, Any] | None:
-        """Get a specific syntax by name."""
-        return self._syntaxes.get(name)
-
-    def get_syntaxes_for_block_type(self, block_type: BlockType) -> list[BlockSyntax[Any, Any]]:
-        """Get syntaxes that can handle a specific block type."""
-        syntaxes = self._block_types.get(block_type, [])
-        # Sort by priority
-        return sorted(syntaxes, key=lambda s: self._syntax_priorities.get(s.name, 100))
 
     def validate_block(
         self,
@@ -102,7 +77,6 @@ class BlockRegistry:
         validators = self._validators.get(block_type, [])
         return all(v(metadata, content) for v in validators)
 
-    def _update_priority_order(self) -> None:
-        """Update the priority order list."""
-        # Sort syntax names by priority (lower number = higher priority)
-        self._priority_order = sorted(self._syntaxes.keys(), key=lambda name: self._syntax_priorities.get(name, 100))
+
+# Backward compatibility alias (will be removed in future versions)
+BlockRegistry = Registry
