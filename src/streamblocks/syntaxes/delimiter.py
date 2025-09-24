@@ -15,13 +15,14 @@ if TYPE_CHECKING:
 
 
 class DelimiterPreambleSyntax:
-    """Syntax 1: !! delimiter with inline metadata.
+    """Syntax: !! delimiter with inline metadata.
 
     Format: !!<id>:<type>[:param1:param2...]
     """
 
     def __init__(
         self,
+        name: str,
         metadata_class: type[TMetadata] | None = None,
         content_class: type[TContent] | None = None,
         delimiter: str = "!!",
@@ -29,10 +30,12 @@ class DelimiterPreambleSyntax:
         """Initialize delimiter preamble syntax.
 
         Args:
+            name: Unique name for this syntax instance
             metadata_class: Class for parsing metadata (defaults to BaseMetadata)
             content_class: Class for parsing content (defaults to BaseContent)
             delimiter: Delimiter string to use
         """
+        self._name = name
         self.metadata_class = metadata_class or BaseMetadata
         self.content_class = content_class or BaseContent
         self.delimiter = delimiter
@@ -42,7 +45,7 @@ class DelimiterPreambleSyntax:
     @property
     def name(self) -> str:
         """Get syntax name."""
-        return f"delimiter_preamble_{self.delimiter}"
+        return self._name
 
     def detect_line(self, line: str, candidate: BlockCandidate | None = None) -> DetectionResult:
         """Detect delimiter-based markers."""
@@ -112,7 +115,7 @@ class DelimiterPreambleSyntax:
 
 
 class DelimiterFrontmatterSyntax:
-    """Syntax 3: Delimiter markers with YAML frontmatter.
+    """Syntax: Delimiter markers with YAML frontmatter.
 
     Format:
     !!start
@@ -125,6 +128,7 @@ class DelimiterFrontmatterSyntax:
 
     def __init__(
         self,
+        name: str,
         metadata_class: type[TMetadata] | None = None,
         content_class: type[TContent] | None = None,
         start_delimiter: str = "!!start",
@@ -133,11 +137,13 @@ class DelimiterFrontmatterSyntax:
         """Initialize delimiter frontmatter syntax.
 
         Args:
+            name: Unique name for this syntax instance
             metadata_class: Class for parsing metadata (defaults to BaseMetadata)
             content_class: Class for parsing content (defaults to BaseContent)
             start_delimiter: Starting delimiter
             end_delimiter: Ending delimiter
         """
+        self._name = name
         self.metadata_class = metadata_class or BaseMetadata
         self.content_class = content_class or BaseContent
         self.start_delimiter = start_delimiter
@@ -147,7 +153,7 @@ class DelimiterFrontmatterSyntax:
     @property
     def name(self) -> str:
         """Get syntax name."""
-        return f"delimiter_frontmatter_{self.start_delimiter}"
+        return self._name
 
     def detect_line(self, line: str, candidate: BlockCandidate | None = None) -> DetectionResult:
         """Detect delimiter markers and frontmatter boundaries."""
