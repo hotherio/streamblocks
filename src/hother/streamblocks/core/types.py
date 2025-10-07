@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, TypeVar
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.models import Block
+    from hother.streamblocks.core.models import BlockDefinition
 
 # Core type variables
 TMetadata = TypeVar("TMetadata", bound=BaseModel)
@@ -43,7 +43,7 @@ class StreamEvent[TMetadata: BaseModel, TContent: BaseModel](BaseModel):
 
     type: EventType
     data: str  # Raw text (line or complete block)
-    block: Block[TMetadata, TContent] | None = None  # For BLOCK_EXTRACTED events
+    block: BlockDefinition[TMetadata, TContent] | None = None  # For BLOCK_EXTRACTED events
     content: dict[str, object] | None = None  # For other event-specific data
 
 
