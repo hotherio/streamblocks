@@ -188,10 +188,9 @@ async def main() -> None:
     # Create delimiter preamble syntax for patches
     patch_syntax = DelimiterPreambleSyntax(
         name="patch_delimiter_syntax",
-        block_class=SimplePatch,
     )
 
-    # Create type-specific registry
+    # Create type-specific registry and register block
     registry = Registry(patch_syntax)
 
     # Add validators for patch quality
@@ -210,8 +209,7 @@ async def main() -> None:
             return any("Fixed:" in line or "SECURITY:" in line for line in lines)
         return True
 
-    registry.add_validator("patch", validate_patch_content)
-    registry.add_validator("patch", validate_critical_patches)
+    registry.register("patch", SimplePatch, validators=[validate_patch_content, validate_critical_patches])
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=15)

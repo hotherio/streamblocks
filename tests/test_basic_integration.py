@@ -20,11 +20,11 @@ async def test_basic_delimiter_preamble_syntax() -> None:
     # Create syntax
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
-        block_class=FileOperations,
     )
 
-    # Setup registry with syntax
+    # Setup registry with syntax and register block
     registry = Registry(syntax)
+    registry.register("files_operations", FileOperations)
 
     # Create processor
     processor = StreamBlockProcessor(registry)
@@ -79,10 +79,10 @@ async def test_multiple_blocks() -> None:
     """Test processing multiple blocks in a stream."""
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
-        block_class=FileOperations,
     )
 
     registry = Registry(syntax)
+    registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:
@@ -117,10 +117,10 @@ async def test_unclosed_block_rejection() -> None:
     """Test that unclosed blocks are rejected."""
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
-        block_class=FileOperations,
     )
 
     registry = Registry(syntax)
+    registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:

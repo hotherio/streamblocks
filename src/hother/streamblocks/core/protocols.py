@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from hother.streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
 
@@ -41,11 +41,29 @@ class BlockSyntax(Protocol[TMetadata, TContent]):
         """
         ...
 
-    def parse_block(self, candidate: BlockCandidate) -> ParseResult[TMetadata, TContent]:
-        """Parse a complete block candidate.
+    def extract_block_type(self, candidate: BlockCandidate) -> str | None:
+        """Extract block_type from candidate without full parsing.
+
+        This method performs minimal parsing to extract just the block_type,
+        which is needed to look up the appropriate block_class from the registry.
+
+        Args:
+            candidate: The block candidate to extract block_type from
+
+        Returns:
+            The block_type string, or None if it cannot be determined
+        """
+        ...
+
+    def parse_block(
+        self, candidate: BlockCandidate, block_class: type[Any] | None = None
+    ) -> ParseResult[TMetadata, TContent]:
+        """Parse a complete block candidate using the specified block class.
 
         Args:
             candidate: The complete block candidate to parse
+            block_class: The BlockDefinition class to use for parsing (has __metadata_class__ and __content_class__)
+                        If None, uses default base classes
 
         Returns:
             ParseResult with parsed metadata and content or error

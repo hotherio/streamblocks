@@ -4,7 +4,6 @@ import asyncio
 from typing import Any
 
 import pytest
-import yaml
 
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
@@ -15,31 +14,20 @@ from hother.streamblocks import (
 from hother.streamblocks.blocks import (
     Choice,
     ChoiceContent,
-    ChoiceMetadata,
     Confirm,
     ConfirmContent,
-    ConfirmMetadata,
     Form,
-    FormContent,
-    FormMetadata,
     Input,
     InputContent,
-    InputMetadata,
     MultiChoice,
     MultiChoiceContent,
-    MultiChoiceMetadata,
     Ranking,
     RankingContent,
-    RankingMetadata,
     Scale,
     ScaleContent,
-    ScaleMetadata,
     YesNo,
     YesNoContent,
-    YesNoMetadata,
 )
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
-from hother.streamblocks.core.types import ParseResult
 
 # Block type mapping for all interactive types
 BLOCK_TYPE_MAPPING = {
@@ -54,41 +42,17 @@ BLOCK_TYPE_MAPPING = {
 }
 
 
-class InteractiveSyntax(DelimiterFrontmatterSyntax):
-    """Test syntax that can handle all interactive block types."""
-
-    def __init__(self) -> None:
-        super().__init__(name="interactive", block_class=None)
-
-    def parse_block(self, candidate: Any) -> ParseResult[Any, Any]:
-        # Parse metadata to get block type
-        metadata_dict = {}
-        if candidate.metadata_lines:
-            yaml_content = "\n".join(candidate.metadata_lines)
-            try:
-                metadata_dict = yaml.safe_load(yaml_content) or {}
-            except Exception as e:
-                return ParseResult(success=False, error=f"Invalid YAML: {e}")
-
-        block_type = metadata_dict.get("block_type", "unknown")
-
-        # Set the appropriate classes from block class
-        if block_type in BLOCK_TYPE_MAPPING:
-            block_class = BLOCK_TYPE_MAPPING[block_type]
-            self.metadata_class = getattr(block_class, "__metadata_class__", BaseMetadata)
-            self.content_class = getattr(block_class, "__content_class__", BaseContent)
-        else:
-            return ParseResult(success=False, error=f"Unknown block type: {block_type}")
-
-        # Parse with correct classes
-        return super().parse_block(candidate)
-
-
 @pytest.fixture
 def interactive_registry() -> Registry:
     """Create a registry configured for interactive blocks."""
-    syntax = InteractiveSyntax()
-    return Registry(syntax)
+    syntax = DelimiterFrontmatterSyntax(name="interactive")
+    registry = Registry(syntax)
+
+    # Register all interactive block types
+    for block_type, block_class in BLOCK_TYPE_MAPPING.items():
+        registry.register(block_type, block_class)
+
+    return registry
 
 
 @pytest.mark.asyncio

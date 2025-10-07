@@ -30,7 +30,6 @@ class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
     def __init__(
         self,
         name: str,
-        block_class: type[Any] | None = None,
         fence: str = "```",
         info_string: str | None = None,
     ) -> None:
@@ -38,23 +37,10 @@ class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
         Args:
             name: Unique name for this syntax instance
-            block_class: BlockDefinition class that defines __metadata_class__ and __content_class__
             fence: Fence string (e.g., "```")
             info_string: Optional info string after fence
         """
         self._name = name
-
-        if block_class is None:
-            # Default to base classes
-            self.metadata_class = cast(type[TMetadata], BaseMetadata)
-            self.content_class = cast(type[TContent], BaseContent)
-        else:
-            # Extract metadata and content classes from block class
-            self.metadata_class = cast(
-                type[TMetadata], getattr(block_class, "__metadata_class__", BaseMetadata)
-            )
-            self.content_class = cast(type[TContent], getattr(block_class, "__content_class__", BaseContent))
-
         self.fence = fence
         self.info_string = info_string
         self._fence_pattern = self._build_fence_pattern()
@@ -108,8 +94,38 @@ class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
         """Check if we're still in metadata section."""
         return candidate.current_section in ["header", "metadata"]
 
-    def parse_block(self, candidate: BlockCandidate) -> ParseResult[TMetadata, TContent]:
-        """Parse the complete block."""
+    def extract_block_type(self, candidate: BlockCandidate) -> str | None:
+        """Extract block_type from YAML frontmatter."""
+        if not candidate.metadata_lines:
+            # Try to infer from info string
+            return self.info_string
+
+        # Parse YAML to extract block_type
+        yaml_content = "\n".join(candidate.metadata_lines)
+        try:
+            metadata_dict = yaml.safe_load(yaml_content) or {}
+            if "block_type" in metadata_dict:
+                return str(metadata_dict["block_type"])
+            # Fall back to info string
+            return self.info_string  # noqa: TRY300
+        except Exception:
+            return self.info_string
+
+    def parse_block(
+        self, candidate: BlockCandidate, block_class: type[Any] | None = None
+    ) -> ParseResult[TMetadata, TContent]:
+        """Parse the complete block using the specified block class."""
+
+        # Extract metadata and content classes from block_class
+        if block_class is None:
+            # Default to base classes
+            metadata_class = cast("type[TMetadata]", BaseMetadata)
+            content_class = cast("type[TContent]", BaseContent)
+        else:
+            # Extract from block class
+            metadata_class = cast("type[TMetadata]", getattr(block_class, "__metadata_class__", BaseMetadata))
+            content_class = cast("type[TContent]", getattr(block_class, "__content_class__", BaseContent))
+
         # Parse metadata from accumulated metadata lines
         metadata_dict: dict[str, Any] = {}
         if candidate.metadata_lines:
@@ -121,7 +137,7 @@ class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
         # Ensure id and block_type have defaults
         # Only fill in defaults if using BaseMetadata (no custom class provided)
-        if self.metadata_class is BaseMetadata:
+        if metadata_class is BaseMetadata:
             if "id" not in metadata_dict:
                 # Generate an ID based on hash of content
                 metadata_dict["id"] = f"block_{candidate.compute_hash()}"
@@ -135,7 +151,7 @@ class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
         try:
             # Convert all metadata values to proper types for type safety
             typed_metadata = {k: str(v) if not isinstance(v, str) else v for k, v in metadata_dict.items()}
-            metadata = self.metadata_class(**typed_metadata)
+            metadata = metadata_class(**typed_metadata)
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}")
 
@@ -144,7 +160,7 @@ class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
         try:
             # All content classes must have parse method
-            content = cast("TContent", self.content_class.parse(content_text))  # type: ignore[attr-defined]
+            content = cast("TContent", content_class.parse(content_text))  # type: ignore[attr-defined]
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid content: {e}")
 

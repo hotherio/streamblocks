@@ -23,7 +23,7 @@ async def test_minimal_api_no_models() -> None:
     # Create syntax with no parameters - uses BaseMetadata and BaseContent
     syntax = DelimiterPreambleSyntax(name="test_base_syntax")
 
-    # Create type-specific registry
+    # Create type-specific registry (no blocks registered, will use base classes)
     registry = Registry(syntax)
 
     processor = StreamBlockProcessor(registry)
@@ -64,7 +64,7 @@ async def test_auto_populated_fields_delimiter_frontmatter() -> None:
     # Use base classes (no custom models)
     syntax = DelimiterFrontmatterSyntax(name="test_frontmatter_syntax")
 
-    # Create type-specific registry
+    # Create type-specific registry (no blocks registered, will use base classes)
     registry = Registry(syntax)
 
     processor = StreamBlockProcessor(registry)
@@ -102,7 +102,7 @@ async def test_auto_populated_fields_markdown() -> None:
     # Use base classes with info string
     syntax = MarkdownFrontmatterSyntax(name="test_python_syntax", info_string="python")
 
-    # Create type-specific registry
+    # Create type-specific registry (no blocks registered, will use base classes)
     registry = Registry(syntax)
 
     processor = StreamBlockProcessor(registry)
@@ -153,8 +153,9 @@ async def test_custom_metadata_inherits_base() -> None:
         tags: list[str] = Field(default_factory=list)
         raw_content: str
 
-    syntax = DelimiterPreambleSyntax(name="test_custom_syntax", block_class=CustomBlock)
+    syntax = DelimiterPreambleSyntax(name="test_custom_syntax")
     registry = Registry(syntax)
+    registry.register("custom", CustomBlock)
 
     processor = StreamBlockProcessor(registry)
 
@@ -223,8 +224,9 @@ async def test_custom_content_inherits_base() -> None:
         raw_content: str
         items: list[TodoItem] = Field(default_factory=list)
 
-    syntax = DelimiterPreambleSyntax(name="test_todo_syntax", block_class=TodoBlock)
+    syntax = DelimiterPreambleSyntax(name="test_todo_syntax")
     registry = Registry(syntax)
+    registry.register("todos", TodoBlock)
 
     processor = StreamBlockProcessor(registry)
 

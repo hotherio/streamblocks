@@ -31,148 +31,16 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.blocks import (
     FileContent,
-    FileContentContent,
-    FileContentMetadata,
     FileOperations,
-    FileOperationsContent,
-    FileOperationsMetadata,
-    MemoryContent,
-    MemoryMetadata,
+    Memory,
     Message,
-    MessageContent,
-    MessageMetadata,
     Patch,
-    PatchContent,
-    PatchMetadata,
-    ToolCallContent,
-    ToolCallMetadata,
-    VisualizationContent,
-    VisualizationMetadata,
+    ToolCall,
+    Visualization,
 )
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockCandidate
-from hother.streamblocks.core.types import ParseResult
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
-
-
-class UnifiedMetadata(BaseMetadata):
-    """Unified metadata that can represent any block type."""
-
-    # Common fields
-    description: str | None = None
-
-    # FileOperations fields
-    type: str | None = None  # Alias for compatibility
-
-    # Patch fields
-    file: str | None = None
-
-    # ToolCall fields
-    tool_name: str | None = None
-
-    # Memory fields
-    memory_type: str | None = None
-    key: str | None = None
-    namespace: str = "default"
-    ttl_seconds: int | None = None
-
-    # Visualization fields
-    viz_type: str | None = None
-    title: str | None = None
-    format: str = "markdown"
-    width: int | None = None
-    height: int | None = None
-
-    # Message fields
-    message_type: str | None = None
-    priority: str = "normal"
-
-
-class UnifiedContent(BaseContent):
-    """Unified content that routes to appropriate content class."""
-
-    @classmethod
-    def parse(cls, raw_text: str) -> Any:
-        """This should not be called directly."""
-        # Return a placeholder - actual parsing happens in the syntax
-        return cls(raw_content=raw_text)
-
-
-class UnifiedSyntax(DelimiterFrontmatterSyntax):
-    """Syntax that dynamically routes to appropriate metadata/content classes."""
-
-    def __init__(self, name: str = "unified_syntax") -> None:
-        # Initialize with no specific block class - we route dynamically in parse_block
-        super().__init__(
-            name=name,
-            block_class=None,
-            start_delimiter="!!start",
-            end_delimiter="!!end",
-        )
-        # Set base classes for initial parsing
-        self.metadata_class = UnifiedMetadata
-        self.content_class = UnifiedContent
-
-    def parse_block(self, candidate: BlockCandidate) -> ParseResult[Any, Any]:
-        """Parse block and route to appropriate classes based on block_type."""
-        # First, parse to get the block_type
-        result = super().parse_block(candidate)
-        if not result.success:
-            return result
-
-        # Get the block_type from metadata
-        unified_metadata = result.metadata
-        block_type = unified_metadata.block_type
-
-        # Route to appropriate classes based on block_type
-        try:
-            content_text = "\n".join(candidate.content_lines)
-
-            metadata_dict = unified_metadata.model_dump()
-
-            if block_type == "files_operations":
-                metadata_dict["type"] = "files_operations"  # Required by FileOperationsMetadata
-                metadata = FileOperationsMetadata(**metadata_dict)
-                # Extract only the file operation lines (before any --- separator)
-                content_lines = content_text.strip().split("\n")
-                file_ops_lines = []
-                for line in content_lines:
-                    if line.strip() == "---":
-                        break  # Stop at separator
-                    if line.strip() and ":" in line:
-                        file_ops_lines.append(line)
-                clean_content = "\n".join(file_ops_lines)
-                content = FileOperationsContent.parse(clean_content)
-            elif block_type == "patch":
-                metadata_dict["type"] = "patch"  # Required by PatchMetadata
-                metadata = PatchMetadata(**metadata_dict)
-                content = PatchContent.parse(content_text)
-            elif block_type == "tool_call":
-                metadata = ToolCallMetadata(**unified_metadata.model_dump())
-                content = ToolCallContent.parse(content_text)
-            elif block_type == "memory":
-                metadata = MemoryMetadata(**unified_metadata.model_dump())
-                content = MemoryContent.parse(content_text)
-            elif block_type == "visualization":
-                metadata = VisualizationMetadata(**unified_metadata.model_dump())
-                content = VisualizationContent.parse(content_text)
-            elif block_type == "file_content":
-                metadata = FileContentMetadata(**unified_metadata.model_dump())
-                content = FileContentContent.parse(content_text)
-            elif block_type == "message":
-                metadata = MessageMetadata(**unified_metadata.model_dump())
-                content = MessageContent.parse(content_text)
-            else:
-                return ParseResult(success=False, error=f"Unknown block_type: {block_type}")
-
-            return ParseResult(success=True, metadata=metadata, content=content)
-        except Exception as e:
-            # Provide more detailed error information
-            error_msg = f"Failed to parse {block_type} block: {e!s}"
-            if hasattr(e, "__class__"):
-                error_msg = f"{e.__class__.__name__}: {e!s}"
-            return ParseResult(success=False, error=error_msg)
 
 
 def create_system_prompt() -> str:
@@ -369,15 +237,29 @@ IMPORTANT: Communicate as much as possible with the user.
 
 def setup_processor() -> StreamBlockProcessor:
     """Set up a single processor with unified syntax."""
-    syntax = UnifiedSyntax()
+    syntax = DelimiterFrontmatterSyntax(
+        name="unified_syntax",
+        start_delimiter="!!start",
+        end_delimiter="!!end",
+    )
+
+    # Create registry and register all block types
     registry = Registry(syntax)
+    registry.register("files_operations", FileOperations)
+    registry.register("patch", Patch)
+    registry.register("tool_call", ToolCall)
+    registry.register("memory", Memory)
+    registry.register("visualization", Visualization)
+    registry.register("file_content", FileContent)
+    registry.register("message", Message)
+
     return StreamBlockProcessor(registry, lines_buffer=5)
 
 
 async def process_file_operations(block) -> None:
     """Process a file operations block."""
-    metadata: FileOperationsMetadata = block.metadata
-    content: FileOperationsContent = block.content
+    metadata = block.metadata
+    content = block.data
 
     print(f"\n📁 File Operations: {metadata.id}")
     if metadata.description:
@@ -408,8 +290,8 @@ async def process_file_operations(block) -> None:
 
 async def process_patch(block) -> None:
     """Process a patch block."""
-    metadata: PatchMetadata = block.metadata
-    content: PatchContent = block.content
+    metadata = block.metadata
+    content = block.data
 
     print(f"\n🔧 Patch: {metadata.id}")
     print(f"📄 File: {metadata.file}")
@@ -428,8 +310,8 @@ async def process_patch(block) -> None:
 
 async def process_tool_call(block) -> None:
     """Process a tool call block."""
-    metadata: ToolCallMetadata = block.metadata
-    content: ToolCallContent = block.content
+    metadata = block.metadata
+    content = block.data
 
     print(f"\n🛠️  Tool Call: {metadata.id}")
     print(f"🔧 Tool: {metadata.tool_name}")
@@ -443,8 +325,8 @@ async def process_tool_call(block) -> None:
 
 async def process_memory(block) -> None:
     """Process a memory block."""
-    metadata: MemoryMetadata = block.metadata
-    content: MemoryContent = block.content
+    metadata = block.metadata
+    content = block.data
 
     print(f"\n🧠 Memory: {metadata.id}")
     print(f"🔑 Type: {metadata.memory_type}")
@@ -461,8 +343,8 @@ async def process_memory(block) -> None:
 
 async def process_visualization(block) -> None:
     """Process a visualization block."""
-    metadata: VisualizationMetadata = block.metadata
-    content: VisualizationContent = block.content
+    metadata = block.metadata
+    content = block.data
 
     print(f"\n📊 Visualization: {metadata.id}")
     print(f"📈 Type: {metadata.viz_type}")
@@ -483,8 +365,8 @@ async def process_visualization(block) -> None:
 
 async def process_file_content(block) -> None:
     """Process a file content block."""
-    metadata: FileContentMetadata = block.metadata
-    content: FileContentContent = block.content
+    metadata = block.metadata
+    content = block.data
 
     print(f"\n📄 File Content: {metadata.id}")
     print(f"📁 File: {metadata.file}")
@@ -502,8 +384,8 @@ async def process_file_content(block) -> None:
 
 async def process_message(block) -> None:
     """Process a message block."""
-    metadata: MessageMetadata = block.metadata
-    content: MessageContent = block.content
+    metadata = block.metadata
+    content = block.data
 
     # Choose emoji based on message type
     emoji_map = {"info": "ℹ️", "warning": "⚠️", "error": "❌", "success": "✅", "status": "📊", "explanation": "💡"}

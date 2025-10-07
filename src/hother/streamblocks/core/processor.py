@@ -227,8 +227,16 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         Returns:
             BLOCK_EXTRACTED event or None if extraction failed
         """
-        # Delegate parsing to the syntax
-        parse_result = candidate.syntax.parse_block(candidate)
+        # Step 1: Extract block_type from candidate
+        block_type = candidate.syntax.extract_block_type(candidate)
+
+        # Step 2: Look up block_class from registry
+        block_class = None
+        if block_type:
+            block_class = self.registry.get_block_class(block_type)
+
+        # Step 3: Parse with the appropriate block_class
+        parse_result = candidate.syntax.parse_block(candidate, block_class)
 
         if not parse_result.success:
             return None
@@ -244,8 +252,8 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
             return None
 
         # Registry validation (user-defined validators)
-        block_type = getattr(metadata, "block_type", None) or getattr(metadata, "type", None)
-        if block_type and not self.registry.validate_block(block_type, metadata, content):
+        final_block_type = getattr(metadata, "block_type", None) or getattr(metadata, "type", None)
+        if final_block_type and not self.registry.validate_block(final_block_type, metadata, content):
             return None
 
         # Create block envelope with separate metadata and data

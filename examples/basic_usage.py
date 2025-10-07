@@ -47,10 +47,9 @@ async def main() -> None:
     # Create delimiter preamble syntax
     syntax = DelimiterPreambleSyntax(
         name="files_operations_syntax",
-        block_class=FileOperations,
     )
 
-    # Create type-specific registry
+    # Create type-specific registry and register block
     registry = Registry(syntax)
 
     # Add a custom validator
@@ -58,7 +57,7 @@ async def main() -> None:
         """Don't allow deleting files from root directory."""
         return all(not (op.action == "delete" and op.path.startswith("/")) for op in content.operations)
 
-    registry.add_validator("files_operations", no_root_delete)
+    registry.register("files_operations", FileOperations, validators=[no_root_delete])
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=5)

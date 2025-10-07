@@ -45,7 +45,6 @@ async def basic_example() -> None:
     # Create syntax for file operations
     file_ops_syntax = DelimiterFrontmatterSyntax(
         name="file_operations_syntax",
-        block_class=FileOperations,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
@@ -53,14 +52,16 @@ async def basic_example() -> None:
     # Create syntax for file content
     file_content_syntax = DelimiterFrontmatterSyntax(
         name="file_content_syntax",
-        block_class=FileContent,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
-    # Create separate registries
+    # Create separate registries and register blocks
     file_ops_registry = Registry(file_ops_syntax)
+    file_ops_registry.register("files_operations", FileOperations)
+
     file_content_registry = Registry(file_content_syntax)
+    file_content_registry.register("file_content", FileContent)
 
     # Create a block-aware agent with custom system prompt
     system_prompt = """
@@ -221,11 +222,11 @@ Mix explanatory text with structured blocks.
     # Create StreamBlocks components
     syntax = DelimiterFrontmatterSyntax(
         name="files_operations_syntax",
-        block_class=FileOperations,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
     registry = Registry(syntax)
+    registry.register("files_operations", FileOperations)
     processor = AgentStreamProcessor(registry)
 
     prompt = "Create a README.md and setup.py for a Python package called 'example'."

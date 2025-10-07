@@ -86,13 +86,13 @@ async def main() -> None:
     # or a custom syntax that handles multiple patterns internally.
     syntax = MarkdownFrontmatterSyntax(
         name="patch_syntax",
-        block_class=Patch,
         fence="```",
         info_string="patch",  # Will match ```patch blocks
     )
 
-    # Create type-specific registry
+    # Create type-specific registry and register block
     registry = Registry(syntax)
+    registry.register("patch", Patch)
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)

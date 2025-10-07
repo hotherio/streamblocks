@@ -162,13 +162,13 @@ async def main() -> None:
     # Using standard !!start/!!end delimiters
     task_syntax = DelimiterFrontmatterSyntax(
         name="task_syntax",
-        block_class=Task,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
-    # Create type-specific registry
+    # Create type-specific registry and register block
     registry = Registry(task_syntax)
+    registry.register("task", Task)
 
     # Add validators
     def validate_task_priority(metadata: TaskMetadata, content: TaskContent) -> bool:

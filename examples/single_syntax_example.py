@@ -69,10 +69,9 @@ async def main() -> None:
     # Create syntax for file operations
     file_ops_syntax = DelimiterPreambleSyntax(
         name="files_operations_syntax",
-        block_class=FileOperations,
     )
 
-    # Create type-specific registry
+    # Create type-specific registry and register block
     registry = Registry(file_ops_syntax)
 
     # Add a validator for critical operations
@@ -85,7 +84,7 @@ async def main() -> None:
                     return False
         return True
 
-    registry.add_validator("files_operations", validate_critical_ops)
+    registry.register("files_operations", FileOperations, validators=[validate_critical_ops])
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)
