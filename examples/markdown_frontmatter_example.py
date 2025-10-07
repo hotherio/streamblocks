@@ -4,9 +4,9 @@ import asyncio
 from collections.abc import AsyncIterator
 
 from hother.streamblocks import (
-    BlockRegistry,
     EventType,
     MarkdownFrontmatterSyntax,
+    Registry,
     StreamBlockProcessor,
 )
 from hother.streamblocks.content import PatchContent, PatchMetadata
@@ -15,7 +15,7 @@ from hother.streamblocks.content import PatchContent, PatchMetadata
 async def example_stream() -> AsyncIterator[str]:
     """Example stream with markdown frontmatter blocks."""
     text = """
-Here's a document with some patches using markdown-style blocks.
+Here's a document with some patches using markdown-style blocks with YAML frontmatter.
 
 ```patch
 ---
@@ -33,7 +33,7 @@ start_line: 45
 
 Now let's add another patch for the config file:
 
-```yaml
+```patch
 ---
 id: config-update
 block_type: patch
@@ -50,7 +50,7 @@ start_line: 10
 
 And here's a final patch with more metadata:
 
-```diff
+```patch
 ---
 id: feature-add
 block_type: patch
@@ -80,39 +80,20 @@ That's all for the patches!
 
 async def main() -> None:
     """Main example function."""
-    # Setup registry
-    registry = BlockRegistry()
-
-    # Register markdown syntaxes with different info strings
-    # 1. Generic patch syntax
-    patch_syntax = MarkdownFrontmatterSyntax(
+    # Create markdown frontmatter syntax for patch blocks
+    # Note: In the new API, each Registry holds exactly one syntax.
+    # To handle multiple info strings (patch/yaml/diff), you would need separate processors
+    # or a custom syntax that handles multiple patterns internally.
+    syntax = MarkdownFrontmatterSyntax(
         name="patch_syntax",
         metadata_class=PatchMetadata,
         content_class=PatchContent,
         fence="```",
-        info_string="patch",
+        info_string="patch",  # Will match ```patch blocks
     )
-    registry.register_syntax(patch_syntax, block_types=["patch"], priority=2)
 
-    # 2. YAML-specific syntax
-    yaml_syntax = MarkdownFrontmatterSyntax(
-        name="yaml_syntax",
-        metadata_class=PatchMetadata,
-        content_class=PatchContent,
-        fence="```",
-        info_string="yaml",
-    )
-    registry.register_syntax(yaml_syntax, block_types=["patch"], priority=1)
-
-    # 3. Diff-specific syntax
-    diff_syntax = MarkdownFrontmatterSyntax(
-        name="diff_syntax",
-        metadata_class=PatchMetadata,
-        content_class=PatchContent,
-        fence="```",
-        info_string="diff",
-    )
-    registry.register_syntax(diff_syntax, block_types=["patch"], priority=1)
+    # Create type-specific registry
+    registry = Registry(syntax)
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)

@@ -7,9 +7,9 @@ import pytest
 import yaml
 
 from hother.streamblocks import (
-    BlockRegistry,
     DelimiterFrontmatterSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
 from hother.streamblocks.content import (
@@ -75,14 +75,14 @@ class InteractiveSyntax(DelimiterFrontmatterSyntax):
 
 
 @pytest.fixture
-def interactive_registry() -> BlockRegistry:
+def interactive_registry() -> Registry:
     """Create a registry configured for interactive blocks."""
     syntax = InteractiveSyntax()
-    return BlockRegistry(syntax)
+    return Registry(syntax)
 
 
 @pytest.mark.asyncio
-async def test_yesno_block(interactive_registry: BlockRegistry) -> None:
+async def test_yesno_block(interactive_registry: Registry) -> None:
     """Test yes/no interactive block."""
     processor = StreamBlockProcessor(interactive_registry)
 
@@ -127,7 +127,7 @@ prompt: "Do you accept the terms?"
 
 
 @pytest.mark.asyncio
-async def test_choice_block(interactive_registry: BlockRegistry) -> None:
+async def test_choice_block(interactive_registry: Registry) -> None:
     """Test single choice block."""
     processor = StreamBlockProcessor(interactive_registry)
 
@@ -172,7 +172,7 @@ options:
 
 
 @pytest.mark.asyncio
-async def test_multichoice_block(interactive_registry: BlockRegistry) -> None:
+async def test_multichoice_block(interactive_registry: Registry) -> None:
     """Test multiple choice block."""
     processor = StreamBlockProcessor(interactive_registry)
 
@@ -221,7 +221,7 @@ options:
 
 
 @pytest.mark.asyncio
-async def test_scale_block(interactive_registry: BlockRegistry) -> None:
+async def test_scale_block(interactive_registry: Registry) -> None:
     """Test scale rating block."""
     processor = StreamBlockProcessor(interactive_registry)
 
@@ -269,7 +269,7 @@ labels:
 
 
 @pytest.mark.asyncio
-async def test_form_block(interactive_registry: BlockRegistry) -> None:
+async def test_form_block(interactive_registry: Registry) -> None:
     """Test form block with multiple fields."""
     processor = StreamBlockProcessor(interactive_registry)
 

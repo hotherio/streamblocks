@@ -76,7 +76,3 @@ class Registry[TSyntax: "BlockSyntax[Any, Any]"]:
         """
         validators = self._validators.get(block_type, [])
         return all(v(metadata, content) for v in validators)
-
-
-# Backward compatibility alias (will be removed in future versions)
-BlockRegistry = Registry

@@ -6,9 +6,9 @@ from typing import Any
 import pytest
 
 from hother.streamblocks import (
-    BlockRegistry,
     DelimiterPreambleSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
 from hother.streamblocks.content import FileOperationsContent, FileOperationsMetadata
@@ -25,7 +25,7 @@ async def test_basic_delimiter_preamble_syntax() -> None:
     )
 
     # Setup registry with syntax
-    registry = BlockRegistry(syntax)
+    registry = Registry(syntax)
 
     # Create processor
     processor = StreamBlockProcessor(registry)
@@ -84,7 +84,7 @@ async def test_multiple_blocks() -> None:
         content_class=FileOperationsContent,
     )
 
-    registry = BlockRegistry(syntax)
+    registry = Registry(syntax)
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:
@@ -123,7 +123,7 @@ async def test_unclosed_block_rejection() -> None:
         content_class=FileOperationsContent,
     )
 
-    registry = BlockRegistry(syntax)
+    registry = Registry(syntax)
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:
