@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
-from hother.streamblocks.core.models import Block, BlockCandidate
+from hother.streamblocks.core.models import Block, BlockCandidate, BlockDefinition
 from hother.streamblocks.core.types import BlockState, EventType, StreamEvent
 
 if TYPE_CHECKING:
@@ -139,7 +139,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
                 yield StreamEvent(
                     type=EventType.BLOCK_DELTA,
                     data=line,
-                    metadata={
+                    content={
                         "syntax": candidate.syntax.name,
                         "start_line": candidate.start_line,
                         "current_line": self._line_counter,
@@ -173,7 +173,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
                 yield StreamEvent(
                     type=EventType.BLOCK_DELTA,
                     data=line,
-                    metadata={
+                    content={
                         "syntax": candidate.syntax.name,
                         "start_line": candidate.start_line,
                         "current_line": self._line_counter,
@@ -212,7 +212,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
                 yield StreamEvent(
                     type=EventType.RAW_TEXT,
                     data=line,
-                    metadata={"line_number": self._line_counter},
+                    content={"line_number": self._line_counter},
                 )
 
     async def _try_extract_block(
@@ -248,11 +248,13 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         if block_type and not self.registry.validate_block(block_type, metadata, content):
             return None
 
-        # Create block
+        # Create block definition from metadata + content
+        definition = BlockDefinition.from_metadata_and_content(metadata, content)
+
+        # Create block envelope
         block = Block(
+            definition=definition,
             syntax_name=candidate.syntax.name,
-            metadata=metadata,
-            content=content,
             raw_text=candidate.raw_text,
             line_start=candidate.start_line,
             line_end=self._line_counter,
@@ -262,7 +264,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         return StreamEvent(
             type=EventType.BLOCK_EXTRACTED,
             data=candidate.raw_text,
-            metadata={"extracted_block": block},
+            content={"extracted_block": block},
         )
 
     def _create_rejection_event(
@@ -282,7 +284,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         return StreamEvent(
             type=EventType.BLOCK_REJECTED,
             data=candidate.raw_text,
-            metadata={
+            content={
                 "reason": reason,
                 "syntax": candidate.syntax.name,
                 "lines": (candidate.start_line, self._line_counter),

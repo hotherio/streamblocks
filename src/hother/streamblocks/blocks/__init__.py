@@ -1,13 +1,15 @@
-"""Content models for StreamBlocks."""
+"""Block definitions and content models for StreamBlocks."""
 
-from hother.streamblocks.content.base import BaseContent
-from hother.streamblocks.content.files import (
+from hother.streamblocks.blocks.base import BaseContent
+from hother.streamblocks.blocks.files import (
     FileContentContent,
+    FileContentDefinition,
     FileContentMetadata,
     FileOperationsContent,
+    FileOperationsDefinition,
     FileOperationsMetadata,
 )
-from hother.streamblocks.content.interactive import (
+from hother.streamblocks.blocks.interactive import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -28,11 +30,11 @@ from hother.streamblocks.content.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks.content.memory import MemoryContent, MemoryMetadata
-from hother.streamblocks.content.message import MessageContent, MessageMetadata
-from hother.streamblocks.content.patch import PatchContent, PatchMetadata
-from hother.streamblocks.content.toolcall import ToolCallContent, ToolCallMetadata
-from hother.streamblocks.content.visualization import VisualizationContent, VisualizationMetadata
+from hother.streamblocks.blocks.memory import MemoryContent, MemoryMetadata
+from hother.streamblocks.blocks.message import MessageContent, MessageMetadata
+from hother.streamblocks.blocks.patch import PatchContent, PatchMetadata
+from hother.streamblocks.blocks.toolcall import ToolCallContent, ToolCallMetadata
+from hother.streamblocks.blocks.visualization import VisualizationContent, VisualizationMetadata
 
 __all__ = [
     # Base
@@ -42,9 +44,11 @@ __all__ = [
     "ConfirmContent",
     "ConfirmMetadata",
     "FileContentContent",
+    "FileContentDefinition",
     "FileContentMetadata",
     # File operations
     "FileOperationsContent",
+    "FileOperationsDefinition",
     "FileOperationsMetadata",
     "FormContent",
     "FormField",

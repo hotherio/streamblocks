@@ -9,7 +9,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.content import PatchContent, PatchMetadata
+from hother.streamblocks.blocks import PatchContent, PatchMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -113,34 +113,34 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_DELTA:
             # Track partial block updates
-            syntax = event.metadata["syntax"]
-            section = event.metadata.get("section", "unknown")
+            syntax = event.content["syntax"]
+            section = event.content.get("section", "unknown")
             if current_partial != syntax:
                 print(f"\n[DELTA] Started {syntax} block (section: {section})")
                 current_partial = syntax
             # Only show section changes
-            if "metadata_boundary" in str(event.metadata):
+            if "metadata_boundary" in str(event.content):
                 print(f"[DELTA] Moved to {section} section")
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.metadata["extracted_block"]
+            block = event.content["extracted_block"]
             blocks_extracted.append(block)
             current_partial = None
 
-            print(f"\n[BLOCK] Extracted: {block.metadata.id} (syntax: {block.syntax_name})")
-            print(f"        File: {block.metadata.file}")
-            print(f"        Start line: {block.metadata.start_line}")
+            print(f"\n[BLOCK] Extracted: {block.definition.id} (syntax: {block.syntax_name})")
+            print(f"        File: {block.definition.file}")
+            print(f"        Start line: {block.definition.start_line}")
 
             # Show extra metadata if present
-            if hasattr(block.metadata, "author"):
-                print(f"        Author: {block.metadata.author}")
-            if hasattr(block.metadata, "priority"):
-                print(f"        Priority: {block.metadata.priority}")
+            if hasattr(block.definition, "author"):
+                print(f"        Author: {block.definition.author}")
+            if hasattr(block.definition, "priority"):
+                print(f"        Priority: {block.definition.priority}")
 
             # Show patch preview
             print("        Patch preview:")
-            lines = block.content.diff.strip().split("\\n")
+            lines = block.definition.diff.strip().split("\\n")
             for line in lines[:3]:  # Show first 3 lines
                 print(f"          {line}")
             if len(lines) > 3:
@@ -148,8 +148,8 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            reason = event.metadata["reason"]
-            syntax = event.metadata["syntax"]
+            reason = event.content["reason"]
+            syntax = event.content["syntax"]
             print(f"\n[REJECT] {syntax} block rejected: {reason}")
 
     print("-" * 70)
@@ -159,7 +159,7 @@ async def main() -> None:
     print("\nBlock summary:")
     for i, block in enumerate(blocks_extracted, 1):
         print(
-            f"  {i}. {block.metadata.id} - {block.metadata.file} "
+            f"  {i}. {block.definition.id} - {block.definition.file} "
             f"({block.syntax_name.replace('markdown_frontmatter_', '')} syntax)"
         )
 

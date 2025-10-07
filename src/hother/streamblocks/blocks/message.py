@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
 from hother.streamblocks.core.models import BaseContent, BaseMetadata
 
@@ -19,7 +19,7 @@ class MessageMetadata(BaseMetadata):
     # Priority level for the message
     priority: Literal["low", "normal", "high"] = "normal"
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         # Set default block_type if not provided
         if "block_type" not in data:
             data["block_type"] = "message"

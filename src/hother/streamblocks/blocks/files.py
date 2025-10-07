@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
 
 
 class FileOperation(BaseModel):
@@ -64,7 +64,7 @@ class FileOperationsMetadata(BaseMetadata):
     type: Literal["files_operations"] = "files_operations"  # Alias for compatibility
     description: str | None = None
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         # Set default block_type if not provided
         if "block_type" not in data:
             data["block_type"] = "files_operations"
@@ -77,7 +77,7 @@ class FileContentMetadata(BaseMetadata):
     file: str  # Path to the file
     description: str | None = None
 
-    def __init__(self, **data: Any) -> None:
+    def __init__(self, **data: object) -> None:
         # Set default block_type if not provided
         if "block_type" not in data:
             data["block_type"] = "file_content"
@@ -93,3 +93,33 @@ class FileContentContent(BaseContent):
     def parse(cls, raw_text: str) -> FileContentContent:
         """Parse file content - just stores the raw text."""
         return cls(raw_content=raw_text)
+
+
+# BlockDefinition classes (new aggregated API)
+
+
+class FileOperationsDefinition(BlockDefinition):
+    """File operations block definition (aggregated metadata + content)."""
+
+    # From metadata:
+    id: str
+    block_type: Literal["files_operations"] = "files_operations"
+    type: Literal["files_operations"] = "files_operations"  # Alias for compatibility
+    description: str | None = None
+
+    # From content:
+    raw_content: str
+    operations: list[FileOperation] = Field(default_factory=list)
+
+
+class FileContentDefinition(BlockDefinition):
+    """File content block definition (aggregated metadata + content)."""
+
+    # From metadata:
+    id: str
+    block_type: Literal["file_content"] = "file_content"
+    file: str
+    description: str | None = None
+
+    # From content:
+    raw_content: str

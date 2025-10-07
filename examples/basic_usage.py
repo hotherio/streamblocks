@@ -9,7 +9,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.content import FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.blocks import FileOperationsContent, FileOperationsMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -78,20 +78,20 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_DELTA:
             # Partial block update
-            print(f"[DELTA] {event.metadata['syntax']} - {event.data.strip()}")
+            print(f"[DELTA] {event.content['syntax']} - {event.data.strip()}")
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.metadata["extracted_block"]
+            block = event.content["extracted_block"]
             blocks_extracted.append(block)
-            print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
+            print(f"[BLOCK] Extracted: {block.definition.id} ({block.syntax_name})")
             print("        Operations:")
-            for op in block.content.operations:
+            for op in block.definition.operations:
                 print(f"          - {op.action}: {op.path}")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            print(f"[REJECT] {event.metadata['reason']} - {event.metadata['syntax']}")
+            print(f"[REJECT] {event.content['reason']} - {event.content['syntax']}")
 
     print("-" * 60)
     print(f"\nTotal blocks extracted: {len(blocks_extracted)}")
@@ -99,9 +99,9 @@ async def main() -> None:
     # Show metadata from blocks
     print("\nBlock metadata:")
     for block in blocks_extracted:
-        print(f"  - {block.metadata.id}: {block.metadata.block_type}")
-        if hasattr(block.metadata, "param_0"):
-            print(f"    Extra param: {block.metadata.param_0}")
+        print(f"  - {block.definition.id}: {block.definition.block_type}")
+        if hasattr(block.definition, "param_0"):
+            print(f"    Extra param: {block.definition.param_0}")
 
 
 if __name__ == "__main__":

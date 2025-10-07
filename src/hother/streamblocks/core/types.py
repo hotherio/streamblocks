@@ -11,6 +11,7 @@ from pydantic import BaseModel
 # Core type variables
 TMetadata = TypeVar("TMetadata", bound=BaseModel)
 TContent = TypeVar("TContent", bound=BaseModel)
+TBlockDef = TypeVar("TBlockDef", bound=BaseModel)
 
 
 class EventType(StrEnum):
@@ -38,8 +39,8 @@ class StreamEvent[TMetadata: BaseModel, TContent: BaseModel](BaseModel):
     """Base event emitted during stream processing."""
 
     type: EventType
-    data: str  # Raw bytes/text
-    metadata: dict[str, object] | None = None
+    data: str  # Raw text (line or complete block)
+    content: dict[str, object] | None = None  # Structured event data
 
 
 @dataclass

@@ -29,7 +29,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.content import (
+from hother.streamblocks.blocks import (
     FileContentContent,
     FileContentMetadata,
     FileOperationsContent,
@@ -590,8 +590,8 @@ async def main() -> None:
 
         async for event in processor.process_stream(gemini_stream):
             if event.type == EventType.BLOCK_EXTRACTED:
-                block = event.metadata["extracted_block"]
-                block_type = block.metadata.block_type
+                block = event.content["extracted_block"]
+                block_type = block.definition.block_type
                 blocks_by_type[block_type] += 1
 
                 print(f"\n{'=' * 60}")
@@ -620,11 +620,11 @@ async def main() -> None:
                     print(f"\n💬 {text}")
 
             elif event.type == EventType.BLOCK_REJECTED:
-                reason = event.metadata.get("reason", "Unknown")
+                reason = event.content.get("reason", "Unknown")
                 print(f"\n⚠️  Block rejected: {reason}")
                 # Show more details about the rejection
                 if "raw_text" in event.metadata:
-                    preview = event.metadata["raw_text"][:200]
+                    preview = event.content["raw_text"][:200]
                     print(f"   Preview: {preview}...")
                 else:
                     # Show the raw data that was rejected

@@ -13,7 +13,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.content import (
+from hother.streamblocks.blocks import (
     FileOperationsContent,
     FileOperationsMetadata,
 )
@@ -106,21 +106,19 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.metadata["extracted_block"]
+            block = event.content["extracted_block"]
             blocks_extracted.append(block)
 
             print(f"\n{'=' * 60}")
-            print(f"[BLOCK] {block.metadata.id} ({block.metadata.block_type})")
+            print(f"[BLOCK] {block.definition.id} ({block.definition.block_type})")
             print(f"        Syntax: {block.syntax_name}")
 
-            content: FileOperationsContent = block.content
+            # Access operations directly from definition
+            creates = [op for op in block.definition.operations if op.action == "create"]
+            edits = [op for op in block.definition.operations if op.action == "edit"]
+            deletes = [op for op in block.definition.operations if op.action == "delete"]
 
-            # Group operations
-            creates = [op for op in content.operations if op.action == "create"]
-            edits = [op for op in content.operations if op.action == "edit"]
-            deletes = [op for op in content.operations if op.action == "delete"]
-
-            print(f"        Total operations: {len(content.operations)}")
+            print(f"        Total operations: {len(block.definition.operations)}")
 
             if creates:
                 print(f"\n        ✅ CREATE ({len(creates)} files):")
@@ -140,14 +138,14 @@ async def main() -> None:
                     print(f"           - {op.path}")
 
             # Check for extra params
-            if hasattr(block.metadata, "param_0"):
-                print(f"\n        Priority: {block.metadata.param_0}")
+            if hasattr(block.definition, "param_0"):
+                print(f"\n        Priority: {block.definition.param_0}")
 
             print(f"{'=' * 60}\n")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            reason = event.metadata["reason"]
+            reason = event.content["reason"]
             print(f"\n[REJECT] {reason}")
 
     # Summary

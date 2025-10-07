@@ -40,20 +40,19 @@ No custom models needed.
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.metadata["extracted_block"])
+            extracted_blocks.append(event.content["extracted_block"])
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
 
-    # Check metadata is BaseMetadata with standard fields
-    assert type(block.metadata).__name__ == "BaseMetadata"
-    assert block.metadata.id == "note01"
-    assert block.metadata.block_type == "notes"
+    # Check definition has standard fields from BaseMetadata and BaseContent
+    assert type(block.definition).__name__ == "BlockDefinition"
+    assert block.definition.id == "note01"
+    assert block.definition.block_type == "notes"
 
-    # Check content is BaseContent with raw_content
-    assert type(block.content).__name__ == "BaseContent"
+    # Check definition has raw_content from BaseContent
     # The content preserves original formatting including empty lines
-    lines = block.content.raw_content.strip().split("\n")
+    lines = block.definition.raw_content.strip().split("\n")
     assert len(lines) == 3  # Two text lines and one empty line between
     assert lines[0] == "This is a simple note."
     assert lines[1] == ""
@@ -88,14 +87,14 @@ assignee: john
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.metadata["extracted_block"])
+            extracted_blocks.append(event.content["extracted_block"])
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
 
     # Check auto-populated fields
-    assert block.metadata.id.startswith("block_")  # Auto-generated hash-based ID
-    assert block.metadata.block_type == "unknown"  # Default when not specified
+    assert block.definition.id.startswith("block_")  # Auto-generated hash-based ID
+    assert block.definition.block_type == "unknown"  # Default when not specified
 
 
 @pytest.mark.asyncio
@@ -125,14 +124,14 @@ def hello():
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.metadata["extracted_block"])
+            extracted_blocks.append(event.content["extracted_block"])
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
 
     # Check auto-populated fields
-    assert block.metadata.id.startswith("block_")  # Auto-generated hash-based ID
-    assert block.metadata.block_type == "python"  # Inferred from info_string
+    assert block.definition.id.startswith("block_")  # Auto-generated hash-based ID
+    assert block.definition.block_type == "python"  # Inferred from info_string
 
 
 @pytest.mark.asyncio
@@ -161,27 +160,27 @@ Task content here.
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.metadata["extracted_block"])
+            extracted_blocks.append(event.content["extracted_block"])
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
 
-    # Check it's our custom class
-    assert type(block.metadata).__name__ == "CustomMetadata"
+    # Check definition has fields from custom metadata class
+    assert type(block.definition).__name__ == "BlockDefinition"
 
     # Check inherited fields work
-    assert block.metadata.id == "task01"
-    assert block.metadata.block_type == "custom"
+    assert block.definition.id == "task01"
+    assert block.definition.block_type == "custom"
 
-    # Check custom fields
-    assert block.metadata.priority == "normal"  # Default value
-    assert block.metadata.tags == []  # Default empty list
+    # Check custom fields from metadata
+    assert block.definition.priority == "normal"  # Default value
+    assert block.definition.tags == []  # Default empty list
 
     # Check param fields from delimiter syntax
-    assert hasattr(block.metadata, "param_0")
-    assert block.metadata.param_0 == "urgent"
-    assert hasattr(block.metadata, "param_1")
-    assert block.metadata.param_1 == "backend"
+    assert hasattr(block.definition, "param_0")
+    assert block.definition.param_0 == "urgent"
+    assert hasattr(block.definition, "param_1")
+    assert block.definition.param_1 == "backend"
 
 
 @pytest.mark.asyncio
@@ -227,30 +226,31 @@ async def test_custom_content_inherits_base() -> None:
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.metadata["extracted_block"])
+            extracted_blocks.append(event.content["extracted_block"])
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
 
-    # Check it's our custom class
-    assert type(block.content).__name__ == "TodoContent"
+    # Check definition has fields from TodoContent via aggregation
+    assert type(block.definition).__name__ == "BlockDefinition"
+    assert hasattr(block.definition, "items")  # Custom field from TodoContent
 
     # Check raw_content is preserved (with extra newlines from stream processing)
     # The exact content depends on how lines are processed
-    lines = block.content.raw_content.strip().split("\n")
+    lines = block.definition.raw_content.strip().split("\n")
     assert len(lines) == 5  # 3 todo items + 2 empty lines between them
     assert lines[0] == "- [ ] Buy groceries"
     assert lines[2] == "- [x] Call mom"
     assert lines[4] == "- Finish report"
 
-    # Check parsed items
-    assert len(block.content.items) == 3
-    assert block.content.items[0].text == "Buy groceries"
-    assert block.content.items[0].done is False
-    assert block.content.items[1].text == "Call mom"
-    assert block.content.items[1].done is True
-    assert block.content.items[2].text == "Finish report"
-    assert block.content.items[2].done is False
+    # Check parsed items from TodoContent
+    assert len(block.definition.items) == 3
+    assert block.definition.items[0].text == "Buy groceries"
+    assert block.definition.items[0].done is False
+    assert block.definition.items[1].text == "Call mom"
+    assert block.definition.items[1].done is True
+    assert block.definition.items[2].text == "Finish report"
+    assert block.definition.items[2].done is False
 
 
 # NOTE: The test for multiple syntaxes handling the same block type

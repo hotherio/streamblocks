@@ -10,7 +10,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.content import (
+from hother.streamblocks.blocks import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -283,61 +283,61 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.metadata["extracted_block"]
+            block = event.content["extracted_block"]
             blocks_extracted.append(block)
 
-            print(f"\n✅ Block Extracted: {block.metadata.id}")
-            print(f"   Type: {block.metadata.block_type}")
-            print(f"   Prompt: {block.content.prompt}")
+            print(f"\n✅ Block Extracted: {block.definition.id}")
+            print(f"   Type: {block.definition.block_type}")
+            print(f"   Prompt: {block.definition.prompt}")
 
             # Show block-specific details
-            if block.metadata.block_type == "yesno":
-                print(f"   Labels: [{block.metadata.yes_label}] / [{block.metadata.no_label}]")
+            if block.definition.block_type == "yesno":
+                print(f"   Labels: [{block.definition.yes_label}] / [{block.definition.no_label}]")
 
-            elif block.metadata.block_type == "choice":
-                print(f"   Style: {block.metadata.display_style}")
-                print(f"   Options: {len(block.content.options)} choices")
-                for i, opt in enumerate(block.content.options, 1):
+            elif block.definition.block_type == "choice":
+                print(f"   Style: {block.definition.display_style}")
+                print(f"   Options: {len(block.definition.options)} choices")
+                for i, opt in enumerate(block.definition.options, 1):
                     print(f"     {i}. {opt}")
 
-            elif block.metadata.block_type == "multichoice":
-                print(f"   Selections: {block.metadata.min_selections}-{block.metadata.max_selections or 'all'}")
-                print(f"   Options: {len(block.content.options)} choices")
+            elif block.definition.block_type == "multichoice":
+                print(f"   Selections: {block.definition.min_selections}-{block.definition.max_selections or 'all'}")
+                print(f"   Options: {len(block.definition.options)} choices")
 
-            elif block.metadata.block_type == "input":
-                print(f"   Type: {block.metadata.input_type}")
-                print(f"   Length: {block.metadata.min_length}-{block.metadata.max_length or 'unlimited'}")
-                if block.metadata.pattern:
-                    print(f"   Pattern: {block.metadata.pattern}")
-                if block.content.placeholder:
-                    print(f"   Placeholder: {block.content.placeholder}")
+            elif block.definition.block_type == "input":
+                print(f"   Type: {block.definition.input_type}")
+                print(f"   Length: {block.definition.min_length}-{block.definition.max_length or 'unlimited'}")
+                if block.definition.pattern:
+                    print(f"   Pattern: {block.definition.pattern}")
+                if block.definition.placeholder:
+                    print(f"   Placeholder: {block.definition.placeholder}")
 
-            elif block.metadata.block_type == "scale":
-                print(f"   Range: {block.metadata.min_value}-{block.metadata.max_value}")
-                if block.content.labels:
-                    print(f"   Labels: {block.content.labels}")
+            elif block.definition.block_type == "scale":
+                print(f"   Range: {block.definition.min_value}-{block.definition.max_value}")
+                if block.definition.labels:
+                    print(f"   Labels: {block.definition.labels}")
 
-            elif block.metadata.block_type == "ranking":
-                print(f"   Items to rank: {len(block.content.items)}")
-                print(f"   Allow partial: {block.metadata.allow_partial}")
+            elif block.definition.block_type == "ranking":
+                print(f"   Items to rank: {len(block.definition.items)}")
+                print(f"   Allow partial: {block.definition.allow_partial}")
 
-            elif block.metadata.block_type == "confirm":
-                print(f"   Danger mode: {block.metadata.danger_mode}")
-                print(f"   Buttons: [{block.metadata.confirm_label}] / [{block.metadata.cancel_label}]")
-                print(f"   Message preview: {block.content.message[:50]}...")
+            elif block.definition.block_type == "confirm":
+                print(f"   Danger mode: {block.definition.danger_mode}")
+                print(f"   Buttons: [{block.definition.confirm_label}] / [{block.definition.cancel_label}]")
+                print(f"   Message preview: {block.definition.message[:50]}...")
 
-            elif block.metadata.block_type == "form":
-                print(f"   Fields: {len(block.content.fields)}")
-                for field in block.content.fields:
+            elif block.definition.block_type == "form":
+                print(f"   Fields: {len(block.definition.fields)}")
+                for field in block.definition.fields:
                     req = "required" if field.required else "optional"
                     print(f"     - {field.name} ({field.field_type}, {req})")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            print(f"\n❌ Block Rejected: {event.metadata['reason']}")
-            print(f"   Syntax: {event.metadata['syntax']}")
-            if "error" in event.metadata:
-                print(f"   Error: {event.metadata['error']}")
+            print(f"\n❌ Block Rejected: {event.content['reason']}")
+            print(f"   Syntax: {event.content['syntax']}")
+            if "error" in event.content:
+                print(f"   Error: {event.content['error']}")
 
     print("\n" + "=" * 70)
     print(f"📊 Total blocks extracted: {len(blocks_extracted)}")
@@ -345,7 +345,7 @@ async def main() -> None:
     # Summary by type
     type_counts = {}
     for block in blocks_extracted:
-        block_type = block.metadata.block_type
+        block_type = block.definition.block_type
         type_counts[block_type] = type_counts.get(block_type, 0) + 1
 
     print("\n📈 Blocks by type:")

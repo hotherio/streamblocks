@@ -11,7 +11,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.content import FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.blocks import FileOperationsContent, FileOperationsMetadata
 
 
 @pytest.mark.asyncio
@@ -63,16 +63,16 @@ async def test_basic_delimiter_preamble_syntax() -> None:
 
     # Check extracted block
     extracted_event = block_extracted_events[0]
-    block = extracted_event.metadata["extracted_block"]
+    block = extracted_event.content["extracted_block"]
 
     assert block.syntax_name == "test_files_syntax"
-    assert block.metadata.id == "file01"
-    assert block.metadata.block_type == "files_operations"
-    assert len(block.content.operations) == 2
-    assert block.content.operations[0].path == "src/main.py"
-    assert block.content.operations[0].action == "create"
-    assert block.content.operations[1].path == "src/utils.py"
-    assert block.content.operations[1].action == "edit"
+    assert block.definition.id == "file01"
+    assert block.definition.block_type == "files_operations"
+    assert len(block.definition.operations) == 2
+    assert block.definition.operations[0].path == "src/main.py"
+    assert block.definition.operations[0].action == "create"
+    assert block.definition.operations[1].path == "src/utils.py"
+    assert block.definition.operations[1].action == "edit"
 
 
 @pytest.mark.asyncio
@@ -105,13 +105,13 @@ file3.py:D
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.metadata["extracted_block"])
+            extracted_blocks.append(event.content["extracted_block"])
 
     assert len(extracted_blocks) == 2
-    assert extracted_blocks[0].metadata.id == "block1"
-    assert extracted_blocks[1].metadata.id == "block2"
-    assert len(extracted_blocks[0].content.operations) == 1
-    assert len(extracted_blocks[1].content.operations) == 2
+    assert extracted_blocks[0].definition.id == "block1"
+    assert extracted_blocks[1].definition.id == "block2"
+    assert len(extracted_blocks[0].definition.operations) == 1
+    assert len(extracted_blocks[1].definition.operations) == 2
 
 
 @pytest.mark.asyncio
@@ -140,7 +140,7 @@ file2.py:E"""
 
     rejected_events = [e for e in events if e.type == EventType.BLOCK_REJECTED]
     assert len(rejected_events) == 1
-    assert "Stream ended without closing marker" in rejected_events[0].metadata["reason"]
+    assert "Stream ended without closing marker" in rejected_events[0].content["reason"]
 
 
 if __name__ == "__main__":

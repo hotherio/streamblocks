@@ -12,7 +12,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.content import (
+from hother.streamblocks.blocks import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -110,20 +110,20 @@ prompt: "Do you accept the terms?"
     rejected = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.metadata["extracted_block"])
+            blocks.append(event.content["extracted_block"])
         elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.metadata["reason"], event.metadata.get("error")))
+            rejected.append((event.content["reason"], event.content.get("error")))
     if rejected:
         print(f"Rejected: {rejected}")
     assert len(blocks) == 1
     block = blocks[0]
 
-    assert block.metadata.id == "test-yesno"
-    assert block.metadata.block_type == "yesno"
-    assert block.metadata.yes_label == "Accept"
-    assert block.metadata.no_label == "Decline"
-    assert block.content.prompt == "Do you accept the terms?"
-    assert block.content.response is None  # No response yet
+    assert block.definition.id == "test-yesno"
+    assert block.definition.block_type == "yesno"
+    assert block.definition.yes_label == "Accept"
+    assert block.definition.no_label == "Decline"
+    assert block.definition.prompt == "Do you accept the terms?"
+    assert block.definition.response is None  # No response yet
 
 
 @pytest.mark.asyncio
@@ -157,18 +157,18 @@ options:
     rejected = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.metadata["extracted_block"])
+            blocks.append(event.content["extracted_block"])
         elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.metadata["reason"], event.metadata.get("error")))
+            rejected.append((event.content["reason"], event.content.get("error")))
 
     if rejected:
         print(f"Rejected: {rejected}")
     assert len(blocks) == 1
     block = blocks[0]
 
-    assert block.metadata.display_style == "dropdown"
-    assert block.content.prompt == "Select your favorite color:"
-    assert block.content.options == ["Red", "Green", "Blue"]
+    assert block.definition.display_style == "dropdown"
+    assert block.definition.prompt == "Select your favorite color:"
+    assert block.definition.options == ["Red", "Green", "Blue"]
 
 
 @pytest.mark.asyncio
@@ -205,19 +205,19 @@ options:
     rejected = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.metadata["extracted_block"])
+            blocks.append(event.content["extracted_block"])
         elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.metadata["reason"], event.metadata.get("error")))
+            rejected.append((event.content["reason"], event.content.get("error")))
 
     if rejected:
         print(f"Rejected: {rejected}")
     assert len(blocks) == 1
     block = blocks[0]
 
-    assert block.metadata.min_selections == 2
-    assert block.metadata.max_selections == 3
-    assert len(block.content.options) == 5
-    assert block.content.response == []  # Empty list by default
+    assert block.definition.min_selections == 2
+    assert block.definition.max_selections == 3
+    assert len(block.definition.options) == 5
+    assert block.definition.response == []  # Empty list by default
 
 
 @pytest.mark.asyncio
@@ -253,19 +253,19 @@ labels:
     rejected = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.metadata["extracted_block"])
+            blocks.append(event.content["extracted_block"])
         elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.metadata["reason"], event.metadata.get("error")))
+            rejected.append((event.content["reason"], event.content.get("error")))
 
     if rejected:
         print(f"Rejected: {rejected}")
     assert len(blocks) == 1
     block = blocks[0]
 
-    assert block.metadata.min_value == 0
-    assert block.metadata.max_value == 10
-    assert block.metadata.step == 2
-    assert block.content.labels == {0: "Very Poor", 5: "Average", 10: "Excellent"}
+    assert block.definition.min_value == 0
+    assert block.definition.max_value == 10
+    assert block.definition.step == 2
+    assert block.definition.labels == {0: "Very Poor", 5: "Average", 10: "Excellent"}
 
 
 @pytest.mark.asyncio
@@ -314,31 +314,31 @@ fields:
     rejected = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.metadata["extracted_block"])
+            blocks.append(event.content["extracted_block"])
         elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.metadata["reason"], event.metadata.get("error")))
+            rejected.append((event.content["reason"], event.content.get("error")))
 
     if rejected:
         print(f"Rejected: {rejected}")
     assert len(blocks) == 1
     block = blocks[0]
 
-    assert block.metadata.submit_label == "Register"
-    assert block.metadata.cancel_label == "Skip"
-    assert len(block.content.fields) == 3
+    assert block.definition.submit_label == "Register"
+    assert block.definition.cancel_label == "Skip"
+    assert len(block.definition.fields) == 3
 
     # Check fields
-    username_field = block.content.fields[0]
+    username_field = block.definition.fields[0]
     assert username_field.name == "username"
     assert username_field.field_type == "text"
     assert username_field.required is True
     assert username_field.validation["min_length"] == 3
 
-    email_field = block.content.fields[1]
+    email_field = block.definition.fields[1]
     assert email_field.name == "email"
     assert email_field.field_type == "email"
 
-    subscribe_field = block.content.fields[2]
+    subscribe_field = block.definition.fields[2]
     assert subscribe_field.name == "subscribe"
     assert subscribe_field.field_type == "yesno"
     assert subscribe_field.required is False
