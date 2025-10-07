@@ -3,6 +3,7 @@
 __version__ = "0.1.0"
 
 from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockCandidate, BlockConfig, BlockDefinition
+from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
 from hother.streamblocks.core.processor import StreamBlockProcessor
 from hother.streamblocks.core.registry import Registry
 from hother.streamblocks.core.types import (
@@ -37,8 +38,12 @@ __all__ = [
     "EventType",
     "MarkdownFrontmatterSyntax",
     "ParseResult",
+    # Parsing
+    "ParseStrategy",
     # Core components
     "Registry",
     "StreamBlockProcessor",
     "StreamEvent",
+    "parse_as_json",
+    "parse_as_yaml",
 ]

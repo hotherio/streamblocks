@@ -182,6 +182,9 @@ class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
             if self._frontmatter_pattern.match(line):
                 candidate.current_section = "metadata"
                 return DetectionResult(is_metadata_boundary=True)
+            # Skip empty lines in header - frontmatter might follow
+            if line.strip() == "":
+                return DetectionResult()
             # Move directly to content if no frontmatter
             candidate.current_section = "content"
             candidate.content_lines.append(line)
