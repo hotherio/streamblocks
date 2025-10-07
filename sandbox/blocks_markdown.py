@@ -7,7 +7,10 @@ Works on any partial stream that ends on a complete line.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncGenerator, AsyncIterable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, AsyncIterable
 
 
 async def split_frontmatter_stream(

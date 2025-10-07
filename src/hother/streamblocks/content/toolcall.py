@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any
 
 import yaml
 from pydantic import Field
 
-from streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata
 
 
 class ToolCallMetadata(BaseMetadata):
     """Metadata for tool calling blocks."""
-    
+
     tool_name: str
     async_call: bool = False
     timeout: float | None = None
@@ -21,9 +21,9 @@ class ToolCallMetadata(BaseMetadata):
 
 class ToolCallContent(BaseContent):
     """Content for tool calling blocks - contains parameters as YAML."""
-    
+
     parameters: dict[str, Any] = Field(default_factory=dict)
-    
+
     @classmethod
     def parse(cls, raw_text: str) -> ToolCallContent:
         """Parse YAML parameters."""
@@ -32,6 +32,7 @@ class ToolCallContent(BaseContent):
             if not isinstance(params, dict):
                 params = {"value": params}
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML parameters: {e}") from e
-        
+            msg = f"Invalid YAML parameters: {e}"
+            raise ValueError(msg) from e
+
         return cls(raw_content=raw_text, parameters=params)

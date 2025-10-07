@@ -96,13 +96,13 @@ async def main():
         content_class=FileOperationsContent,
     )
     registry = Registry(syntax)
-    
+
     # Create block-aware agent
     agent = BlockAwareAgent(
         model='openai:gpt-4o',
         registry=registry,
     )
-    
+
     # Run agent with block extraction
     async for event in agent.run_with_blocks("Create a Python web API"):
         if event.type == EventType.BLOCK_EXTRACTED:
@@ -133,7 +133,7 @@ async with agent.run_stream(prompt) as result:
     async def stream():
         async for text in result.stream_text():
             yield text
-    
+
     async for event in processor.process_agent_stream(stream()):
         # Handle events
         pass

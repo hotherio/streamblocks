@@ -6,12 +6,12 @@ from typing import Any, Literal
 
 import yaml
 
-from streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata
 
 
 class MemoryMetadata(BaseMetadata):
     """Metadata for memory/context blocks."""
-    
+
     memory_type: Literal["store", "recall", "update", "delete", "list"]
     key: str
     ttl_seconds: int | None = None
@@ -20,24 +20,23 @@ class MemoryMetadata(BaseMetadata):
 
 class MemoryContent(BaseContent):
     """Content for memory operations."""
-    
+
     value: Any | None = None
     previous_value: Any | None = None
     keys: list[str] | None = None  # For list operations
-    
+
     @classmethod
     def parse(cls, raw_text: str) -> MemoryContent:
         """Parse YAML value for memory operations."""
         if not raw_text.strip():
             return cls(raw_content=raw_text)
-        
+
         try:
             data = yaml.safe_load(raw_text) or {}
             if isinstance(data, dict) and "value" in data:
                 return cls(raw_content=raw_text, **data)
-            else:
-                # If not a dict with 'value' key, treat entire content as value
-                return cls(raw_content=raw_text, value=data)
+            # If not a dict with 'value' key, treat entire content as value
+            return cls(raw_content=raw_text, value=data)
         except yaml.YAMLError:
             # If YAML parsing fails, treat as plain text value
             return cls(raw_content=raw_text, value=raw_text.strip())

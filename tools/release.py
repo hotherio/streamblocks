@@ -7,8 +7,7 @@ Usage:  hatch release {dev|rc|final} [SHA]
 import subprocess
 import sys
 
-from packaging.version import Version
-from packaging.version import parse as version_parse
+from packaging.version import Version, parse as version_parse
 
 
 def cmd(c: str) -> str:

@@ -121,16 +121,16 @@ async def main():
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
-    
+
     # Create type-specific registry
     registry = Registry(syntax)
-    
+
     # Add validators
     registry.add_validator("files_operations", my_validator)
-    
+
     # Create processor
     processor = StreamBlockProcessor(registry)
-    
+
     # Process stream
     async for event in processor.process_stream(my_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:

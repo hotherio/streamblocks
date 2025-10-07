@@ -3,13 +3,13 @@
 import asyncio
 from collections.abc import AsyncIterator
 
-from streamblocks import (
+from hother.streamblocks import (
     BlockRegistry,
     EventType,
     MarkdownFrontmatterSyntax,
     StreamBlockProcessor,
 )
-from streamblocks.content import PatchContent, PatchMetadata
+from hother.streamblocks.content import PatchContent, PatchMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -25,7 +25,7 @@ file: auth.py
 start_line: 45
 ---
  def authenticate(user, password):
--    if password == "admin":
+-    if password == "admin": # pragma: allowlist secret
 +    if check_password_hash(user.password_hash, password):
          return True
      return False

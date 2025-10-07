@@ -5,28 +5,27 @@ from typing import Any
 
 import pytest
 
-from streamblocks import (
+from hother.streamblocks import (
     BlockRegistry,
     DelimiterPreambleSyntax,
     EventType,
     StreamBlockProcessor,
 )
-from streamblocks.content import FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.content import FileOperationsContent, FileOperationsMetadata
 
 
 @pytest.mark.asyncio
 async def test_basic_delimiter_preamble_syntax() -> None:
     """Test basic functionality with delimiter preamble syntax."""
-    # Setup registry
-    registry = BlockRegistry()
-
-    # Register syntax
+    # Create syntax
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
-    registry.register_syntax(syntax, block_types=["files_operations"], priority=1)
+
+    # Setup registry with syntax
+    registry = BlockRegistry(syntax)
 
     # Create processor
     processor = StreamBlockProcessor(registry)
@@ -54,7 +53,7 @@ async def test_basic_delimiter_preamble_syntax() -> None:
 
     # Check events
     raw_text_events = [e for e in events if e.type == EventType.RAW_TEXT]
-    block_delta_events = [e for e in events if e.type == EventType.BLOCK_DELTA]
+    [e for e in events if e.type == EventType.BLOCK_DELTA]
     block_extracted_events = [e for e in events if e.type == EventType.BLOCK_EXTRACTED]
 
     # We get more events because of how line splitting works - that's OK
@@ -79,15 +78,13 @@ async def test_basic_delimiter_preamble_syntax() -> None:
 @pytest.mark.asyncio
 async def test_multiple_blocks() -> None:
     """Test processing multiple blocks in a stream."""
-    registry = BlockRegistry()
-
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
-    registry.register_syntax(syntax, block_types=["files_operations"], priority=1)
 
+    registry = BlockRegistry(syntax)
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:
@@ -120,15 +117,13 @@ file3.py:D
 @pytest.mark.asyncio
 async def test_unclosed_block_rejection() -> None:
     """Test that unclosed blocks are rejected."""
-    registry = BlockRegistry()
-
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
-    registry.register_syntax(syntax, block_types=["files_operations"], priority=1)
 
+    registry = BlockRegistry(syntax)
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:

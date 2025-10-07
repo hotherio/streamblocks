@@ -13,7 +13,7 @@ This directory contains examples showing how to use StreamBlocks with Google's G
 
 3. Set the environment variable:
    ```bash
-   export GEMINI_API_KEY="your-api-key-here"
+   export GEMINI_API_KEY="your-api-key-here" # pragma: allowlist secret
    ```
 
 ## Available Examples
@@ -111,7 +111,7 @@ old/file.txt:D
 !!end
 ```
 
-### Tool Calls  
+### Tool Calls
 ```yaml
 ```toolcall
 ---

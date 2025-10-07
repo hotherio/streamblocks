@@ -2,9 +2,9 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata
 
 
 class PatchContent(BaseContent):
@@ -17,12 +17,13 @@ class PatchContent(BaseContent):
         """Parse and validate patch content."""
         # Basic validation
         if not raw_text.strip():
-            raise ValueError("Empty patch")
+            msg = "Empty patch"
+            raise ValueError(msg)
 
         # For now, accept any content that looks like it has changes
         # (lines starting with +, -, or space for context)
         lines = raw_text.strip().split("\n")
-        has_diff_lines = any(line.startswith("+") or line.startswith("-") or line.startswith(" ") for line in lines)
+        has_diff_lines = any(line.startswith(("+", "-", " ")) for line in lines)
 
         if not has_diff_lines:
             # If no obvious diff markers, just accept it as is

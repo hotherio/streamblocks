@@ -3,39 +3,39 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Generic
 
 from pydantic import BaseModel, Field
 
-from streamblocks.core.types import BlockState, TContent, TMetadata
+from hother.streamblocks.core.types import BlockState, TContent, TMetadata
 
 if TYPE_CHECKING:
-    from streamblocks.core.protocols import BlockSyntax
+    from hother.streamblocks.core.protocols import BlockSyntax
 
 
 class BaseMetadata(BaseModel):
     """Base metadata model with standard fields.
-    
+
     All custom metadata models should inherit from this class.
     """
-    
+
     id: str = Field(..., description="Block identifier")
     block_type: str = Field(..., description="Type of the block")
 
 
 class BaseContent(BaseModel):
     """Base content model with raw content field.
-    
+
     All custom content models should inherit from this class.
     The raw_content field always contains the unparsed block content.
     """
-    
+
     raw_content: str = Field(..., description="Raw unparsed content from the block")
-    
+
     @classmethod
     def parse(cls, raw_text: str) -> BaseContent:
         """Default parse method that just stores raw content.
-        
+
         Override this in subclasses to add custom parsing logic.
         """
         return cls(raw_content=raw_text)

@@ -5,15 +5,15 @@ processor handles exactly one syntax type.
 """
 
 import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
-from streamblocks import (
-    Registry,
+from hother.streamblocks import (
     DelimiterPreambleSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
-from streamblocks.content import (
+from hother.streamblocks.content import (
     FileOperationsContent,
     FileOperationsMetadata,
 )
@@ -64,17 +64,17 @@ That's it! Each processor handles one syntax type efficiently.
 async def main() -> None:
     """Main example function."""
     print("=== Single Syntax Processing Example ===\n")
-    
+
     # Create syntax for file operations
     file_ops_syntax = DelimiterPreambleSyntax(
         name="files_operations_syntax",
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
-    
+
     # Create type-specific registry
     registry = Registry(file_ops_syntax)
-    
+
     # Add a validator for critical operations
     def validate_critical_ops(metadata: FileOperationsMetadata, content: FileOperationsContent) -> bool:
         """Extra validation for critical operations."""
@@ -84,17 +84,17 @@ async def main() -> None:
                 if op.action == "delete" and op.path.startswith("/"):
                     return False
         return True
-    
+
     registry.add_validator("files_operations", validate_critical_ops)
-    
+
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)
-    
+
     # Process stream
     print("Processing file operations stream...\n")
-    
+
     blocks_extracted = []
-    
+
     async for event in processor.process_stream(file_operations_stream()):
         if event.type == EventType.RAW_TEXT:
             # Show text
@@ -103,53 +103,53 @@ async def main() -> None:
                 if len(text) > 60:
                     text = text[:57] + "..."
                 print(f"[TEXT] {text}")
-        
+
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
             block = event.metadata["extracted_block"]
             blocks_extracted.append(block)
-            
-            print(f"\n{'='*60}")
+
+            print(f"\n{'=' * 60}")
             print(f"[BLOCK] {block.metadata.id} ({block.metadata.block_type})")
             print(f"        Syntax: {block.syntax_name}")
-            
+
             content: FileOperationsContent = block.content
-            
+
             # Group operations
             creates = [op for op in content.operations if op.action == "create"]
             edits = [op for op in content.operations if op.action == "edit"]
             deletes = [op for op in content.operations if op.action == "delete"]
-            
+
             print(f"        Total operations: {len(content.operations)}")
-            
+
             if creates:
                 print(f"\n        ✅ CREATE ({len(creates)} files):")
                 for op in creates[:3]:
                     print(f"           + {op.path}")
                 if len(creates) > 3:
                     print(f"           ... and {len(creates) - 3} more")
-            
+
             if edits:
                 print(f"\n        ✏️  EDIT ({len(edits)} files):")
                 for op in edits[:3]:
                     print(f"           ~ {op.path}")
-            
+
             if deletes:
                 print(f"\n        ❌ DELETE ({len(deletes)} files):")
                 for op in deletes[:3]:
                     print(f"           - {op.path}")
-            
+
             # Check for extra params
             if hasattr(block.metadata, "param_0"):
                 print(f"\n        Priority: {block.metadata.param_0}")
-            
-            print(f"{'='*60}\n")
-        
+
+            print(f"{'=' * 60}\n")
+
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
             reason = event.metadata["reason"]
             print(f"\n[REJECT] {reason}")
-    
+
     # Summary
     print("\n" + "=" * 80)
     print("SUMMARY:")

@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
-from streamblocks.core.models import BaseContent, BaseMetadata
-from streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
 
 if TYPE_CHECKING:
-    from streamblocks.core.models import BlockCandidate
+    from hother.streamblocks.core.models import BlockCandidate
 
 
 class MarkdownFrontmatterSyntax:
@@ -76,12 +76,11 @@ class MarkdownFrontmatterSyntax:
                 candidate.current_section = "metadata"
                 return DetectionResult(is_metadata_boundary=True)
             # Skip empty lines in header - frontmatter might follow
-            elif line.strip() == "":
+            if line.strip() == "":
                 return DetectionResult()
             # Non-empty, non-frontmatter line - move to content
-            else:
-                candidate.current_section = "content"
-                candidate.content_lines.append(line)
+            candidate.current_section = "content"
+            candidate.content_lines.append(line)
         elif candidate.current_section == "metadata":
             # Check for metadata end
             if self._frontmatter_pattern.match(line):
@@ -123,9 +122,11 @@ class MarkdownFrontmatterSyntax:
                     metadata_dict["block_type"] = self.info_string
                 else:
                     metadata_dict["block_type"] = "markdown"
-        
+
         try:
-            metadata = self.metadata_class(**metadata_dict)
+            # Convert all metadata values to proper types for type safety
+            typed_metadata = {k: str(v) if not isinstance(v, str) else v for k, v in metadata_dict.items()}
+            metadata = self.metadata_class(**typed_metadata)
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}")
 
@@ -134,7 +135,7 @@ class MarkdownFrontmatterSyntax:
 
         try:
             # All content classes must have parse method
-            content = self.content_class.parse(content_text)  # type: ignore[attr-defined]
+            content = cast("TContent", self.content_class.parse(content_text))  # type: ignore[attr-defined]
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid content: {e}")
 

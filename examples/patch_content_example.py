@@ -1,14 +1,16 @@
 """Example focusing on PatchContent with various patch formats."""
 
 import asyncio
-from typing import AsyncIterator, Literal
+import contextlib
+from collections.abc import AsyncIterator
+from typing import Literal
 
 from pydantic import BaseModel
 
-from streamblocks import (
-    Registry,
+from hother.streamblocks import (
     DelimiterPreambleSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
 
@@ -37,7 +39,8 @@ class SimplePatchContent(BaseModel):
         """Parse patch content, extracting file info from first line."""
         lines = raw_text.strip().split("\n")
         if not lines:
-            raise ValueError("Empty patch")
+            msg = "Empty patch"
+            raise ValueError(msg)
 
         # The content already has the diff, just store it
         return cls(diff=raw_text.strip())
@@ -52,7 +55,7 @@ Let's demonstrate different patch formats that our PatchContent can handle.
 auth/login.py:45
  def login(username, password):
      # Check credentials
--    if username == "admin" and password == "admin":
+-    if username == "admin" and password == "admin": # pragma: allowlist secret
 +    user = User.query.filter_by(username=username).first()
 +    if user and user.check_password(password):
          session['user_id'] = user.id
@@ -68,7 +71,7 @@ Here's a patch adding a new feature:
 models/user.py:120
      def get_permissions(self):
          return self.permissions
- 
+
 +    def has_permission(self, permission_name):
 +        \"\"\"Check if user has a specific permission.\"\"\"
 +        return permission_name in self.get_permissions()
@@ -109,7 +112,7 @@ config/settings.py:50
 +    'DATABASE_URL',
 +    'postgresql://localhost/myapp'
 +)
- 
+
  # Cache configuration
 -CACHE_TYPE = "simple"
 -CACHE_DEFAULT_TIMEOUT = 300
@@ -168,7 +171,7 @@ async def main() -> None:
         metadata_class=SimplePatchMetadata,
         content_class=SimplePatchContent,
     )
-    
+
     # Create type-specific registry
     registry = Registry(patch_syntax)
 
@@ -185,8 +188,7 @@ async def main() -> None:
         if hasattr(metadata, "param_1") and metadata.param_1 == "critical":
             # Critical patches must have a description in the diff
             lines = content.diff.strip().split("\n")
-            has_comment = any("Fixed:" in line or "SECURITY:" in line for line in lines)
-            return has_comment
+            return any("Fixed:" in line or "SECURITY:" in line for line in lines)
         return True
 
     registry.add_validator("patch", validate_patch_content)
@@ -226,7 +228,7 @@ async def main() -> None:
             block = event.metadata["extracted_block"]
             patches.append(block)
 
-            print(f"\n{'-'*70}")
+            print(f"\n{'-' * 70}")
             print(f"[PATCH] {block.metadata.id}")
 
             # Get category from params
@@ -239,10 +241,8 @@ async def main() -> None:
             lines = block.content.diff.strip().split("\n")
             if lines and ":" in lines[0]:
                 file_path, start_line = lines[0].split(":")
-                try:
+                with contextlib.suppress(ValueError):
                     block.metadata.start_line = int(start_line)
-                except ValueError:
-                    pass
             else:
                 file_path = "unknown"
             block.metadata.file = file_path

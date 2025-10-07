@@ -4,10 +4,10 @@ This module provides transparent integration between PydanticAI agents and Strea
 allowing agents to generate structured blocks that are extracted in real-time during streaming.
 """
 
-from streamblocks.integrations.pydantic_ai.agent import BlockAwareAgent
-from streamblocks.integrations.pydantic_ai.processor import AgentStreamProcessor
+from hother.streamblocks.integrations.pydantic_ai.agent import BlockAwareAgent
+from hother.streamblocks.integrations.pydantic_ai.processor import AgentStreamProcessor
 
 __all__ = [
-    "BlockAwareAgent",
     "AgentStreamProcessor",
+    "BlockAwareAgent",
 ]

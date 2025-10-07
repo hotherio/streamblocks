@@ -1,26 +1,41 @@
-# Lefthook configuration for Python project
-# Fast and powerful Git hooks manager
+skip_output:
+  - meta
+  - success
+  - failure
 
 pre-commit:
   parallel: true
   commands:
-    # Python linting and formatting with Ruff
-    ruff-check:
+    # Fast checks first - Python formatting and linting
+    ruff:
       run: ruff check --fix --unsafe-fixes {staged_files}
       glob: "*.py"
+      stage_fixed: true
 
     ruff-format:
       run: ruff format {staged_files}
       glob: "*.py"
+      stage_fixed: true
 
-    # Type checking
-    mypy:
-      run: mypy {staged_files}
+    # Type checking (only for src/ files)
+    # Note: Run 'uv run basedpyright src/' manually for type checking
+    # Skipped in pre-commit because basedpyright doesn't respect pyproject.toml ignores when run via lefthook
+    type-check:
+      run: echo "Type checking skipped - run 'uv run basedpyright src/' manually"
+      skip:
+        - merge
+        - rebase
+
+    # Security checks
+    security:
+      run: ruff check --select=S {staged_files}
       glob: "*.py"
 
-    pyright:
+    # Import organization
+    imports:
+      run: ruff check --select=I {staged_files}
       glob: "*.py"
-      run: basedpyright {staged_files}
+      stage_fixed: true
 
     # Non-Python file checks
     trailing-whitespace:
@@ -72,7 +87,6 @@ pre-commit:
           echo "Creating initial secrets baseline..."
           detect-secrets scan > .secrets.baseline
         fi
-        # Check staged files for secrets
         git diff --staged --name-only -z | xargs -0 detect-secrets-hook --baseline .secrets.baseline
       glob: "*"
       exclude: "*.lock|*.egg-info/*|.secrets.baseline"
@@ -80,21 +94,29 @@ pre-commit:
 pre-push:
   parallel: true
   commands:
+    # Full test suite
+    test:
+      run: pytest --cov=hother.streamblocks --cov-report=term-missing --cov-report=xml
+      glob: "*.py"
+
+    # Comprehensive type checking
+    type-check-full:
+      run: basedpyright
+      glob: "*.py"
+
     # Verify dependency lock
     uv-lock:
       run: uv lock --check
 
-    # Check last commit message follows conventional commits
-    conventional-commits:
-      run: |
-        commit_regex='^(feat|fix|docs|style|refactor|test|chore|build|ci|perf|revert)(\(.+\))?: .+'
-        if ! git log -1 --pretty=%B | grep -qE "$commit_regex"; then
-          echo "❌ Last commit doesn't follow conventional commits format"
-          echo "Expected format: <type>(<scope>): <subject>"
-          echo "Example: feat(auth): add login functionality"
-          exit 1
-        fi
+    # Build and validate package
+    build-validate:
+      run: uv build --wheel --sdist --no-dev
+      glob: "*.py"
 
+    # Documentation check
+    doc-check:
+      run: mkdocs build --strict
+      glob: "*.md"
 
 commit-msg:
   commands:
@@ -125,8 +147,3 @@ commit-msg:
           echo "  fix(auth): resolve login timeout issue"
           exit 1
         fi
-
-# Skip hooks during rebase/merge
-skip_output:
-  - meta
-  - execution

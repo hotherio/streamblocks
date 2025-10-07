@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -34,7 +34,7 @@ class BlockState(StrEnum):
     COMPLETED = "completed"
 
 
-class StreamEvent(BaseModel, Generic[TMetadata, TContent]):
+class StreamEvent[TMetadata: BaseModel, TContent: BaseModel](BaseModel):
     """Base event emitted during stream processing."""
 
     type: EventType
@@ -53,7 +53,7 @@ class DetectionResult:
 
 
 @dataclass
-class ParseResult(Generic[TMetadata, TContent]):
+class ParseResult[TMetadata: BaseModel, TContent: BaseModel]:
     """Result from parsing attempt."""
 
     success: bool

@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from streamblocks.core.protocols import BlockSyntax
+    from hother.streamblocks.core.protocols import BlockSyntax
 
 type BlockType = str
 type ValidatorFunc = Callable[[BaseModel, BaseModel], bool]
@@ -17,7 +17,7 @@ type ValidatorFunc = Callable[[BaseModel, BaseModel], bool]
 TSyntax = TypeVar("TSyntax", bound="BlockSyntax[Any, Any]")
 
 
-class Registry(Generic[TSyntax]):
+class Registry[TSyntax: "BlockSyntax[Any, Any]"]:
     """Type-specific registry for a single syntax type.
 
     This registry holds exactly one syntax instance and its associated validators.

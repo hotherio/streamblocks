@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
-from streamblocks.core.models import BaseContent, BaseMetadata
-from streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
 
 if TYPE_CHECKING:
-    from streamblocks.core.models import BlockCandidate
+    from hother.streamblocks.core.models import BlockCandidate
 
 
 class DelimiterPreambleSyntax:
@@ -80,7 +80,7 @@ class DelimiterPreambleSyntax:
 
     def parse_block(self, candidate: BlockCandidate) -> ParseResult[Any, Any]:
         """Parse the complete block."""
-        
+
         # Metadata was already extracted during detection
         detection = self.detect_line(candidate.lines[0], None)
 
@@ -90,11 +90,13 @@ class DelimiterPreambleSyntax:
         try:
             # Ensure id and block_type are in metadata dict
             if "id" not in detection.metadata:
-                detection.metadata["id"] = detection.metadata.get("block_id", "unknown")
+                detection.metadata["id"] = str(detection.metadata.get("block_id", "unknown"))
             if "block_type" not in detection.metadata:
-                detection.metadata["block_type"] = detection.metadata.get("type", "unknown")
-            
-            metadata = self.metadata_class(**detection.metadata)
+                detection.metadata["block_type"] = str(detection.metadata.get("type", "unknown"))
+
+            # Convert all metadata values to strings for type safety
+            typed_metadata = {k: str(v) for k, v in detection.metadata.items()}
+            metadata = self.metadata_class(**typed_metadata)
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}")
 
@@ -103,7 +105,7 @@ class DelimiterPreambleSyntax:
 
         try:
             # All content classes must have parse method
-            content = self.content_class.parse(content_text)  # type: ignore[attr-defined]
+            content = cast("TContent", self.content_class.parse(content_text))  # type: ignore[attr-defined]
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid content: {e}")
 
@@ -205,9 +207,11 @@ class DelimiterFrontmatterSyntax:
                 metadata_dict["id"] = f"block_{candidate.compute_hash()}"
             if "block_type" not in metadata_dict:
                 metadata_dict["block_type"] = "unknown"
-        
+
         try:
-            metadata = self.metadata_class(**metadata_dict)
+            # Convert all metadata values to proper types for type safety
+            typed_metadata = {k: str(v) if not isinstance(v, str) else v for k, v in metadata_dict.items()}
+            metadata = self.metadata_class(**typed_metadata)
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}")
 
@@ -215,7 +219,7 @@ class DelimiterFrontmatterSyntax:
 
         try:
             # All content classes must have parse method
-            content = self.content_class.parse(content_text)  # type: ignore[attr-defined]
+            content = cast("TContent", self.content_class.parse(content_text))  # type: ignore[attr-defined]
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid content: {e}")
 

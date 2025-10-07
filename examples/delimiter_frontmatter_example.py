@@ -9,10 +9,10 @@ from collections.abc import AsyncIterator
 
 from pydantic import BaseModel
 
-from streamblocks import (
-    Registry,
+from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
 
@@ -48,9 +48,9 @@ class TaskContent(BaseModel):
         subtasks = []
 
         for line in lines[1:]:
-            line = line.strip()
-            if line.startswith("- ") or line.startswith("* "):
-                subtasks.append(line[2:])
+            stripped = line.strip()
+            if stripped.startswith(("- ", "* ")):
+                subtasks.append(stripped[2:])
 
         return cls(description=description, subtasks=subtasks)
 
@@ -134,7 +134,7 @@ That's all for now!
 async def main() -> None:
     """Main example function."""
     print("=== DelimiterFrontmatterSyntax Example ===\n")
-    
+
     # Create delimiter frontmatter syntax for tasks
     # Using standard !!start/!!end delimiters
     task_syntax = DelimiterFrontmatterSyntax(
@@ -144,27 +144,25 @@ async def main() -> None:
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
-    
+
     # Create type-specific registry
     registry = Registry(task_syntax)
-    
+
     # Add validators
     def validate_task_priority(metadata: TaskMetadata, content: TaskContent) -> bool:
         """Ensure high priority tasks have assignees."""
-        if metadata.priority in ["high", "urgent"] and not metadata.assignee:
-            return False
-        return True
+        return not (metadata.priority in ["high", "urgent"] and not metadata.assignee)
 
     registry.add_validator("task", validate_task_priority)
-    
+
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)
-    
+
     # Process stream
     print("Processing task blocks...\n")
-    
+
     blocks_extracted = []
-    
+
     async for event in processor.process_stream(example_stream()):
         if event.type == EventType.RAW_TEXT:
             # Raw text passed through
@@ -173,19 +171,19 @@ async def main() -> None:
                 if len(text) > 60:
                     text = text[:57] + "..."
                 print(f"[TEXT] {text}")
-        
+
         elif event.type == EventType.BLOCK_DELTA:
             # Skip deltas for cleaner output
             pass
-        
+
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
             block = event.metadata["extracted_block"]
             blocks_extracted.append(block)
-            
+
             metadata: TaskMetadata = block.metadata
             content: TaskContent = block.content
-            
+
             print(f"\n{'=' * 60}")
             print(f"[TASK] {metadata.id} - {metadata.title}")
             print(f"       Priority: {metadata.priority}")
@@ -196,19 +194,19 @@ async def main() -> None:
                 print(f"       Due: {metadata.due_date}")
             if metadata.tags:
                 print(f"       Tags: {', '.join(metadata.tags)}")
-            
+
             print(f"\n       Description: {content.description}")
             if content.subtasks:
-                print(f"       Subtasks:")
+                print("       Subtasks:")
                 for subtask in content.subtasks:
                     print(f"         - {subtask}")
             print("=" * 60)
-        
+
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
             reason = event.metadata["reason"]
             print(f"\n[REJECT] {reason}")
-    
+
     print("\n\nEXTRACTED BLOCKS SUMMARY:")
     print(f"Total blocks: {len(blocks_extracted)}")
     print("\nTasks:")
@@ -216,7 +214,7 @@ async def main() -> None:
         print(f"  - [{task.metadata.priority.upper()}] {task.metadata.title}")
         print(f"    Assignee: {task.metadata.assignee or 'Unassigned'}")
         print(f"    Status: {task.metadata.status}")
-    
+
     print("\n✓ DelimiterFrontmatterSyntax processing complete!")
 
 

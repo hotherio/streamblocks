@@ -8,7 +8,8 @@ This simplified version uses a single syntax (delimiter with frontmatter) for al
 import asyncio
 import os
 import sys
-from typing import AsyncIterator, Literal
+from collections.abc import AsyncIterator
+from typing import Literal
 
 from google import genai
 from pydantic import BaseModel, Field
@@ -16,10 +17,10 @@ from pydantic import BaseModel, Field
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from streamblocks import (
-    Registry,
+from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
 
@@ -27,13 +28,14 @@ from streamblocks import (
 # Unified metadata model for all Gemini blocks
 class GeminiBlockMetadata(BaseModel):
     """Metadata for Gemini AI blocks."""
+
     id: str
     block_type: Literal["file_operations", "file_content", "message"]
     description: str | None = None
-    
+
     # File-specific fields (optional)
     file_path: str | None = None
-    
+
     # Message-specific fields (optional)
     message_type: Literal["info", "warning", "error", "status"] | None = None
 
@@ -41,8 +43,9 @@ class GeminiBlockMetadata(BaseModel):
 # Unified content model
 class GeminiBlockContent(BaseModel):
     """Content for Gemini AI blocks."""
+
     raw_content: str = Field(default="", description="Raw content of the block")
-    
+
     @classmethod
     def parse(cls, raw_text: str) -> "GeminiBlockContent":
         """Parse content from raw text."""
@@ -113,31 +116,32 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
     # Try GOOGLE_API_KEY first (official), then GEMINI_API_KEY
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
-    
+        msg = "Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable"
+        raise ValueError(msg)
+
     client = genai.Client(api_key=api_key)
-    
+
     # Combine system prompt with user prompt
     system_prompt = create_simple_prompt()
     full_prompt = f"{system_prompt}\n\nUser: {prompt}"
-    
+
     # Stream the response
     response = await client.aio.models.generate_content_stream(
         model="gemini-2.0-flash-exp",  # or "gemini-1.5-flash" for stable
-        contents=full_prompt
+        contents=full_prompt,
     )
-    
+
     async for chunk in response:
         if chunk.text:
             yield chunk.text
 
 
-async def main():
+async def main() -> None:
     """Run the simple Gemini demo."""
     print("🤖 StreamBlocks + Gemini Simple Demo")
     print("=" * 60)
     print("\nUsing unified delimiter + frontmatter syntax for all blocks")
-    
+
     # Create a single syntax for all Gemini responses
     syntax = DelimiterFrontmatterSyntax(
         name="gemini_syntax",
@@ -146,24 +150,24 @@ async def main():
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
-    
+
     # Create registry and processor
     registry = Registry(syntax)
     processor = StreamBlockProcessor(registry, lines_buffer=10)
-    
+
     # Example prompts
     example_prompts = [
         "Create a Python hello world script with a README file",
         "Create a basic Flask web server with routes",
         "Write a function to calculate fibonacci numbers",
         "Create a simple calculator module with tests",
-        "Explain how to use async/await in Python with examples"
+        "Explain how to use async/await in Python with examples",
     ]
-    
+
     print("\nExample prompts:")
     for i, prompt in enumerate(example_prompts, 1):
         print(f"{i}. {prompt}")
-    
+
     # Get user input
     if len(sys.argv) > 1:
         arg = sys.argv[1]
@@ -179,110 +183,106 @@ async def main():
             user_prompt = example_prompts[0]
         else:
             user_prompt = user_input
-    
+
     print(f"\n🚀 Processing: {user_prompt}")
     print("=" * 60)
-    
+
     # Track extracted blocks
     extracted_blocks = []
     raw_text = []
-    
+
     # Process the stream
     try:
         async for event in processor.process_stream(stream_from_gemini(user_prompt)):
             if event.type == EventType.BLOCK_EXTRACTED:
                 block = event.metadata["extracted_block"]
                 extracted_blocks.append(block)
-                
+
                 metadata: GeminiBlockMetadata = block.metadata
                 content: GeminiBlockContent = block.content
-                
+
                 print(f"\n📦 Block: {metadata.id} ({metadata.block_type})")
                 if metadata.description:
                     print(f"   Description: {metadata.description}")
-                
+
                 # Handle different block types
                 if metadata.block_type == "file_operations":
                     # Parse file operations from content
-                    lines = content.raw_content.strip().split('\n')
+                    lines = content.raw_content.strip().split("\n")
                     operations = {"create": [], "edit": [], "delete": []}
-                    
+
                     for line in lines:
-                        if ':' in line:
-                            path, op = line.rsplit(':', 1)
-                            if op.upper() == 'C':
+                        if ":" in line:
+                            path, op = line.rsplit(":", 1)
+                            if op.upper() == "C":
                                 operations["create"].append(path)
-                            elif op.upper() == 'E':
+                            elif op.upper() == "E":
                                 operations["edit"].append(path)
-                            elif op.upper() == 'D':
+                            elif op.upper() == "D":
                                 operations["delete"].append(path)
-                    
+
                     if operations["create"]:
                         print(f"   ✅ Create: {', '.join(operations['create'])}")
                     if operations["edit"]:
                         print(f"   ✏️  Edit: {', '.join(operations['edit'])}")
                     if operations["delete"]:
                         print(f"   ❌ Delete: {', '.join(operations['delete'])}")
-                
+
                 elif metadata.block_type == "file_content":
                     print(f"   📄 File: {metadata.file_path}")
                     # Show preview of content
-                    lines = content.raw_content.split('\n')
+                    lines = content.raw_content.split("\n")
                     preview_lines = 3
                     for i, line in enumerate(lines[:preview_lines]):
                         print(f"      {line}")
                     if len(lines) > preview_lines:
                         print(f"      ... ({len(lines) - preview_lines} more lines)")
-                
+
                 elif metadata.block_type == "message":
-                    icons = {
-                        "info": "ℹ️ ",
-                        "warning": "⚠️ ",
-                        "error": "❌",
-                        "status": "📊"
-                    }
+                    icons = {"info": "ℹ️ ", "warning": "⚠️ ", "error": "❌", "status": "📊"}
                     icon = icons.get(metadata.message_type, "💬")
                     print(f"   {icon} {metadata.message_type or 'message'}:")
                     # Show first few lines of message
-                    lines = content.raw_content.split('\n')
+                    lines = content.raw_content.split("\n")
                     for line in lines[:5]:
                         print(f"      {line}")
                     if len(lines) > 5:
                         print(f"      ... ({len(lines) - 5} more lines)")
-            
+
             elif event.type == EventType.BLOCK_DELTA:
                 # Show progress
                 size = len(event.metadata.get("partial_block", {}).get("accumulated", ""))
                 print(f"\r⏳ Processing block... {size} bytes", end="", flush=True)
-            
+
             elif event.type == EventType.RAW_TEXT:
                 # Collect any text outside blocks
                 text = event.data.strip()
                 if text:
                     raw_text.append(text)
-            
+
             elif event.type == EventType.BLOCK_REJECTED:
                 print(f"\n⚠️  Block rejected: {event.metadata['reason']}")
-    
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
-    
+
     # Summary
     print(f"\n\n{'=' * 60}")
     print("SUMMARY:")
     print(f"  ✅ Extracted {len(extracted_blocks)} blocks")
-    
+
     # Count block types
     block_types = {}
     for block in extracted_blocks:
         bt = block.metadata.block_type
         block_types[bt] = block_types.get(bt, 0) + 1
-    
+
     for bt, count in sorted(block_types.items()):
         print(f"     - {bt}: {count}")
-    
+
     if raw_text:
         print(f"\n  💬 Raw text lines: {len(raw_text)}")
 

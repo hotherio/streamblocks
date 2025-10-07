@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
+from hother.streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
 
 if TYPE_CHECKING:
-    from streamblocks.core.models import BlockCandidate
+    from hother.streamblocks.core.models import BlockCandidate
 
 
 class BlockSyntax(Protocol[TMetadata, TContent]):

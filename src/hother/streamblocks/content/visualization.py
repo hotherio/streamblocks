@@ -6,12 +6,12 @@ from typing import Any, Literal
 
 import yaml
 
-from streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata
 
 
 class VisualizationMetadata(BaseMetadata):
     """Metadata for visualization blocks."""
-    
+
     viz_type: Literal["chart", "diagram", "table", "code", "ascii_art"]
     title: str
     format: Literal["ascii", "markdown", "html"] = "markdown"
@@ -21,10 +21,10 @@ class VisualizationMetadata(BaseMetadata):
 
 class VisualizationContent(BaseContent):
     """Content for visualization blocks."""
-    
+
     data: dict[str, Any]
     rendered: str | None = None
-    
+
     @classmethod
     def parse(cls, raw_text: str) -> VisualizationContent:
         """Parse YAML data for visualization."""
@@ -33,6 +33,7 @@ class VisualizationContent(BaseContent):
             if not isinstance(data, dict):
                 data = {"content": data}
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML data: {e}") from e
-        
+            msg = f"Invalid YAML data: {e}"
+            raise ValueError(msg) from e
+
         return cls(raw_content=raw_text, data=data)

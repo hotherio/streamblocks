@@ -3,13 +3,13 @@
 import asyncio
 from collections.abc import AsyncIterator
 
-from streamblocks import (
-    Registry,
+from hother.streamblocks import (
     DelimiterPreambleSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
-from streamblocks.content import FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.content import FileOperationsContent, FileOperationsMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -50,17 +50,14 @@ async def main() -> None:
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
-    
+
     # Create type-specific registry
     registry = Registry(syntax)
 
     # Add a custom validator
     def no_root_delete(metadata: FileOperationsMetadata, content: FileOperationsContent) -> bool:
         """Don't allow deleting files from root directory."""
-        for op in content.operations:
-            if op.action == "delete" and op.path.startswith("/"):
-                return False
-        return True
+        return all(not (op.action == "delete" and op.path.startswith("/")) for op in content.operations)
 
     registry.add_validator("files_operations", no_root_delete)
 

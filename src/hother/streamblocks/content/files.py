@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata
 
 
 class FileOperation(BaseModel):
     """Single file operation."""
 
-    action: Literal["create", "delete"]
+    action: Literal["create", "edit", "delete"]
     path: str
 
 
@@ -31,19 +31,21 @@ class FileOperationsContent(BaseContent):
 
         Where C=create, E=edit, D=delete
         """
-        operations = []
+        operations: list[FileOperation] = []
         for line in raw_text.strip().split("\n"):
             if not line.strip():
                 continue
 
             if ":" not in line:
-                raise ValueError(f"Invalid format: {line}")
+                msg = f"Invalid format: {line}"
+                raise ValueError(msg)
 
             path, action = line.rsplit(":", 1)
-            action_map = {"C": "create", "D": "delete"}
+            action_map = {"C": "create", "E": "edit", "D": "delete"}
 
             if action.upper() not in action_map:
-                raise ValueError(f"Unknown action: {action}")
+                msg = f"Unknown action: {action}"
+                raise ValueError(msg)
 
             operations.append(
                 FileOperation(
@@ -57,12 +59,12 @@ class FileOperationsContent(BaseContent):
 
 class FileOperationsMetadata(BaseMetadata):
     """Metadata for file operations blocks."""
-    
+
     # Additional fields beyond BaseMetadata
     type: Literal["files_operations"] = "files_operations"  # Alias for compatibility
     description: str | None = None
-    
-    def __init__(self, **data):
+
+    def __init__(self, **data: Any) -> None:
         # Set default block_type if not provided
         if "block_type" not in data:
             data["block_type"] = "files_operations"
@@ -71,11 +73,11 @@ class FileOperationsMetadata(BaseMetadata):
 
 class FileContentMetadata(BaseMetadata):
     """Metadata for file content blocks."""
-    
+
     file: str  # Path to the file
     description: str | None = None
-    
-    def __init__(self, **data):
+
+    def __init__(self, **data: Any) -> None:
         # Set default block_type if not provided
         if "block_type" not in data:
             data["block_type"] = "file_content"
@@ -84,9 +86,9 @@ class FileContentMetadata(BaseMetadata):
 
 class FileContentContent(BaseContent):
     """Content model for file content blocks."""
-    
+
     # The raw_content field from BaseContent contains the file contents
-    
+
     @classmethod
     def parse(cls, raw_text: str) -> FileContentContent:
         """Parse file content - just stores the raw text."""

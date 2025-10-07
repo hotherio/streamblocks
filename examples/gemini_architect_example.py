@@ -17,20 +17,19 @@ import asyncio
 import os
 import sys
 import traceback
-from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from google import genai
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from streamblocks import (
+from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     EventType,
     Registry,
     StreamBlockProcessor,
 )
-from streamblocks.content import (
+from hother.streamblocks.content import (
     FileContentContent,
     FileContentMetadata,
     FileOperationsContent,
@@ -46,8 +45,11 @@ from streamblocks.content import (
     VisualizationContent,
     VisualizationMetadata,
 )
-from streamblocks.core.models import BaseContent, BaseMetadata, BlockCandidate
-from streamblocks.core.types import ParseResult
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockCandidate
+from hother.streamblocks.core.types import ParseResult
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 
 class UnifiedMetadata(BaseMetadata):
@@ -96,14 +98,14 @@ class UnifiedContent(BaseContent):
 class UnifiedSyntax(DelimiterFrontmatterSyntax):
     """Syntax that dynamically routes to appropriate metadata/content classes."""
 
-    def __init__(self, name: str = "unified_syntax"):
+    def __init__(self, name: str = "unified_syntax") -> None:
         # Initialize with unified classes
         super().__init__(
             name=name,
             metadata_class=UnifiedMetadata,
             content_class=UnifiedContent,
             start_delimiter="!!start",
-            end_delimiter="!!end"
+            end_delimiter="!!end",
         )
 
     def parse_block(self, candidate: BlockCandidate) -> ParseResult[Any, Any]:
@@ -127,14 +129,14 @@ class UnifiedSyntax(DelimiterFrontmatterSyntax):
                 metadata_dict["type"] = "files_operations"  # Required by FileOperationsMetadata
                 metadata = FileOperationsMetadata(**metadata_dict)
                 # Extract only the file operation lines (before any --- separator)
-                content_lines = content_text.strip().split('\n')
+                content_lines = content_text.strip().split("\n")
                 file_ops_lines = []
                 for line in content_lines:
-                    if line.strip() == '---':
+                    if line.strip() == "---":
                         break  # Stop at separator
-                    if line.strip() and ':' in line:
+                    if line.strip() and ":" in line:
                         file_ops_lines.append(line)
-                clean_content = '\n'.join(file_ops_lines)
+                clean_content = "\n".join(file_ops_lines)
                 content = FileOperationsContent.parse(clean_content)
             elif block_type == "patch":
                 metadata_dict["type"] = "patch"  # Required by PatchMetadata
@@ -161,9 +163,9 @@ class UnifiedSyntax(DelimiterFrontmatterSyntax):
             return ParseResult(success=True, metadata=metadata, content=content)
         except Exception as e:
             # Provide more detailed error information
-            error_msg = f"Failed to parse {block_type} block: {str(e)}"
-            if hasattr(e, '__class__'):
-                error_msg = f"{e.__class__.__name__}: {str(e)}"
+            error_msg = f"Failed to parse {block_type} block: {e!s}"
+            if hasattr(e, "__class__"):
+                error_msg = f"{e.__class__.__name__}: {e!s}"
             return ParseResult(success=False, error=error_msg)
 
 
@@ -295,7 +297,7 @@ class Settings(BaseSettings):
     app_name: str = "My Application"
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./app.db")
-    
+
     class Config:
         env_file = ".env"
 
@@ -366,7 +368,7 @@ def setup_processor() -> StreamBlockProcessor:
     return StreamBlockProcessor(registry, lines_buffer=5)
 
 
-async def process_file_operations(block):
+async def process_file_operations(block) -> None:
     """Process a file operations block."""
     metadata: FileOperationsMetadata = block.metadata
     content: FileOperationsContent = block.content
@@ -398,7 +400,7 @@ async def process_file_operations(block):
             print(f"   - {path}")
 
 
-async def process_patch(block):
+async def process_patch(block) -> None:
     """Process a patch block."""
     metadata: PatchMetadata = block.metadata
     content: PatchContent = block.content
@@ -412,13 +414,13 @@ async def process_patch(block):
     diff_lines = content.diff.split("\n")[:10]
     print("\nDiff preview:")
     for line in diff_lines:
-        if line.startswith("+") or line.startswith("-"):
+        if line.startswith(("+", "-")):
             print(f"  {line}")
         else:
             print(f"  {line}")
 
 
-async def process_tool_call(block):
+async def process_tool_call(block) -> None:
     """Process a tool call block."""
     metadata: ToolCallMetadata = block.metadata
     content: ToolCallContent = block.content
@@ -433,7 +435,7 @@ async def process_tool_call(block):
         print(f"   - {key}: {value}")
 
 
-async def process_memory(block):
+async def process_memory(block) -> None:
     """Process a memory block."""
     metadata: MemoryMetadata = block.metadata
     content: MemoryContent = block.content
@@ -451,7 +453,7 @@ async def process_memory(block):
         print("📋 Listing keys")
 
 
-async def process_visualization(block):
+async def process_visualization(block) -> None:
     """Process a visualization block."""
     metadata: VisualizationMetadata = block.metadata
     content: VisualizationContent = block.content
@@ -473,7 +475,7 @@ async def process_visualization(block):
         print(f"\n📊 Data keys: {list(content.data.keys())}")
 
 
-async def process_file_content(block):
+async def process_file_content(block) -> None:
     """Process a file content block."""
     metadata: FileContentMetadata = block.metadata
     content: FileContentContent = block.content
@@ -484,28 +486,21 @@ async def process_file_content(block):
         print(f"📝 {metadata.description}")
 
     # Show content preview
-    lines = content.raw_content.strip().split('\n')
+    lines = content.raw_content.strip().split("\n")
     print(f"\n📊 Content preview ({len(lines)} lines):")
     for i, line in enumerate(lines[:10]):
-        print(f"   {i+1}: {line}")
+        print(f"   {i + 1}: {line}")
     if len(lines) > 10:
         print(f"   ... and {len(lines) - 10} more lines")
 
 
-async def process_message(block):
+async def process_message(block) -> None:
     """Process a message block."""
     metadata: MessageMetadata = block.metadata
     content: MessageContent = block.content
 
     # Choose emoji based on message type
-    emoji_map = {
-        "info": "ℹ️",
-        "warning": "⚠️",
-        "error": "❌",
-        "success": "✅",
-        "status": "📊",
-        "explanation": "💡"
-    }
+    emoji_map = {"info": "ℹ️", "warning": "⚠️", "error": "❌", "success": "✅", "status": "📊", "explanation": "💡"}
     emoji = emoji_map.get(metadata.message_type, "💬")
 
     print(f"\n{emoji} Message: {metadata.id}")
@@ -524,7 +519,8 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
     # Try GOOGLE_API_KEY first (official), then GEMINI_API_KEY
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
+        msg = "Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable"
+        raise ValueError(msg)
 
     client = genai.Client(api_key=api_key)
     model_id = "gemini-2.5-flash"
@@ -540,7 +536,7 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
             yield chunk.text
 
 
-async def main():
+async def main() -> None:
     """Run the architect example."""
     print("🏗️  Gemini AI Architect - Multi-Block Demo")
     print("=" * 60)
@@ -598,9 +594,9 @@ async def main():
                 block_type = block.metadata.block_type
                 blocks_by_type[block_type] += 1
 
-                print(f"\n{'='*60}")
+                print(f"\n{'=' * 60}")
                 print(f"📦 Block extracted: {block_type}")
-                print(f"{'='*60}")
+                print(f"{'=' * 60}")
 
                 # Process based on type
                 if block_type == "files_operations":
@@ -624,16 +620,16 @@ async def main():
                     print(f"\n💬 {text}")
 
             elif event.type == EventType.BLOCK_REJECTED:
-                reason = event.metadata.get('reason', 'Unknown')
+                reason = event.metadata.get("reason", "Unknown")
                 print(f"\n⚠️  Block rejected: {reason}")
                 # Show more details about the rejection
-                if 'raw_text' in event.metadata:
-                    preview = event.metadata['raw_text'][:200]
+                if "raw_text" in event.metadata:
+                    preview = event.metadata["raw_text"][:200]
                     print(f"   Preview: {preview}...")
                 else:
                     # Show the raw data that was rejected
                     preview = event.data[:200] if len(event.data) > 200 else event.data
-                    print(f"   Raw data preview: {repr(preview)}")
+                    print(f"   Raw data preview: {preview!r}")
 
     except Exception as e:
         print(f"\n❌ Error: {e}")

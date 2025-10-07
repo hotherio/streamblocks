@@ -6,10 +6,8 @@ from datetime import datetime
 from typing import Any
 
 import yaml
-
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical, VerticalScroll
-from textual.screen import Screen
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.widgets import (
     Button,
     Checkbox,
@@ -17,21 +15,21 @@ from textual.widgets import (
     Header,
     Input,
     Label,
-    ListView,
     ListItem,
+    ListView,
     RadioButton,
     RadioSet,
     Select,
     Static,
 )
 
-from streamblocks import (
-    Registry,
+from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     EventType,
+    Registry,
     StreamBlockProcessor,
 )
-from streamblocks.content import (
+from hother.streamblocks.content import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -49,13 +47,12 @@ from streamblocks.content import (
     YesNoContent,
     YesNoMetadata,
 )
-from streamblocks.core.models import BaseContent, BaseMetadata
-from streamblocks.core.models import Block
+from hother.streamblocks.core.models import Block
 
 
 class InteractiveWidget(Static):
     """Base class for interactive block widgets."""
-    
+
     def __init__(self, block: Block[Any, Any]) -> None:
         super().__init__()
         self.block = block
@@ -64,13 +61,13 @@ class InteractiveWidget(Static):
 
 class YesNoWidget(InteractiveWidget):
     """Widget for yes/no questions."""
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"❓ {self.block.content.prompt}", classes="prompt")
         with Horizontal(classes="button-group"):
             yield Button(self.block.metadata.yes_label, id="yes", variant="primary")
             yield Button(self.block.metadata.no_label, id="no", variant="default")
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         self.response = event.button.id == "yes"
@@ -79,10 +76,10 @@ class YesNoWidget(InteractiveWidget):
 
 class ChoiceWidget(InteractiveWidget):
     """Widget for single choice questions."""
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"🔘 {self.block.content.prompt}", classes="prompt")
-        
+
         if self.block.metadata.display_style == "dropdown":
             options = [(opt, opt) for opt in self.block.content.options]
             yield Select(options, prompt="Select an option", id="choice-select")
@@ -90,12 +87,12 @@ class ChoiceWidget(InteractiveWidget):
             with RadioSet(id="choice-radio"):
                 for opt in self.block.content.options:
                     yield RadioButton(opt)
-    
+
     def on_select_changed(self, event: Select.Changed) -> None:
         """Handle dropdown selection."""
         self.response = str(event.value)
         self.app.handle_response(self.block.metadata.id, self.response)
-    
+
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         """Handle radio button selection."""
         if event.pressed:
@@ -105,25 +102,25 @@ class ChoiceWidget(InteractiveWidget):
 
 class MultiChoiceWidget(InteractiveWidget):
     """Widget for multiple choice questions."""
-    
+
     def __init__(self, block: Block[Any, Any]) -> None:
         super().__init__(block)
         self.selected: set[str] = set()
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"☑️  {self.block.content.prompt}", classes="prompt")
         if self.block.metadata.min_selections > 1 or self.block.metadata.max_selections:
             yield Label(
                 f"Select {self.block.metadata.min_selections}-{self.block.metadata.max_selections or 'all'} options",
-                classes="hint"
+                classes="hint",
             )
-        
+
         with Container(id="checkbox-group"):
             for i, opt in enumerate(self.block.content.options):
                 yield Checkbox(opt, id=f"check-{i}", value=False)
-        
+
         yield Button("Submit", id="submit", variant="primary")
-    
+
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         """Handle checkbox changes."""
         option = event.checkbox.label
@@ -131,33 +128,32 @@ class MultiChoiceWidget(InteractiveWidget):
             self.selected.add(option)
         else:
             self.selected.discard(option)
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle submit button."""
-        if event.button.id == "submit":
-            if self.block.metadata.min_selections <= len(self.selected) <= (self.block.metadata.max_selections or float('inf')):
-                self.response = list(self.selected)
-                self.app.handle_response(self.block.metadata.id, self.response)
+        if event.button.id == "submit" and (
+            self.block.metadata.min_selections
+            <= len(self.selected)
+            <= (self.block.metadata.max_selections or float("inf"))
+        ):
+            self.response = list(self.selected)
+            self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class InputWidget(InteractiveWidget):
     """Widget for text input."""
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"📝 {self.block.content.prompt}", classes="prompt")
-        yield Input(
-            placeholder=self.block.content.placeholder,
-            value=self.block.content.default_value,
-            id="text-input"
-        )
+        yield Input(placeholder=self.block.content.placeholder, value=self.block.content.default_value, id="text-input")
         yield Button("Submit", id="submit", variant="primary")
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle submit button."""
         if event.button.id == "submit":
             input_widget = self.query_one("#text-input", Input)
             value = input_widget.value
-            
+
             # Basic validation
             if len(value) >= self.block.metadata.min_length:
                 if self.block.metadata.max_length is None or len(value) <= self.block.metadata.max_length:
@@ -167,15 +163,17 @@ class InputWidget(InteractiveWidget):
 
 class ScaleWidget(InteractiveWidget):
     """Widget for scale rating."""
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"⭐ {self.block.content.prompt}", classes="prompt")
-        
+
         with RadioSet(id="scale-radio"):
-            for value in range(self.block.metadata.min_value, self.block.metadata.max_value + 1, self.block.metadata.step):
+            for value in range(
+                self.block.metadata.min_value, self.block.metadata.max_value + 1, self.block.metadata.step
+            ):
                 label = self.block.content.labels.get(value, str(value))
                 yield RadioButton(f"{value} - {label}")
-    
+
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         """Handle radio button selection."""
         if event.pressed:
@@ -187,18 +185,18 @@ class ScaleWidget(InteractiveWidget):
 
 class RankingWidget(InteractiveWidget):
     """Widget for ranking items."""
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"🔢 {self.block.content.prompt}", classes="prompt")
         yield Label("Use ↑/↓ to move items, Space to select", classes="hint")
-        
+
         list_view = ListView(id="ranking-list")
         for item in self.block.content.items:
             list_view.append(ListItem(Label(item)))
         yield list_view
-        
+
         yield Button("Submit Ranking", id="submit", variant="primary")
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle submit button."""
         if event.button.id == "submit":
@@ -208,23 +206,23 @@ class RankingWidget(InteractiveWidget):
                 if isinstance(item, ListItem):
                     label = item.query_one(Label)
                     ranked_items.append(label.renderable)
-            
+
             self.response = ranked_items
             self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class ConfirmWidget(InteractiveWidget):
     """Widget for confirmation dialogs."""
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"⚠️  {self.block.content.prompt}", classes="prompt")
         yield Label(self.block.content.message, classes="message")
-        
+
         with Horizontal(classes="button-group"):
             variant = "error" if self.block.metadata.danger_mode else "primary"
             yield Button(self.block.metadata.confirm_label, id="confirm", variant=variant)
             yield Button(self.block.metadata.cancel_label, id="cancel", variant="default")
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         self.response = event.button.id == "confirm"
@@ -233,18 +231,18 @@ class ConfirmWidget(InteractiveWidget):
 
 class FormWidget(InteractiveWidget):
     """Widget for form blocks."""
-    
+
     def __init__(self, block: Block[Any, Any]) -> None:
         super().__init__(block)
         self.form_data: dict[str, Any] = {}
-    
+
     def compose(self) -> ComposeResult:
         yield Label(f"📋 {self.block.content.prompt}", classes="prompt")
-        
+
         with Container(id="form-fields"):
             for field in self.block.content.fields:
                 yield Label(f"{field.label}{' *' if field.required else ''}")
-                
+
                 if field.field_type == "text":
                     yield Input(id=f"field-{field.name}")
                 elif field.field_type == "yesno":
@@ -252,11 +250,11 @@ class FormWidget(InteractiveWidget):
                         yield RadioButton("Yes")
                         yield RadioButton("No")
                 # Add more field types as needed
-        
+
         with Horizontal(classes="button-group"):
             yield Button(self.block.metadata.submit_label, id="submit", variant="primary")
             yield Button(self.block.metadata.cancel_label, id="cancel", variant="default")
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         if event.button.id == "submit":
@@ -269,38 +267,38 @@ class FormWidget(InteractiveWidget):
 
 class ResponseHistory(Static):
     """Widget showing response history."""
-    
+
     def __init__(self) -> None:
         super().__init__()
         self.responses: list[tuple[str, str, Any]] = []
-    
+
     def add_response(self, block_id: str, timestamp: str, response: Any) -> None:
         """Add a response to history."""
         self.responses.append((block_id, timestamp, response))
         self.refresh()
-    
+
     def render(self) -> str:
         """Render the response history."""
         if not self.responses:
             return "[dim]No responses yet[/dim]"
-        
+
         lines = []
         for block_id, timestamp, response in self.responses[-10:]:  # Show last 10
             lines.append(f"[cyan]{timestamp}[/cyan] {block_id}")
             lines.append(f"  Response: {response}")
             lines.append("")
-        
+
         return "\n".join(lines)
 
 
 class InteractiveBlocksApp(App):
     """Textual app for interactive blocks."""
-    
+
     CSS = """
     Horizontal {
         height: 100%;
     }
-    
+
     #active-widgets {
         width: 60%;
         border: solid cyan;
@@ -308,7 +306,7 @@ class InteractiveBlocksApp(App):
         height: 100%;
         overflow-y: scroll;
     }
-    
+
     #response-history {
         width: 40%;
         border: solid green;
@@ -316,128 +314,128 @@ class InteractiveBlocksApp(App):
         height: 100%;
         overflow-y: scroll;
     }
-    
+
     #widget-container {
         height: auto;
         min-height: 100%;
     }
-    
+
     #widget-spacer {
         height: 1fr;
         min-height: 1;
     }
-    
+
     #history {
         height: auto;
     }
-    
+
     .title {
         text-style: bold;
         margin: 0 0 1 0;
         dock: top;
     }
-    
+
     .prompt {
         margin: 1 0;
         text-style: bold;
     }
-    
+
     .hint {
         margin: 0 0 1 0;
         color: $text-muted;
     }
-    
+
     .message {
         margin: 1;
         padding: 1;
         background: $surface;
     }
-    
+
     .button-group {
         margin: 1 0;
         height: 3;
     }
-    
+
     #checkbox-group {
         height: auto;
         margin: 0 0 1 0;
     }
-    
+
     InteractiveWidget {
         height: auto;
         margin: 0 0 1 0;
         padding: 1;
         border: solid $primary;
     }
-    
+
     Checkbox {
         height: auto;
         margin: 0;
         padding: 0 1;
     }
-    
+
     RadioSet {
         height: auto;
         margin: 0;
     }
-    
+
     RadioButton {
         height: auto;
         margin: 0;
         padding: 0 1;
     }
-    
+
     Select {
         height: auto;
         margin: 0 0 1 0;
     }
-    
+
     Input {
         height: auto;
         margin: 0 0 1 0;
     }
-    
+
     Button {
         height: auto;
     }
-    
+
     ListView {
         height: auto;
         max-height: 10;
         margin: 0 0 1 0;
     }
     """
-    
+
     def __init__(self) -> None:
         super().__init__()
         self.active_widgets: list[InteractiveWidget] = []
         self.processor: StreamBlockProcessor | None = None
         self.current_block_id: str | None = None
-    
+
     def compose(self) -> ComposeResult:
         """Create the UI layout."""
         yield Header()
-        
+
         with Horizontal():
             with VerticalScroll(id="active-widgets", can_focus=True):
                 yield Static("Active Widgets (newest at bottom ↓)", classes="title")
                 yield Container(id="widget-container")
-            
+
             with VerticalScroll(id="response-history", can_focus=True):
                 yield Static("Response History", classes="title")
                 yield Container(id="history")
-        
+
         yield Footer()
-    
+
     def on_mount(self) -> None:
         """Start processing blocks when app starts."""
         # Start processing blocks immediately
         self.run_worker(self.process_blocks())
-    
+
     async def process_blocks(self) -> None:
         """Process the block stream."""
         # Note: This example uses a workaround for dynamic block types
-        
+
         # Create a block type to class mapping
         block_type_mapping = {
             "yesno": (YesNoMetadata, YesNoContent),
@@ -449,50 +447,51 @@ class InteractiveBlocksApp(App):
             "confirm": (ConfirmMetadata, ConfirmContent),
             "form": (FormMetadata, FormContent),
         }
-        
+
         # Create a custom syntax that can handle different block types
         class InteractiveSyntax(DelimiterFrontmatterSyntax):
             def __init__(self, block_mapping: dict[str, tuple[type, type]]) -> None:
                 super().__init__(name="interactive_syntax")
                 self.block_mapping = block_mapping
-                
+
             def parse_block(self, candidate: Any) -> Any:
                 # First, parse just the metadata to determine block type
-                import yaml
                 metadata_dict = {}
                 if candidate.metadata_lines:
                     yaml_content = "\n".join(candidate.metadata_lines)
                     try:
                         metadata_dict = yaml.safe_load(yaml_content) or {}
                     except Exception as e:
-                        from streamblocks.core.types import ParseResult
+                        from hother.streamblocks.core.types import ParseResult
+
                         return ParseResult(success=False, error=f"Invalid YAML: {e}")
-                
+
                 # Get the block type
                 block_type = metadata_dict.get("block_type", "unknown")
-                
+
                 # Set the appropriate classes
                 if block_type in self.block_mapping:
                     self.metadata_class, self.content_class = self.block_mapping[block_type]
                 else:
                     # Use base classes as fallback
-                    from streamblocks.core.models import BaseMetadata, BaseContent
+                    from hother.streamblocks.core.models import BaseContent, BaseMetadata
+
                     self.metadata_class = BaseMetadata
                     self.content_class = BaseContent
-                
+
                 # Now parse with the correct classes
                 return super().parse_block(candidate)
-        
+
         # Create a single syntax that can handle multiple block types
         # This is a workaround - in the new design, you'd normally have separate processors
         interactive_syntax = InteractiveSyntax(block_mapping=block_type_mapping)
-        
+
         # Create type-specific registry
         registry = Registry(interactive_syntax)
-        
+
         # Create processor
         self.processor = StreamBlockProcessor(registry, lines_buffer=10)
-        
+
         # Process stream and show widgets as they arrive
         async for event in self.processor.process_stream(demo_stream()):
             if event.type == EventType.BLOCK_EXTRACTED:
@@ -501,8 +500,7 @@ class InteractiveBlocksApp(App):
                 await self.add_interactive_block(block)
             elif event.type == EventType.BLOCK_REJECTED:
                 self.log(f"Block rejected: {event.metadata['reason']}")
-    
-    
+
     async def add_interactive_block(self, block: Block[Any, Any]) -> None:
         """Add a new interactive block widget."""
         widget_class = {
@@ -515,36 +513,33 @@ class InteractiveBlocksApp(App):
             "confirm": ConfirmWidget,
             "form": FormWidget,
         }.get(block.metadata.block_type)
-        
+
         if widget_class:
             widget = widget_class(block)
             self.active_widgets.append(widget)
-            
+
             # Add to UI at the bottom
             container = self.query_one("#widget-container", Container)
             await container.mount(widget)
             self.log(f"Mounted widget for block {block.metadata.id}")
-            
+
             # Scroll to show the new widget
             scroll_container = self.query_one("#active-widgets", VerticalScroll)
             scroll_container.scroll_to_widget(widget, animate=True)
-            
+
         else:
             self.log(f"No widget class for block type: {block.metadata.block_type}")
-    
+
     def handle_response(self, block_id: str, response: Any) -> None:
         """Handle a widget response."""
         # Add to history
         timestamp = datetime.now().strftime("%H:%M:%S")
         history_container = self.query_one("#history", Container)
-        
+
         # Create a new history entry
-        entry = Static(
-            f"[cyan]{timestamp}[/cyan] {block_id}\n  Response: {response}\n",
-            classes="history-entry"
-        )
+        entry = Static(f"[cyan]{timestamp}[/cyan] {block_id}\n  Response: {response}\n", classes="history-entry")
         history_container.mount(entry)
-        
+
         # Remove widget
         for widget in self.active_widgets:
             if widget.block.metadata.id == block_id:
@@ -555,7 +550,7 @@ class InteractiveBlocksApp(App):
 
 async def demo_stream() -> AsyncIterator[str]:
     """Demo stream with interactive blocks."""
-    text = '''!!start
+    text = """!!start
 ---
 id: welcome
 block_type: yesno
@@ -625,14 +620,14 @@ labels:
   3: "Good"
   5: "Excellent"
 !!end
-'''
-    
+"""
+
     # Stream in chunks with delays
     # First, process to handle wait markers
     processed_text = ""
-    lines = text.split('\n')
-    
-    for i, line in enumerate(lines):
+    lines = text.split("\n")
+
+    for _i, line in enumerate(lines):
         if line.strip() == "[Wait 2 seconds...]":
             # Yield what we have so far in chunks
             chunk_size = 50
@@ -643,8 +638,8 @@ labels:
             processed_text = ""  # Reset for next section
             await asyncio.sleep(2)  # Wait
         else:
-            processed_text += line + '\n'
-    
+            processed_text += line + "\n"
+
     # Yield any remaining text
     if processed_text:
         chunk_size = 50

@@ -33,17 +33,17 @@ from streamblocks.content import FileOperationsContent, FileOperationsMetadata
 async def main():
     # Setup registry
     registry = BlockRegistry()
-    
+
     # Register a syntax
     syntax = DelimiterPreambleSyntax(
         metadata_class=FileOperationsMetadata,
         content_class=FileOperationsContent,
     )
     registry.register_syntax(syntax, block_types=["files_operations"])
-    
+
     # Create processor
     processor = StreamBlockProcessor(registry)
-    
+
     # Process a stream
     async def text_stream():
         text = """
@@ -54,7 +54,7 @@ src/utils.py:E
 """
         for line in text.strip().split("\n"):
             yield line + "\n"
-    
+
     # Handle events
     async for event in processor.process_stream(text_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
@@ -111,7 +111,7 @@ class MyMetadata(BaseModel):
 
 class MyContent(BaseModel):
     data: str
-    
+
     @classmethod
     def parse(cls, raw_text: str) -> "MyContent":
         # Custom parsing logic

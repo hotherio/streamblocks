@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import AsyncGenerator, AsyncIterator
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any
 
-from streamblocks.core.models import Block, BlockCandidate
-from streamblocks.core.registry import Registry
-from streamblocks.core.types import BlockState, EventType, StreamEvent
+from hother.streamblocks.core.models import Block, BlockCandidate
+from hother.streamblocks.core.types import BlockState, EventType, StreamEvent
 
-# Type variable for syntax types
-TSyntax = TypeVar("TSyntax")
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, AsyncIterator
+
+    from hother.streamblocks.core.protocols import BlockSyntax
+    from hother.streamblocks.core.registry import Registry
 
 
-class StreamBlockProcessor(Generic[TSyntax]):
+class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
     """Main stream processing engine for a single syntax type.
 
     This processor works with exactly one syntax type, ensuring type safety
