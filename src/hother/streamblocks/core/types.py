@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import Block
 
 # Core type variables
 TMetadata = TypeVar("TMetadata", bound=BaseModel)
@@ -40,7 +43,8 @@ class StreamEvent[TMetadata: BaseModel, TContent: BaseModel](BaseModel):
 
     type: EventType
     data: str  # Raw text (line or complete block)
-    content: dict[str, object] | None = None  # Structured event data
+    block: Block[TMetadata, TContent] | None = None  # For BLOCK_EXTRACTED events
+    content: dict[str, object] | None = None  # For other event-specific data
 
 
 @dataclass

@@ -18,6 +18,9 @@ from hother.streamblocks.syntaxes import (
     MarkdownFrontmatterSyntax,
 )
 
+# Rebuild StreamEvent model to resolve forward reference to Block
+StreamEvent.model_rebuild()
+
 __all__ = [
     # Core models
     "BaseContent",

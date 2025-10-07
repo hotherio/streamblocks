@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Generic
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.types import BlockState, TBlockDef, TContent, TMetadata
+from hother.streamblocks.core.types import BlockState, TContent, TMetadata
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.protocols import BlockSyntax
@@ -129,14 +129,15 @@ class BlockCandidate:
         return hashlib.sha256(text_slice.encode()).hexdigest()[:8]
 
 
-class Block(BaseModel, Generic[TBlockDef]):
+class Block(BaseModel, Generic[TMetadata, TContent]):
     """Extracted block with processing metadata.
 
-    This is the envelope containing the block definition plus
+    This is the envelope containing the parsed metadata and data plus
     extraction/processing information.
     """
 
-    definition: TBlockDef = Field(..., description="The aggregated block definition")
+    metadata: TMetadata = Field(..., description="Parsed block metadata")
+    data: TContent = Field(..., description="Parsed block data/content")
     syntax_name: str = Field(..., description="Name of the syntax that extracted this block")
     raw_text: str = Field(..., description="Original raw text of the block")
     line_start: int = Field(..., description="Starting line number")

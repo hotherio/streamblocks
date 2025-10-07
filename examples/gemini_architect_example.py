@@ -590,8 +590,8 @@ async def main() -> None:
 
         async for event in processor.process_stream(gemini_stream):
             if event.type == EventType.BLOCK_EXTRACTED:
-                block = event.content["extracted_block"]
-                block_type = block.definition.block_type
+                block = event.block
+                block_type = block.metadata.block_type
                 blocks_by_type[block_type] += 1
 
                 print(f"\n{'=' * 60}")

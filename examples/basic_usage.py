@@ -82,11 +82,11 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.content["extracted_block"]
+            block = event.block
             blocks_extracted.append(block)
-            print(f"[BLOCK] Extracted: {block.definition.id} ({block.syntax_name})")
+            print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
             print("        Operations:")
-            for op in block.definition.operations:
+            for op in block.data.operations:
                 print(f"          - {op.action}: {op.path}")
 
         elif event.type == EventType.BLOCK_REJECTED:
@@ -99,9 +99,9 @@ async def main() -> None:
     # Show metadata from blocks
     print("\nBlock metadata:")
     for block in blocks_extracted:
-        print(f"  - {block.definition.id}: {block.definition.block_type}")
-        if hasattr(block.definition, "param_0"):
-            print(f"    Extra param: {block.definition.param_0}")
+        print(f"  - {block.metadata.id}: {block.metadata.block_type}")
+        if hasattr(block.metadata, "param_0"):
+            print(f"    Extra param: {block.metadata.param_0}")
 
 
 if __name__ == "__main__":

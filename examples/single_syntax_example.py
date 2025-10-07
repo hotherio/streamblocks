@@ -106,19 +106,19 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.content["extracted_block"]
+            block = event.block
             blocks_extracted.append(block)
 
             print(f"\n{'=' * 60}")
-            print(f"[BLOCK] {block.definition.id} ({block.definition.block_type})")
+            print(f"[BLOCK] {block.metadata.id} ({block.metadata.block_type})")
             print(f"        Syntax: {block.syntax_name}")
 
-            # Access operations directly from definition
-            creates = [op for op in block.definition.operations if op.action == "create"]
-            edits = [op for op in block.definition.operations if op.action == "edit"]
-            deletes = [op for op in block.definition.operations if op.action == "delete"]
+            # Access operations directly from data
+            creates = [op for op in block.data.operations if op.action == "create"]
+            edits = [op for op in block.data.operations if op.action == "edit"]
+            deletes = [op for op in block.data.operations if op.action == "delete"]
 
-            print(f"        Total operations: {len(block.definition.operations)}")
+            print(f"        Total operations: {len(block.data.operations)}")
 
             if creates:
                 print(f"\n        ✅ CREATE ({len(creates)} files):")
@@ -138,8 +138,8 @@ async def main() -> None:
                     print(f"           - {op.path}")
 
             # Check for extra params
-            if hasattr(block.definition, "param_0"):
-                print(f"\n        Priority: {block.definition.param_0}")
+            if hasattr(block.metadata, "param_0"):
+                print(f"\n        Priority: {block.metadata.param_0}")
 
             print(f"{'=' * 60}\n")
 

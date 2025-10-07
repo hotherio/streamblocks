@@ -63,41 +63,41 @@ class YesNoWidget(InteractiveWidget):
     """Widget for yes/no questions."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"❓ {self.block.definition.prompt}", classes="prompt")
+        yield Label(f"❓ {self.block.data.prompt}", classes="prompt")
         with Horizontal(classes="button-group"):
-            yield Button(self.block.definition.yes_label, id="yes", variant="primary")
-            yield Button(self.block.definition.no_label, id="no", variant="default")
+            yield Button(self.block.metadata.yes_label, id="yes", variant="primary")
+            yield Button(self.block.metadata.no_label, id="no", variant="default")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         self.response = event.button.id == "yes"
-        self.app.handle_response(self.block.definition.id, self.response)
+        self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class ChoiceWidget(InteractiveWidget):
     """Widget for single choice questions."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"🔘 {self.block.definition.prompt}", classes="prompt")
+        yield Label(f"🔘 {self.block.data.prompt}", classes="prompt")
 
-        if self.block.definition.display_style == "dropdown":
-            options = [(opt, opt) for opt in self.block.definition.options]
+        if self.block.metadata.display_style == "dropdown":
+            options = [(opt, opt) for opt in self.block.data.options]
             yield Select(options, prompt="Select an option", id="choice-select")
         else:
             with RadioSet(id="choice-radio"):
-                for opt in self.block.definition.options:
+                for opt in self.block.data.options:
                     yield RadioButton(opt)
 
     def on_select_changed(self, event: Select.Changed) -> None:
         """Handle dropdown selection."""
         self.response = str(event.value)
-        self.app.handle_response(self.block.definition.id, self.response)
+        self.app.handle_response(self.block.metadata.id, self.response)
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         """Handle radio button selection."""
         if event.pressed:
             self.response = str(event.pressed.label)
-            self.app.handle_response(self.block.definition.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class MultiChoiceWidget(InteractiveWidget):
@@ -108,15 +108,15 @@ class MultiChoiceWidget(InteractiveWidget):
         self.selected: set[str] = set()
 
     def compose(self) -> ComposeResult:
-        yield Label(f"☑️  {self.block.definition.prompt}", classes="prompt")
-        if self.block.definition.min_selections > 1 or self.block.definition.max_selections:
+        yield Label(f"☑️  {self.block.data.prompt}", classes="prompt")
+        if self.block.metadata.min_selections > 1 or self.block.metadata.max_selections:
             yield Label(
-                f"Select {self.block.definition.min_selections}-{self.block.definition.max_selections or 'all'} options",
+                f"Select {self.block.metadata.min_selections}-{self.block.metadata.max_selections or 'all'} options",
                 classes="hint",
             )
 
         with Container(id="checkbox-group"):
-            for i, opt in enumerate(self.block.definition.options):
+            for i, opt in enumerate(self.block.data.options):
                 yield Checkbox(opt, id=f"check-{i}", value=False)
 
         yield Button("Submit", id="submit", variant="primary")
@@ -132,22 +132,20 @@ class MultiChoiceWidget(InteractiveWidget):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle submit button."""
         if event.button.id == "submit" and (
-            self.block.definition.min_selections
+            self.block.metadata.min_selections
             <= len(self.selected)
-            <= (self.block.definition.max_selections or float("inf"))
+            <= (self.block.metadata.max_selections or float("inf"))
         ):
             self.response = list(self.selected)
-            self.app.handle_response(self.block.definition.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class InputWidget(InteractiveWidget):
     """Widget for text input."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"📝 {self.block.definition.prompt}", classes="prompt")
-        yield Input(
-            placeholder=self.block.definition.placeholder, value=self.block.definition.default_value, id="text-input"
-        )
+        yield Label(f"📝 {self.block.data.prompt}", classes="prompt")
+        yield Input(placeholder=self.block.data.placeholder, value=self.block.data.default_value, id="text-input")
         yield Button("Submit", id="submit", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -157,23 +155,23 @@ class InputWidget(InteractiveWidget):
             value = input_widget.value
 
             # Basic validation
-            if len(value) >= self.block.definition.min_length:
-                if self.block.definition.max_length is None or len(value) <= self.block.definition.max_length:
+            if len(value) >= self.block.metadata.min_length:
+                if self.block.metadata.max_length is None or len(value) <= self.block.metadata.max_length:
                     self.response = value
-                    self.app.handle_response(self.block.definition.id, self.response)
+                    self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class ScaleWidget(InteractiveWidget):
     """Widget for scale rating."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"⭐ {self.block.definition.prompt}", classes="prompt")
+        yield Label(f"⭐ {self.block.data.prompt}", classes="prompt")
 
         with RadioSet(id="scale-radio"):
             for value in range(
-                self.block.definition.min_value, self.block.definition.max_value + 1, self.block.definition.step
+                self.block.metadata.min_value, self.block.metadata.max_value + 1, self.block.metadata.step
             ):
-                label = self.block.definition.labels.get(value, str(value))
+                label = self.block.data.labels.get(value, str(value))
                 yield RadioButton(f"{value} - {label}")
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
@@ -182,18 +180,18 @@ class ScaleWidget(InteractiveWidget):
             # Extract value from label
             value_str = str(event.pressed.label).split(" - ")[0]
             self.response = int(value_str)
-            self.app.handle_response(self.block.definition.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class RankingWidget(InteractiveWidget):
     """Widget for ranking items."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"🔢 {self.block.definition.prompt}", classes="prompt")
+        yield Label(f"🔢 {self.block.data.prompt}", classes="prompt")
         yield Label("Use ↑/↓ to move items, Space to select", classes="hint")
 
         list_view = ListView(id="ranking-list")
-        for item in self.block.definition.items:
+        for item in self.block.data.items:
             list_view.append(ListItem(Label(item)))
         yield list_view
 
@@ -210,25 +208,25 @@ class RankingWidget(InteractiveWidget):
                     ranked_items.append(label.renderable)
 
             self.response = ranked_items
-            self.app.handle_response(self.block.definition.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class ConfirmWidget(InteractiveWidget):
     """Widget for confirmation dialogs."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"⚠️  {self.block.definition.prompt}", classes="prompt")
-        yield Label(self.block.definition.message, classes="message")
+        yield Label(f"⚠️  {self.block.data.prompt}", classes="prompt")
+        yield Label(self.block.data.message, classes="message")
 
         with Horizontal(classes="button-group"):
-            variant = "error" if self.block.definition.danger_mode else "primary"
-            yield Button(self.block.definition.confirm_label, id="confirm", variant=variant)
-            yield Button(self.block.definition.cancel_label, id="cancel", variant="default")
+            variant = "error" if self.block.metadata.danger_mode else "primary"
+            yield Button(self.block.metadata.confirm_label, id="confirm", variant=variant)
+            yield Button(self.block.metadata.cancel_label, id="cancel", variant="default")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         self.response = event.button.id == "confirm"
-        self.app.handle_response(self.block.definition.id, self.response)
+        self.app.handle_response(self.block.metadata.id, self.response)
 
 
 class FormWidget(InteractiveWidget):
@@ -239,10 +237,10 @@ class FormWidget(InteractiveWidget):
         self.form_data: dict[str, Any] = {}
 
     def compose(self) -> ComposeResult:
-        yield Label(f"📋 {self.block.definition.prompt}", classes="prompt")
+        yield Label(f"📋 {self.block.data.prompt}", classes="prompt")
 
         with Container(id="form-fields"):
-            for field in self.block.definition.fields:
+            for field in self.block.data.fields:
                 yield Label(f"{field.label}{' *' if field.required else ''}")
 
                 if field.field_type == "text":
@@ -254,17 +252,17 @@ class FormWidget(InteractiveWidget):
                 # Add more field types as needed
 
         with Horizontal(classes="button-group"):
-            yield Button(self.block.definition.submit_label, id="submit", variant="primary")
-            yield Button(self.block.definition.cancel_label, id="cancel", variant="default")
+            yield Button(self.block.metadata.submit_label, id="submit", variant="primary")
+            yield Button(self.block.metadata.cancel_label, id="cancel", variant="default")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         if event.button.id == "submit":
             # Collect form data
             self.response = self.form_data  # Simplified for demo
-            self.app.handle_response(self.block.definition.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)
         elif event.button.id == "cancel":
-            self.app.handle_response(self.block.definition.id, None)
+            self.app.handle_response(self.block.metadata.id, None)
 
 
 class ResponseHistory(Static):
@@ -497,8 +495,8 @@ class InteractiveBlocksApp(App):
         # Process stream and show widgets as they arrive
         async for event in self.processor.process_stream(demo_stream()):
             if event.type == EventType.BLOCK_EXTRACTED:
-                block = event.content["extracted_block"]
-                self.log(f"Extracted block: {block.definition.id} ({block.definition.block_type})")
+                block = event.block
+                self.log(f"Extracted block: {block.metadata.id} ({block.metadata.block_type})")
                 await self.add_interactive_block(block)
             elif event.type == EventType.BLOCK_REJECTED:
                 self.log(f"Block rejected: {event.content['reason']}")
@@ -514,7 +512,7 @@ class InteractiveBlocksApp(App):
             "ranking": RankingWidget,
             "confirm": ConfirmWidget,
             "form": FormWidget,
-        }.get(block.definition.block_type)
+        }.get(block.metadata.block_type)
 
         if widget_class:
             widget = widget_class(block)
@@ -523,14 +521,14 @@ class InteractiveBlocksApp(App):
             # Add to UI at the bottom
             container = self.query_one("#widget-container", Container)
             await container.mount(widget)
-            self.log(f"Mounted widget for block {block.definition.id}")
+            self.log(f"Mounted widget for block {block.metadata.id}")
 
             # Scroll to show the new widget
             scroll_container = self.query_one("#active-widgets", VerticalScroll)
             scroll_container.scroll_to_widget(widget, animate=True)
 
         else:
-            self.log(f"No widget class for block type: {block.definition.block_type}")
+            self.log(f"No widget class for block type: {block.metadata.block_type}")
 
     def handle_response(self, block_id: str, response: Any) -> None:
         """Handle a widget response."""
@@ -544,7 +542,7 @@ class InteractiveBlocksApp(App):
 
         # Remove widget
         for widget in self.active_widgets:
-            if widget.block.definition.id == block_id:
+            if widget.block.metadata.id == block_id:
                 self.active_widgets.remove(widget)
                 widget.remove()
                 break

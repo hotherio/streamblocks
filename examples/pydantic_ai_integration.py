@@ -152,12 +152,12 @@ Make sure to include proper project structure with an app module and a simple Fa
 
     async for event in file_ops_processor.process_stream(text_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.content["extracted_block"]
+            block = event.block
             extracted_blocks.append(block)
-            print(f"\n📦 EXTRACTED BLOCK: {block.definition.id}")
-            print(f"   Type: {block.definition.block_type}")
+            print(f"\n📦 EXTRACTED BLOCK: {block.metadata.id}")
+            print(f"   Type: {block.metadata.block_type}")
             print("   Operations:")
-            for op in block.definition.operations:
+            for op in block.data.operations:
                 icon = {"create": "✅", "edit": "📝", "delete": "❌"}.get(op.action, "❓")
                 print(f"     {icon} {op.action}: {op.path}")
 
@@ -167,14 +167,14 @@ Make sure to include proper project structure with an app module and a simple Fa
 
     async for event in file_content_processor.process_stream(text_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.content["extracted_block"]
+            block = event.block
             extracted_blocks.append(block)
-            print(f"\n📄 EXTRACTED BLOCK: {block.definition.id}")
-            print(f"   Type: {block.definition.block_type}")
-            print(f"   File: {block.definition.file}")
-            if block.definition.description:
-                print(f"   Description: {block.definition.description}")
-            lines = block.definition.raw_content.strip().split("\n")
+            print(f"\n📄 EXTRACTED BLOCK: {block.metadata.id}")
+            print(f"   Type: {block.metadata.block_type}")
+            print(f"   File: {block.metadata.file}")
+            if block.metadata.description:
+                print(f"   Description: {block.metadata.description}")
+            lines = block.data.raw_content.strip().split("\n")
             print(f"   Content preview ({len(lines)} lines):")
             preview_lines = 5
             for i, line in enumerate(lines[:preview_lines]):
@@ -247,9 +247,9 @@ Mix explanatory text with structured blocks.
                 print(f"[TEXT] {event.data.strip()}")
 
         elif event.type == EventType.BLOCK_EXTRACTED:
-            block = event.content["extracted_block"]
-            print(f"\n📦 BLOCK: {block.definition.id}")
-            for op in block.definition.operations:
+            block = event.block
+            print(f"\n📦 BLOCK: {block.metadata.id}")
+            for op in block.data.operations:
                 print(f"   - {op.action}: {op.path}")
 
 

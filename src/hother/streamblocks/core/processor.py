@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
-from hother.streamblocks.core.models import Block, BlockCandidate, BlockDefinition
+from hother.streamblocks.core.models import Block, BlockCandidate
 from hother.streamblocks.core.types import BlockState, EventType, StreamEvent
 
 if TYPE_CHECKING:
@@ -248,12 +248,10 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         if block_type and not self.registry.validate_block(block_type, metadata, content):
             return None
 
-        # Create block definition from metadata + content
-        definition = BlockDefinition.from_metadata_and_content(metadata, content)
-
-        # Create block envelope
+        # Create block envelope with separate metadata and data
         block = Block(
-            definition=definition,
+            metadata=metadata,
+            data=content,
             syntax_name=candidate.syntax.name,
             raw_text=candidate.raw_text,
             line_start=candidate.start_line,
@@ -264,7 +262,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         return StreamEvent(
             type=EventType.BLOCK_EXTRACTED,
             data=candidate.raw_text,
-            content={"extracted_block": block},
+            block=block,
         )
 
     def _create_rejection_event(

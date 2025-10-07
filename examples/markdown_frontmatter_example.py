@@ -124,23 +124,23 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.content["extracted_block"]
+            block = event.block
             blocks_extracted.append(block)
             current_partial = None
 
-            print(f"\n[BLOCK] Extracted: {block.definition.id} (syntax: {block.syntax_name})")
-            print(f"        File: {block.definition.file}")
-            print(f"        Start line: {block.definition.start_line}")
+            print(f"\n[BLOCK] Extracted: {block.metadata.id} (syntax: {block.syntax_name})")
+            print(f"        File: {block.metadata.file}")
+            print(f"        Start line: {block.metadata.start_line}")
 
             # Show extra metadata if present
-            if hasattr(block.definition, "author"):
-                print(f"        Author: {block.definition.author}")
-            if hasattr(block.definition, "priority"):
-                print(f"        Priority: {block.definition.priority}")
+            if hasattr(block.metadata, "author"):
+                print(f"        Author: {block.metadata.author}")
+            if hasattr(block.metadata, "priority"):
+                print(f"        Priority: {block.metadata.priority}")
 
             # Show patch preview
             print("        Patch preview:")
-            lines = block.definition.diff.strip().split("\\n")
+            lines = block.data.diff.strip().split("\\n")
             for line in lines[:3]:  # Show first 3 lines
                 print(f"          {line}")
             if len(lines) > 3:
@@ -159,7 +159,7 @@ async def main() -> None:
     print("\nBlock summary:")
     for i, block in enumerate(blocks_extracted, 1):
         print(
-            f"  {i}. {block.definition.id} - {block.definition.file} "
+            f"  {i}. {block.metadata.id} - {block.metadata.file} "
             f"({block.syntax_name.replace('markdown_frontmatter_', '')} syntax)"
         )
 

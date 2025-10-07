@@ -63,16 +63,16 @@ async def test_basic_delimiter_preamble_syntax() -> None:
 
     # Check extracted block
     extracted_event = block_extracted_events[0]
-    block = extracted_event.content["extracted_block"]
+    block = extracted_event.block
 
     assert block.syntax_name == "test_files_syntax"
-    assert block.definition.id == "file01"
-    assert block.definition.block_type == "files_operations"
-    assert len(block.definition.operations) == 2
-    assert block.definition.operations[0].path == "src/main.py"
-    assert block.definition.operations[0].action == "create"
-    assert block.definition.operations[1].path == "src/utils.py"
-    assert block.definition.operations[1].action == "edit"
+    assert block.metadata.id == "file01"
+    assert block.metadata.block_type == "files_operations"
+    assert len(block.data.operations) == 2
+    assert block.data.operations[0].path == "src/main.py"
+    assert block.data.operations[0].action == "create"
+    assert block.data.operations[1].path == "src/utils.py"
+    assert block.data.operations[1].action == "edit"
 
 
 @pytest.mark.asyncio
@@ -105,13 +105,13 @@ file3.py:D
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.content["extracted_block"])
+            extracted_blocks.append(event.block)
 
     assert len(extracted_blocks) == 2
-    assert extracted_blocks[0].definition.id == "block1"
-    assert extracted_blocks[1].definition.id == "block2"
-    assert len(extracted_blocks[0].definition.operations) == 1
-    assert len(extracted_blocks[1].definition.operations) == 2
+    assert extracted_blocks[0].metadata.id == "block1"
+    assert extracted_blocks[1].metadata.id == "block2"
+    assert len(extracted_blocks[0].data.operations) == 1
+    assert len(extracted_blocks[1].data.operations) == 2
 
 
 @pytest.mark.asyncio
