@@ -2,7 +2,7 @@
 
 __version__ = "0.1.0"
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, Block, BlockCandidate, BlockDefinition
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockCandidate, BlockConfig, BlockDefinition
 from hother.streamblocks.core.processor import StreamBlockProcessor
 from hother.streamblocks.core.registry import Registry
 from hother.streamblocks.core.types import (
@@ -18,15 +18,15 @@ from hother.streamblocks.syntaxes import (
     MarkdownFrontmatterSyntax,
 )
 
-# Rebuild StreamEvent model to resolve forward reference to Block
+# Rebuild StreamEvent model to resolve forward reference to BlockDefinition
 StreamEvent.model_rebuild()
 
 __all__ = [
     # Core models
     "BaseContent",
     "BaseMetadata",
-    "Block",
     "BlockCandidate",
+    "BlockConfig",
     "BlockDefinition",
     # Core types
     "BlockState",

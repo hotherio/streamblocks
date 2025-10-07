@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockConfig
 
 
 class FileOperation(BaseModel):
@@ -95,39 +95,18 @@ class FileContentContent(BaseContent):
         return cls(raw_content=raw_text)
 
 
-# Block classes (aggregated metadata + content)
+# Block configuration classes
 
 
-class FileOperations(BlockDefinition):
-    """File operations block."""
+class FileOperations(BlockConfig):
+    """File operations block configuration."""
 
-    # Link to metadata/content classes for syntax parsing
     __metadata_class__ = FileOperationsMetadata
     __content_class__ = FileOperationsContent
 
-    # From metadata:
-    id: str
-    block_type: Literal["files_operations"] = "files_operations"
-    type: Literal["files_operations"] = "files_operations"  # Alias for compatibility
-    description: str | None = None
 
-    # From content:
-    raw_content: str
-    operations: list[FileOperation] = Field(default_factory=list)
+class FileContent(BlockConfig):
+    """File content block configuration."""
 
-
-class FileContent(BlockDefinition):
-    """File content block."""
-
-    # Link to metadata/content classes for syntax parsing
     __metadata_class__ = FileContentMetadata
     __content_class__ = FileContentContent
-
-    # From metadata:
-    id: str
-    block_type: Literal["file_content"] = "file_content"
-    file: str
-    description: str | None = None
-
-    # From content:
-    raw_content: str

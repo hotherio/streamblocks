@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
-from hother.streamblocks.core.models import Block, BlockCandidate
+from hother.streamblocks.core.models import BlockCandidate, BlockDefinition
 from hother.streamblocks.core.types import BlockState, EventType, StreamEvent
 
 if TYPE_CHECKING:
@@ -257,7 +257,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
             return None
 
         # Create block envelope with separate metadata and data
-        block = Block(
+        block = BlockDefinition(
             metadata=metadata,
             data=content,
             syntax_name=candidate.syntax.name,

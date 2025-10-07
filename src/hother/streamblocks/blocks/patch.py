@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockConfig
 
 
 class PatchContent(BaseContent):
@@ -46,26 +46,11 @@ class PatchMetadata(BaseMetadata):
     description: str | None = None
 
 
-# Block class (aggregated metadata + content)
+# Block configuration class
 
 
-class Patch(BlockDefinition):
-    """Patch block."""
+class Patch(BlockConfig):
+    """Patch block configuration."""
 
-    # Link to metadata/content classes for syntax parsing
     __metadata_class__ = PatchMetadata
     __content_class__ = PatchContent
-
-    # From metadata:
-    id: str
-    block_type: Literal["patch"] = "patch"
-    type: Literal["patch"] = "patch"  # Alias for compatibility
-    file: str
-    start_line: int | None = None
-    author: str | None = None
-    priority: str | None = None
-    description: str | None = None
-
-    # From content:
-    raw_content: str
-    diff: str

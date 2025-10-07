@@ -13,77 +13,21 @@ if TYPE_CHECKING:
     from hother.streamblocks.core.protocols import BlockSyntax
 
 
-class BlockDefinition(BaseModel):
-    """Aggregated block definition combining metadata and content.
+class BlockConfig:
+    """Configuration holder for block type registration.
 
-    This is the actual block data that users work with.
-    Subclass this to create specific block types with typed fields.
-
-    Subclasses should define:
-    - __metadata_class__: The metadata class to use for parsing
-    - __content_class__: The content class to use for parsing
+    Used to link metadata and content classes for a block type.
+    Subclass this to create block type configurations for the registry.
 
     Example:
-        class FileOperations(BlockDefinition):
+        class FileOperations(BlockConfig):
             __metadata_class__ = FileOperationsMetadata
             __content_class__ = FileOperationsContent
-
-            id: str
-            block_type: str
-            operations: list[FileOperation]
-            raw_content: str
     """
 
-    model_config = {"extra": "allow"}  # Allow extra fields from metadata and content
-
-    # Optional class attributes for metadata/content classes
-    __metadata_class__: type[BaseModel] | None = None
-    __content_class__: type[BaseModel] | None = None
-
-    # Core fields from metadata:
-    id: str = Field(..., description="Block identifier")
-    block_type: str = Field(..., description="Type of the block")
-
-    # Core fields from content:
-    raw_content: str = Field(..., description="Raw unparsed content from the block")
-
-    @classmethod
-    def from_metadata_and_content(
-        cls,
-        metadata: BaseModel,
-        content: BaseModel,
-    ) -> BlockDefinition:
-        """Create block definition from separate metadata and content.
-
-        Args:
-            metadata: Parsed metadata object
-            content: Parsed content object
-
-        Returns:
-            Aggregated BlockDefinition with fields from both objects
-        """
-        data: dict[str, object] = {}
-
-        # Add all fields from metadata (including extra fields)
-        for field_name in metadata.__class__.model_fields:
-            data[field_name] = getattr(metadata, field_name)
-
-        # Add extra fields from metadata if model allows them
-        if hasattr(metadata, "__pydantic_extra__") and metadata.__pydantic_extra__:
-            data.update(metadata.__pydantic_extra__)
-
-        # Add all fields from content (avoid duplicates)
-        for field_name in content.__class__.model_fields:
-            if field_name not in data:
-                data[field_name] = getattr(content, field_name)
-
-        # Add extra fields from content if model allows them
-        if hasattr(content, "__pydantic_extra__") and content.__pydantic_extra__:
-            for key, value in content.__pydantic_extra__.items():
-                if key not in data:
-                    data[key] = value
-
-        return cls(**data)
+    # Class attributes for metadata/content classes - subclasses should override
+    __metadata_class__: type[BaseModel]
+    __content_class__: type[BaseModel]
 
 
 class BaseMetadata(BaseModel):
@@ -147,11 +91,19 @@ class BlockCandidate:
         return hashlib.sha256(text_slice.encode()).hexdigest()[:8]
 
 
-class Block(BaseModel, Generic[TMetadata, TContent]):
-    """Extracted block with processing metadata.
+class BlockDefinition(BaseModel, Generic[TMetadata, TContent]):
+    """Extracted block with parsed metadata and content.
 
     This is the envelope containing the parsed metadata and data plus
     extraction/processing information.
+
+    The metadata and data fields are typed generics, allowing type-safe
+    access to block-specific fields.
+
+    Example:
+        block: BlockDefinition[FileOperationsMetadata, FileOperationsContent]
+        block.metadata.id  # Type-safe access to metadata fields
+        block.data.operations  # Type-safe access to content fields
     """
 
     metadata: TMetadata = Field(..., description="Parsed block metadata")

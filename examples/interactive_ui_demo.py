@@ -47,13 +47,13 @@ from hother.streamblocks.blocks import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.models import BlockDefinition
 
 
 class InteractiveWidget(Static):
     """Base class for interactive block widgets."""
 
-    def __init__(self, block: Block[Any, Any]) -> None:
+    def __init__(self, block: BlockDefinition[Any, Any]) -> None:
         super().__init__()
         self.block = block
         self.response: Any = None
@@ -103,7 +103,7 @@ class ChoiceWidget(InteractiveWidget):
 class MultiChoiceWidget(InteractiveWidget):
     """Widget for multiple choice questions."""
 
-    def __init__(self, block: Block[Any, Any]) -> None:
+    def __init__(self, block: BlockDefinition[Any, Any]) -> None:
         super().__init__(block)
         self.selected: set[str] = set()
 
@@ -232,7 +232,7 @@ class ConfirmWidget(InteractiveWidget):
 class FormWidget(InteractiveWidget):
     """Widget for form blocks."""
 
-    def __init__(self, block: Block[Any, Any]) -> None:
+    def __init__(self, block: BlockDefinition[Any, Any]) -> None:
         super().__init__(block)
         self.form_data: dict[str, Any] = {}
 
@@ -501,7 +501,7 @@ class InteractiveBlocksApp(App):
             elif event.type == EventType.BLOCK_REJECTED:
                 self.log(f"Block rejected: {event.content['reason']}")
 
-    async def add_interactive_block(self, block: Block[Any, Any]) -> None:
+    async def add_interactive_block(self, block: BlockDefinition[Any, Any]) -> None:
         """Add a new interactive block widget."""
         widget_class = {
             "yesno": YesNoWidget,
