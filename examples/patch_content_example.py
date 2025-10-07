@@ -5,7 +5,7 @@ import contextlib
 from collections.abc import AsyncIterator
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from hother.streamblocks import (
     DelimiterPreambleSyntax,
@@ -13,6 +13,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks.core.models import BaseContent, BlockDefinition
 
 
 # Custom models for this example
@@ -29,10 +30,10 @@ class SimplePatchMetadata(BaseModel):
     start_line: int = 0
 
 
-class SimplePatchContent(BaseModel):
+class SimplePatchContent(BaseContent):
     """Content model that parses file info from first line."""
 
-    diff: str
+    diff: str = ""
 
     @classmethod
     def parse(cls, raw_text: str) -> "SimplePatchContent":
@@ -43,7 +44,26 @@ class SimplePatchContent(BaseModel):
             raise ValueError(msg)
 
         # The content already has the diff, just store it
-        return cls(diff=raw_text.strip())
+        return cls(raw_content=raw_text, diff=raw_text.strip())
+
+
+class SimplePatch(BlockDefinition):
+    """Simple patch block combining metadata and content."""
+
+    __metadata_class__ = SimplePatchMetadata
+    __content_class__ = SimplePatchContent
+
+    # From metadata:
+    id: str
+    block_type: Literal["patch"] = "patch"
+    category: str | None = None
+    priority: str | None = None
+    file: str = ""
+    start_line: int = 0
+
+    # From content:
+    raw_content: str
+    diff: str = ""
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -168,8 +188,7 @@ async def main() -> None:
     # Create delimiter preamble syntax for patches
     patch_syntax = DelimiterPreambleSyntax(
         name="patch_delimiter_syntax",
-        metadata_class=SimplePatchMetadata,
-        content_class=SimplePatchContent,
+        block_class=SimplePatch,
     )
 
     # Create type-specific registry

@@ -16,8 +16,10 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.blocks import (
+    FileContent,
     FileContentContent,
     FileContentMetadata,
+    FileOperations,
     FileOperationsContent,
     FileOperationsMetadata,
 )
@@ -43,8 +45,7 @@ async def basic_example() -> None:
     # Create syntax for file operations
     file_ops_syntax = DelimiterFrontmatterSyntax(
         name="file_operations_syntax",
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
+        block_class=FileOperations,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
@@ -52,8 +53,7 @@ async def basic_example() -> None:
     # Create syntax for file content
     file_content_syntax = DelimiterFrontmatterSyntax(
         name="file_content_syntax",
-        metadata_class=FileContentMetadata,
-        content_class=FileContentContent,
+        block_class=FileContent,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
@@ -221,8 +221,7 @@ Mix explanatory text with structured blocks.
     # Create StreamBlocks components
     syntax = DelimiterFrontmatterSyntax(
         name="files_operations_syntax",
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
+        block_class=FileOperations,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )

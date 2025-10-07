@@ -9,7 +9,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.blocks import FileOperations, FileOperationsContent, FileOperationsMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -47,8 +47,7 @@ async def main() -> None:
     # Create delimiter preamble syntax
     syntax = DelimiterPreambleSyntax(
         name="files_operations_syntax",
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
+        block_class=FileOperations,
     )
 
     # Create type-specific registry

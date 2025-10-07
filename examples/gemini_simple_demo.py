@@ -23,6 +23,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks.core.models import BaseContent, BlockDefinition
 
 
 # Unified metadata model for all Gemini blocks
@@ -41,15 +42,30 @@ class GeminiBlockMetadata(BaseModel):
 
 
 # Unified content model
-class GeminiBlockContent(BaseModel):
+class GeminiBlockContent(BaseContent):
     """Content for Gemini AI blocks."""
-
-    raw_content: str = Field(default="", description="Raw content of the block")
 
     @classmethod
     def parse(cls, raw_text: str) -> "GeminiBlockContent":
         """Parse content from raw text."""
         return cls(raw_content=raw_text.strip())
+
+
+class GeminiBlock(BlockDefinition):
+    """Unified block for all Gemini responses."""
+
+    __metadata_class__ = GeminiBlockMetadata
+    __content_class__ = GeminiBlockContent
+
+    # From metadata:
+    id: str
+    block_type: Literal["file_operations", "file_content", "message"]
+    description: str | None = None
+    file_path: str | None = None
+    message_type: Literal["info", "warning", "error", "status"] | None = None
+
+    # From content:
+    raw_content: str = ""
 
 
 def create_simple_prompt() -> str:
@@ -145,8 +161,7 @@ async def main() -> None:
     # Create a single syntax for all Gemini responses
     syntax = DelimiterFrontmatterSyntax(
         name="gemini_syntax",
-        metadata_class=GeminiBlockMetadata,
-        content_class=GeminiBlockContent,
+        block_class=GeminiBlock,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )

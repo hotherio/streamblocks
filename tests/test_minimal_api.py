@@ -14,7 +14,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
 
 
 @pytest.mark.asyncio
@@ -143,7 +143,17 @@ async def test_custom_metadata_inherits_base() -> None:
 
         model_config = {"extra": "allow"}
 
-    syntax = DelimiterPreambleSyntax(name="test_custom_syntax", metadata_class=CustomMetadata)
+    class CustomBlock(BlockDefinition):
+        __metadata_class__ = CustomMetadata
+        __content_class__ = BaseContent
+
+        id: str
+        block_type: str
+        priority: str = "normal"
+        tags: list[str] = Field(default_factory=list)
+        raw_content: str
+
+    syntax = DelimiterPreambleSyntax(name="test_custom_syntax", block_class=CustomBlock)
     registry = Registry(syntax)
 
     processor = StreamBlockProcessor(registry)
@@ -204,7 +214,16 @@ async def test_custom_content_inherits_base() -> None:
 
             return cls(raw_content=raw_text, items=items)
 
-    syntax = DelimiterPreambleSyntax(name="test_todo_syntax", content_class=TodoContent)
+    class TodoBlock(BlockDefinition):
+        __metadata_class__ = BaseMetadata
+        __content_class__ = TodoContent
+
+        id: str
+        block_type: str
+        raw_content: str
+        items: list[TodoItem] = Field(default_factory=list)
+
+    syntax = DelimiterPreambleSyntax(name="test_todo_syntax", block_class=TodoBlock)
     registry = Registry(syntax)
 
     processor = StreamBlockProcessor(registry)

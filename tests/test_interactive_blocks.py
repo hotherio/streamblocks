@@ -13,20 +13,28 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.blocks import (
+    Choice,
     ChoiceContent,
     ChoiceMetadata,
+    Confirm,
     ConfirmContent,
     ConfirmMetadata,
+    Form,
     FormContent,
     FormMetadata,
+    Input,
     InputContent,
     InputMetadata,
+    MultiChoice,
     MultiChoiceContent,
     MultiChoiceMetadata,
+    Ranking,
     RankingContent,
     RankingMetadata,
+    Scale,
     ScaleContent,
     ScaleMetadata,
+    YesNo,
     YesNoContent,
     YesNoMetadata,
 )
@@ -35,14 +43,14 @@ from hother.streamblocks.core.types import ParseResult
 
 # Block type mapping for all interactive types
 BLOCK_TYPE_MAPPING = {
-    "yesno": (YesNoMetadata, YesNoContent),
-    "choice": (ChoiceMetadata, ChoiceContent),
-    "multichoice": (MultiChoiceMetadata, MultiChoiceContent),
-    "input": (InputMetadata, InputContent),
-    "scale": (ScaleMetadata, ScaleContent),
-    "ranking": (RankingMetadata, RankingContent),
-    "confirm": (ConfirmMetadata, ConfirmContent),
-    "form": (FormMetadata, FormContent),
+    "yesno": YesNo,
+    "choice": Choice,
+    "multichoice": MultiChoice,
+    "input": Input,
+    "scale": Scale,
+    "ranking": Ranking,
+    "confirm": Confirm,
+    "form": Form,
 }
 
 
@@ -50,7 +58,7 @@ class InteractiveSyntax(DelimiterFrontmatterSyntax):
     """Test syntax that can handle all interactive block types."""
 
     def __init__(self) -> None:
-        super().__init__(name="interactive", metadata_class=BaseMetadata, content_class=BaseContent)
+        super().__init__(name="interactive", block_class=None)
 
     def parse_block(self, candidate: Any) -> ParseResult[Any, Any]:
         # Parse metadata to get block type
@@ -64,9 +72,11 @@ class InteractiveSyntax(DelimiterFrontmatterSyntax):
 
         block_type = metadata_dict.get("block_type", "unknown")
 
-        # Set the appropriate classes
+        # Set the appropriate classes from block class
         if block_type in BLOCK_TYPE_MAPPING:
-            self.metadata_class, self.content_class = BLOCK_TYPE_MAPPING[block_type]
+            block_class = BLOCK_TYPE_MAPPING[block_type]
+            self.metadata_class = getattr(block_class, "__metadata_class__", BaseMetadata)
+            self.content_class = getattr(block_class, "__content_class__", BaseContent)
         else:
             return ParseResult(success=False, error=f"Unknown block type: {block_type}")
 

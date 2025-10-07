@@ -7,7 +7,7 @@ single-syntax design. Each processor handles one syntax type.
 import asyncio
 from collections.abc import AsyncIterator
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
@@ -15,6 +15,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks.core.models import BaseContent, BlockDefinition
 
 
 # Custom content models for this example
@@ -31,18 +32,18 @@ class TaskMetadata(BaseModel):
     status: str = "todo"
 
 
-class TaskContent(BaseModel):
+class TaskContent(BaseContent):
     """Content for task blocks."""
 
-    description: str
-    subtasks: list[str] = []
+    description: str = ""
+    subtasks: list[str] = Field(default_factory=list)
 
     @classmethod
     def parse(cls, raw_text: str) -> "TaskContent":
         """Parse task content from raw text."""
         lines = raw_text.strip().split("\n")
         if not lines:
-            return cls(description="")
+            return cls(raw_content=raw_text, description="")
 
         description = lines[0]
         subtasks = []
@@ -52,7 +53,29 @@ class TaskContent(BaseModel):
             if stripped.startswith(("- ", "* ")):
                 subtasks.append(stripped[2:])
 
-        return cls(description=description, subtasks=subtasks)
+        return cls(raw_content=raw_text, description=description, subtasks=subtasks)
+
+
+class Task(BlockDefinition):
+    """Task block combining metadata and content."""
+
+    __metadata_class__ = TaskMetadata
+    __content_class__ = TaskContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    title: str = "Untitled Task"
+    priority: str = "medium"
+    assignee: str | None = None
+    due_date: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    status: str = "todo"
+
+    # From content:
+    raw_content: str
+    description: str = ""
+    subtasks: list[str] = Field(default_factory=list)
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -139,8 +162,7 @@ async def main() -> None:
     # Using standard !!start/!!end delimiters
     task_syntax = DelimiterFrontmatterSyntax(
         name="task_syntax",
-        metadata_class=TaskMetadata,
-        content_class=TaskContent,
+        block_class=Task,
         start_delimiter="!!start",
         end_delimiter="!!end",
     )

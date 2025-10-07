@@ -2,57 +2,70 @@
 
 from hother.streamblocks.blocks.base import BaseContent
 from hother.streamblocks.blocks.files import (
+    FileContent,
     FileContentContent,
-    FileContentDefinition,
     FileContentMetadata,
+    FileOperations,
     FileOperationsContent,
-    FileOperationsDefinition,
     FileOperationsMetadata,
 )
 from hother.streamblocks.blocks.interactive import (
+    Choice,
     ChoiceContent,
     ChoiceMetadata,
+    Confirm,
     ConfirmContent,
     ConfirmMetadata,
+    Form,
     FormContent,
     FormField,
     FormMetadata,
+    Input,
     InputContent,
     InputMetadata,
     InteractiveContent,
     InteractiveMetadata,
+    MultiChoice,
     MultiChoiceContent,
     MultiChoiceMetadata,
+    Ranking,
     RankingContent,
     RankingMetadata,
+    Scale,
     ScaleContent,
     ScaleMetadata,
+    YesNo,
     YesNoContent,
     YesNoMetadata,
 )
 from hother.streamblocks.blocks.memory import MemoryContent, MemoryMetadata
-from hother.streamblocks.blocks.message import MessageContent, MessageMetadata
-from hother.streamblocks.blocks.patch import PatchContent, PatchMetadata
+from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
+from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
 from hother.streamblocks.blocks.toolcall import ToolCallContent, ToolCallMetadata
 from hother.streamblocks.blocks.visualization import VisualizationContent, VisualizationMetadata
 
 __all__ = [
     # Base
     "BaseContent",
+    # Block classes
+    "Choice",
     "ChoiceContent",
     "ChoiceMetadata",
+    "Confirm",
     "ConfirmContent",
     "ConfirmMetadata",
+    "FileContent",
     "FileContentContent",
-    "FileContentDefinition",
     "FileContentMetadata",
+    "FileOperations",
     # File operations
     "FileOperationsContent",
-    "FileOperationsDefinition",
     "FileOperationsMetadata",
+    "Form",
     "FormContent",
     "FormField",
     "FormMetadata",
+    "Input",
     "InputContent",
     "InputMetadata",
     "InteractiveContent",
@@ -61,16 +74,21 @@ __all__ = [
     # Memory
     "MemoryContent",
     "MemoryMetadata",
+    "Message",
     # Message
     "MessageContent",
     "MessageMetadata",
+    "MultiChoice",
     "MultiChoiceContent",
     "MultiChoiceMetadata",
+    "Patch",
     # Patch
     "PatchContent",
     "PatchMetadata",
+    "Ranking",
     "RankingContent",
     "RankingMetadata",
+    "Scale",
     "ScaleContent",
     "ScaleMetadata",
     # Tool calling
@@ -79,6 +97,7 @@ __all__ = [
     # Visualization
     "VisualizationContent",
     "VisualizationMetadata",
+    "YesNo",
     "YesNoContent",
     # Interactive specific
     "YesNoMetadata",

@@ -7,7 +7,7 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
 
 
 class InteractiveMetadata(BaseMetadata):
@@ -163,3 +163,176 @@ class FormContent(InteractiveContent):
 
     fields: list[FormField]
     response: dict[str, Any] = Field(default_factory=dict)
+
+
+# Block classes (aggregated metadata + content)
+
+
+class YesNo(BlockDefinition):
+    """Yes/No question block."""
+
+    __metadata_class__ = YesNoMetadata
+    __content_class__ = YesNoContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    yes_label: str = "Yes"
+    no_label: str = "No"
+
+    # From content:
+    raw_content: str
+    prompt: str
+    response: bool | None = None
+    responded_at: str | None = None
+
+
+class Choice(BlockDefinition):
+    """Single choice question block."""
+
+    __metadata_class__ = ChoiceMetadata
+    __content_class__ = ChoiceContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    display_style: Literal["radio", "dropdown", "list"] = "radio"
+
+    # From content:
+    raw_content: str
+    prompt: str
+    options: list[str]
+    response: str | None = None
+    responded_at: str | None = None
+
+
+class MultiChoice(BlockDefinition):
+    """Multiple choice question block."""
+
+    __metadata_class__ = MultiChoiceMetadata
+    __content_class__ = MultiChoiceContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    min_selections: int = 0
+    max_selections: int | None = None
+
+    # From content:
+    raw_content: str
+    prompt: str
+    options: list[str]
+    response: list[str] = Field(default_factory=list)
+    responded_at: str | None = None
+
+
+class Input(BlockDefinition):
+    """Text input block."""
+
+    __metadata_class__ = InputMetadata
+    __content_class__ = InputContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    input_type: Literal["text", "number", "email", "url", "password"] = "text"
+    min_length: int = 0
+    max_length: int | None = None
+    pattern: str | None = None
+
+    # From content:
+    raw_content: str
+    prompt: str
+    placeholder: str = ""
+    default_value: str = ""
+    response: str | None = None
+    responded_at: str | None = None
+
+
+class Scale(BlockDefinition):
+    """Scale rating block."""
+
+    __metadata_class__ = ScaleMetadata
+    __content_class__ = ScaleContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    min_value: int = 1
+    max_value: int = 10
+    step: int = 1
+
+    # From content:
+    raw_content: str
+    prompt: str
+    labels: dict[int, str] = Field(default_factory=dict)
+    response: int | None = None
+    responded_at: str | None = None
+
+
+class Ranking(BlockDefinition):
+    """Ranking block."""
+
+    __metadata_class__ = RankingMetadata
+    __content_class__ = RankingContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    allow_partial: bool = False
+
+    # From content:
+    raw_content: str
+    prompt: str
+    items: list[str]
+    response: list[str] = Field(default_factory=list)
+    responded_at: str | None = None
+
+
+class Confirm(BlockDefinition):
+    """Confirmation dialog block."""
+
+    __metadata_class__ = ConfirmMetadata
+    __content_class__ = ConfirmContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    confirm_label: str = "Confirm"
+    cancel_label: str = "Cancel"
+    danger_mode: bool = False
+
+    # From content:
+    raw_content: str
+    prompt: str
+    message: str
+    response: bool | None = None
+    responded_at: str | None = None
+
+
+class Form(BlockDefinition):
+    """Form block."""
+
+    __metadata_class__ = FormMetadata
+    __content_class__ = FormContent
+
+    # From metadata:
+    id: str
+    block_type: str
+    required: bool = True
+    submit_label: str = "Submit"
+    cancel_label: str = "Cancel"
+
+    # From content:
+    raw_content: str
+    prompt: str
+    fields: list[FormField]
+    response: dict[str, Any] = Field(default_factory=dict)
+    responded_at: str | None = None

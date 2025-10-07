@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
 
 
 class MessageMetadata(BaseMetadata):
@@ -35,3 +35,24 @@ class MessageContent(BaseContent):
     def parse(cls, raw_text: str) -> MessageContent:
         """Parse message content - just stores the raw text."""
         return cls(raw_content=raw_text.strip())
+
+
+# Block class (aggregated metadata + content)
+
+
+class Message(BlockDefinition):
+    """Message block."""
+
+    # Link to metadata/content classes for syntax parsing
+    __metadata_class__ = MessageMetadata
+    __content_class__ = MessageContent
+
+    # From metadata:
+    id: str
+    block_type: Literal["message"] = "message"
+    message_type: Literal["info", "warning", "error", "success", "status", "explanation"]
+    title: str | None = None
+    priority: Literal["low", "normal", "high"] = "normal"
+
+    # From content:
+    raw_content: str

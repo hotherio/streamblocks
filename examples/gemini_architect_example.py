@@ -30,14 +30,18 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.blocks import (
+    FileContent,
     FileContentContent,
     FileContentMetadata,
+    FileOperations,
     FileOperationsContent,
     FileOperationsMetadata,
     MemoryContent,
     MemoryMetadata,
+    Message,
     MessageContent,
     MessageMetadata,
+    Patch,
     PatchContent,
     PatchMetadata,
     ToolCallContent,
@@ -99,14 +103,16 @@ class UnifiedSyntax(DelimiterFrontmatterSyntax):
     """Syntax that dynamically routes to appropriate metadata/content classes."""
 
     def __init__(self, name: str = "unified_syntax") -> None:
-        # Initialize with unified classes
+        # Initialize with no specific block class - we route dynamically in parse_block
         super().__init__(
             name=name,
-            metadata_class=UnifiedMetadata,
-            content_class=UnifiedContent,
+            block_class=None,
             start_delimiter="!!start",
             end_delimiter="!!end",
         )
+        # Set base classes for initial parsing
+        self.metadata_class = UnifiedMetadata
+        self.content_class = UnifiedContent
 
     def parse_block(self, candidate: BlockCandidate) -> ParseResult[Any, Any]:
         """Parse block and route to appropriate classes based on block_type."""

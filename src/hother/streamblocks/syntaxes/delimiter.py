@@ -24,21 +24,29 @@ class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel]:
     def __init__(
         self,
         name: str,
-        metadata_class: type[TMetadata] | None = None,
-        content_class: type[TContent] | None = None,
+        block_class: type[Any] | None = None,
         delimiter: str = "!!",
     ) -> None:
         """Initialize delimiter preamble syntax.
 
         Args:
             name: Unique name for this syntax instance
-            metadata_class: Class for parsing metadata (defaults to BaseMetadata)
-            content_class: Class for parsing content (defaults to BaseContent)
+            block_class: BlockDefinition class that defines __metadata_class__ and __content_class__
             delimiter: Delimiter string to use
         """
         self._name = name
-        self.metadata_class = metadata_class or BaseMetadata
-        self.content_class = content_class or BaseContent
+
+        if block_class is None:
+            # Default to base classes
+            self.metadata_class = cast(type[TMetadata], BaseMetadata)
+            self.content_class = cast(type[TContent], BaseContent)
+        else:
+            # Extract metadata and content classes from block class
+            self.metadata_class = cast(
+                type[TMetadata], getattr(block_class, "__metadata_class__", BaseMetadata)
+            )
+            self.content_class = cast(type[TContent], getattr(block_class, "__content_class__", BaseContent))
+
         self.delimiter = delimiter
         self._opening_pattern = re.compile(rf"^{re.escape(delimiter)}(\w+):(\w+)(:.+)?$")
         self._closing_pattern = re.compile(rf"^{re.escape(delimiter)}end$")
@@ -132,8 +140,7 @@ class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
     def __init__(
         self,
         name: str,
-        metadata_class: type[TMetadata] | None = None,
-        content_class: type[TContent] | None = None,
+        block_class: type[Any] | None = None,
         start_delimiter: str = "!!start",
         end_delimiter: str = "!!end",
     ) -> None:
@@ -141,14 +148,23 @@ class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
         Args:
             name: Unique name for this syntax instance
-            metadata_class: Class for parsing metadata (defaults to BaseMetadata)
-            content_class: Class for parsing content (defaults to BaseContent)
+            block_class: BlockDefinition class that defines __metadata_class__ and __content_class__
             start_delimiter: Starting delimiter
             end_delimiter: Ending delimiter
         """
         self._name = name
-        self.metadata_class = metadata_class or BaseMetadata
-        self.content_class = content_class or BaseContent
+
+        if block_class is None:
+            # Default to base classes
+            self.metadata_class = cast(type[TMetadata], BaseMetadata)
+            self.content_class = cast(type[TContent], BaseContent)
+        else:
+            # Extract metadata and content classes from block class
+            self.metadata_class = cast(
+                type[TMetadata], getattr(block_class, "__metadata_class__", BaseMetadata)
+            )
+            self.content_class = cast(type[TContent], getattr(block_class, "__content_class__", BaseContent))
+
         self.start_delimiter = start_delimiter
         self.end_delimiter = end_delimiter
         self._frontmatter_pattern = re.compile(r"^---\s*$")

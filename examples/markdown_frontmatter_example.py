@@ -9,7 +9,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import PatchContent, PatchMetadata
+from hother.streamblocks.blocks import Patch, PatchContent, PatchMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -86,8 +86,7 @@ async def main() -> None:
     # or a custom syntax that handles multiple patterns internally.
     syntax = MarkdownFrontmatterSyntax(
         name="patch_syntax",
-        metadata_class=PatchMetadata,
-        content_class=PatchContent,
+        block_class=Patch,
         fence="```",
         info_string="patch",  # Will match ```patch blocks
     )

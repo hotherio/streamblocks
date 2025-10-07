@@ -14,6 +14,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.blocks import (
+    FileOperations,
     FileOperationsContent,
     FileOperationsMetadata,
 )
@@ -68,8 +69,7 @@ async def main() -> None:
     # Create syntax for file operations
     file_ops_syntax = DelimiterPreambleSyntax(
         name="files_operations_syntax",
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
+        block_class=FileOperations,
     )
 
     # Create type-specific registry

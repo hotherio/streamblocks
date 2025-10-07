@@ -11,7 +11,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.blocks import FileOperations
 
 
 @pytest.mark.asyncio
@@ -20,8 +20,7 @@ async def test_basic_delimiter_preamble_syntax() -> None:
     # Create syntax
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
+        block_class=FileOperations,
     )
 
     # Setup registry with syntax
@@ -80,8 +79,7 @@ async def test_multiple_blocks() -> None:
     """Test processing multiple blocks in a stream."""
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
+        block_class=FileOperations,
     )
 
     registry = Registry(syntax)
@@ -119,8 +117,7 @@ async def test_unclosed_block_rejection() -> None:
     """Test that unclosed blocks are rejected."""
     syntax = DelimiterPreambleSyntax(
         name="test_files_syntax",
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
+        block_class=FileOperations,
     )
 
     registry = Registry(syntax)

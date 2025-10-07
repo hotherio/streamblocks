@@ -18,9 +18,27 @@ class BlockDefinition(BaseModel):
 
     This is the actual block data that users work with.
     Subclass this to create specific block types with typed fields.
+
+    Subclasses should define:
+    - __metadata_class__: The metadata class to use for parsing
+    - __content_class__: The content class to use for parsing
+
+    Example:
+        class FileOperations(BlockDefinition):
+            __metadata_class__ = FileOperationsMetadata
+            __content_class__ = FileOperationsContent
+
+            id: str
+            block_type: str
+            operations: list[FileOperation]
+            raw_content: str
     """
 
     model_config = {"extra": "allow"}  # Allow extra fields from metadata and content
+
+    # Optional class attributes for metadata/content classes
+    __metadata_class__: type[BaseModel] | None = None
+    __content_class__: type[BaseModel] | None = None
 
     # Core fields from metadata:
     id: str = Field(..., description="Block identifier")

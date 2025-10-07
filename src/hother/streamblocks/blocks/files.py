@@ -95,11 +95,15 @@ class FileContentContent(BaseContent):
         return cls(raw_content=raw_text)
 
 
-# BlockDefinition classes (new aggregated API)
+# Block classes (aggregated metadata + content)
 
 
-class FileOperationsDefinition(BlockDefinition):
-    """File operations block definition (aggregated metadata + content)."""
+class FileOperations(BlockDefinition):
+    """File operations block."""
+
+    # Link to metadata/content classes for syntax parsing
+    __metadata_class__ = FileOperationsMetadata
+    __content_class__ = FileOperationsContent
 
     # From metadata:
     id: str
@@ -112,8 +116,12 @@ class FileOperationsDefinition(BlockDefinition):
     operations: list[FileOperation] = Field(default_factory=list)
 
 
-class FileContentDefinition(BlockDefinition):
-    """File content block definition (aggregated metadata + content)."""
+class FileContent(BlockDefinition):
+    """File content block."""
+
+    # Link to metadata/content classes for syntax parsing
+    __metadata_class__ = FileContentMetadata
+    __content_class__ = FileContentContent
 
     # From metadata:
     id: str
