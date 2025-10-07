@@ -6,15 +6,16 @@ import re
 from typing import TYPE_CHECKING, Any, cast
 
 import yaml
+from pydantic import BaseModel
 
 from hother.streamblocks.core.models import BaseContent, BaseMetadata
-from hother.streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
+from hother.streamblocks.core.types import DetectionResult, ParseResult
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate
 
 
-class DelimiterPreambleSyntax:
+class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel]:
     """Syntax: !! delimiter with inline metadata.
 
     Format: !!<id>:<type>[:param1:param2...]
@@ -78,7 +79,7 @@ class DelimiterPreambleSyntax:
         """No separate metadata section for this syntax."""
         return False
 
-    def parse_block(self, candidate: BlockCandidate) -> ParseResult[Any, Any]:
+    def parse_block(self, candidate: BlockCandidate) -> ParseResult[TMetadata, TContent]:
         """Parse the complete block."""
 
         # Metadata was already extracted during detection
@@ -111,12 +112,12 @@ class DelimiterPreambleSyntax:
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
-    def validate_block(self, metadata: Any, content: Any) -> bool:
+    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
         """Additional validation after parsing."""
         return True
 
 
-class DelimiterFrontmatterSyntax:
+class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
     """Syntax: Delimiter markers with YAML frontmatter.
 
     Format:
@@ -188,7 +189,7 @@ class DelimiterFrontmatterSyntax:
         """Check if we're still in metadata section."""
         return candidate.current_section in ["header", "metadata"]
 
-    def parse_block(self, candidate: BlockCandidate) -> ParseResult[Any, Any]:
+    def parse_block(self, candidate: BlockCandidate) -> ParseResult[TMetadata, TContent]:
         """Parse the complete block."""
         # Parse metadata from accumulated metadata lines
         metadata_dict: dict[str, Any] = {}
@@ -225,6 +226,6 @@ class DelimiterFrontmatterSyntax:
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
-    def validate_block(self, metadata: Any, content: Any) -> bool:
+    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
         """Additional validation after parsing."""
         return True

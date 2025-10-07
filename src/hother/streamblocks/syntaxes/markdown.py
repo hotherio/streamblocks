@@ -6,15 +6,16 @@ import re
 from typing import TYPE_CHECKING, Any, cast
 
 import yaml
+from pydantic import BaseModel
 
 from hother.streamblocks.core.models import BaseContent, BaseMetadata
-from hother.streamblocks.core.types import DetectionResult, ParseResult, TContent, TMetadata
+from hother.streamblocks.core.types import DetectionResult, ParseResult
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate
 
 
-class MarkdownFrontmatterSyntax:
+class MarkdownFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
     """Syntax: Markdown-style with YAML frontmatter.
 
     Format:
@@ -99,7 +100,7 @@ class MarkdownFrontmatterSyntax:
         """Check if we're still in metadata section."""
         return candidate.current_section in ["header", "metadata"]
 
-    def parse_block(self, candidate: BlockCandidate) -> ParseResult[Any, Any]:
+    def parse_block(self, candidate: BlockCandidate) -> ParseResult[TMetadata, TContent]:
         """Parse the complete block."""
         # Parse metadata from accumulated metadata lines
         metadata_dict: dict[str, Any] = {}
@@ -141,6 +142,6 @@ class MarkdownFrontmatterSyntax:
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
-    def validate_block(self, metadata: Any, content: Any) -> bool:
+    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
         """Additional validation after parsing."""
         return True

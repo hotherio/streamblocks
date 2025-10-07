@@ -254,9 +254,6 @@ line-ending = "auto"
     "FBT001",  # Boolean positional arguments for optional features
     "FBT002",  # Boolean default arguments for optional features
 ]
-"src/hother/streamblocks/syntaxes/**/*" = [
-    "ANN401",  # Any types needed for generic Protocol compliance
-]
 "src/hother/streamblocks/content/**/*" = [
     "ANN401",  # Any types needed for generic content parsing
 ]
