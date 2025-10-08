@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockConfig
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 class MessageMetadata(BaseMetadata):
@@ -40,8 +41,5 @@ class MessageContent(BaseContent):
 # Block configuration class
 
 
-class Message(BlockConfig):
+class Message(Block[MessageMetadata, MessageContent]):
     """Message block configuration."""
-
-    __metadata_class__ = MessageMetadata
-    __content_class__ = MessageContent

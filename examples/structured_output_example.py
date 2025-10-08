@@ -50,8 +50,8 @@ async def example_1_basic_person() -> None:
 
     # Create syntax and registry
     # The syntax will extract metadata and content classes from the block automatically
-    syntax = DelimiterFrontmatterSyntax(name="person_syntax")
-    registry = Registry(syntax)
+    syntax = DelimiterFrontmatterSyntax()
+    registry = Registry(syntax=syntax)
     registry.register("person", PersonBlock)
 
     # Create processor
@@ -90,17 +90,17 @@ That's the profile data.
             print(f"\n✅ Extracted Person Block: {block.metadata.id}")
 
             # Type-safe access to structured data
-            print(f"   Name: {block.data.name}")
-            print(f"   Age: {block.data.age}")
-            print(f"   Email: {block.data.email}")
-            print(f"   City: {block.data.city}")
+            print(f"   Name: {block.content.name}")
+            print(f"   Age: {block.content.age}")
+            print(f"   Email: {block.content.email}")
+            print(f"   City: {block.content.city}")
 
             # Can also validate and export as the original schema
             person = PersonSchema(
-                name=block.data.name,
-                age=block.data.age,
-                email=block.data.email,
-                city=block.data.city,
+                name=block.content.name,
+                age=block.content.age,
+                email=block.content.email,
+                city=block.content.city,
             )
             print(f"\n   Validated: {person.model_dump()}")
 
@@ -149,8 +149,8 @@ async def example_2_task_list() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax(name="task_syntax")
-    registry = Registry(syntax)
+    syntax = DelimiterFrontmatterSyntax()
+    registry = Registry(syntax=syntax)
     registry.register("task", TaskBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -215,12 +215,12 @@ All tasks loaded!
             block = event.block
             tasks.append(block)
 
-            print(f"\n📋 Task: {block.data.title}")
-            print(f"   Priority: {block.data.priority.upper()}")
-            print(f"   Due: {block.data.due_date or 'No deadline'}")
-            print(f"   Tags: {', '.join(block.data.tags) if block.data.tags else 'None'}")
-            if block.data.description:
-                print(f"   Description: {block.data.description}")
+            print(f"\n📋 Task: {block.content.title}")
+            print(f"   Priority: {block.content.priority.upper()}")
+            print(f"   Due: {block.content.due_date or 'No deadline'}")
+            print(f"   Tags: {', '.join(block.content.tags) if block.content.tags else 'None'}")
+            if block.content.description:
+                print(f"   Description: {block.content.description}")
 
         elif event.type == EventType.RAW_TEXT:
             if event.data.strip():
@@ -228,9 +228,9 @@ All tasks loaded!
 
     # Summary
     print(f"\n📊 Total tasks: {len(tasks)}")
-    urgent = sum(1 for t in tasks if t.data.priority == Priority.URGENT)
+    urgent = sum(1 for t in tasks if t.content.priority == Priority.URGENT)
     print(f"   Urgent: {urgent}")
-    print(f"   Completed: {sum(1 for t in tasks if t.data.completed)}")
+    print(f"   Completed: {sum(1 for t in tasks if t.content.completed)}")
 
 
 # ============================================================================
@@ -282,8 +282,8 @@ async def example_3_nested_schema() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax(name="detailed_person_syntax")
-    registry = Registry(syntax)
+    syntax = DelimiterFrontmatterSyntax()
+    registry = Registry(syntax=syntax)
     registry.register("detailed_person", DetailedPersonBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -328,19 +328,19 @@ Profile loaded.
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
 
-            print(f"\n👤 {block.data.name} ({block.data.age} years old)")
-            print(f"   Email: {block.data.email}")
+            print(f"\n👤 {block.content.name} ({block.content.age} years old)")
+            print(f"   Email: {block.content.email}")
             print("\n   📍 Address:")
-            print(f"      {block.data.address.street}")
-            print(f"      {block.data.address.city}, {block.data.address.state} {block.data.address.zip_code}")
+            print(f"      {block.content.address.street}")
+            print(f"      {block.content.address.city}, {block.content.address.state} {block.content.address.zip_code}")
 
-            if block.data.company:
-                print(f"\n   🏢 Company: {block.data.company.name}")
-                print(f"      Industry: {block.data.company.industry}")
-                print(f"      Size: {block.data.company.employee_count} employees")
+            if block.content.company:
+                print(f"\n   🏢 Company: {block.content.company.name}")
+                print(f"      Industry: {block.content.company.industry}")
+                print(f"      Size: {block.content.company.employee_count} employees")
 
-            if block.data.skills:
-                print(f"\n   💻 Skills: {', '.join(block.data.skills)}")
+            if block.content.skills:
+                print(f"\n   💻 Skills: {', '.join(block.content.skills)}")
 
 
 # ============================================================================
@@ -373,8 +373,8 @@ async def example_4_yaml_format() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax(name="config_syntax")
-    registry = Registry(syntax)
+    syntax = DelimiterFrontmatterSyntax()
+    registry = Registry(syntax=syntax)
     registry.register("config", ConfigBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -413,16 +413,16 @@ Configuration loaded successfully.
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
 
-            print(f"\n⚙️  Application: {block.data.app_name} v{block.data.version}")
-            print(f"   Debug mode: {'ON' if block.data.debug else 'OFF'}")
+            print(f"\n⚙️  Application: {block.content.app_name} v{block.content.version}")
+            print(f"   Debug mode: {'ON' if block.content.debug else 'OFF'}")
 
             print("\n   Features:")
-            for feature, enabled in block.data.features.items():
+            for feature, enabled in block.content.features.items():
                 status = "✓" if enabled else "✗"
                 print(f"      {status} {feature}")
 
             print("\n   Allowed hosts:")
-            for host in block.data.allowed_hosts:
+            for host in block.content.allowed_hosts:
                 print(f"      - {host}")
 
         elif event.type == EventType.RAW_TEXT:
@@ -460,8 +460,8 @@ async def example_5_llm_simulation() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax(name="analysis_syntax")
-    registry = Registry(syntax)
+    syntax = DelimiterFrontmatterSyntax()
+    registry = Registry(syntax=syntax)
     registry.register("analysis", AnalysisBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -525,16 +525,16 @@ The analysis is complete. The data shows strong positive sentiment overall.
 
             # Type-safe structured data from LLM!
             print("\n📊 Analysis Results:")
-            print(f"   Summary: {block.data.summary}")
-            print(f"   Sentiment: {block.data.sentiment.upper()}")
-            print(f"   Confidence: {block.data.confidence * 100:.1f}%")
+            print(f"   Summary: {block.content.summary}")
+            print(f"   Sentiment: {block.content.sentiment.upper()}")
+            print(f"   Confidence: {block.content.confidence * 100:.1f}%")
 
             print("\n   Key Points:")
-            for i, point in enumerate(block.data.key_points, 1):
+            for i, point in enumerate(block.content.key_points, 1):
                 print(f"      {i}. {point}")
 
             print("\n   Entities:")
-            for entity_type, values in block.data.entities.items():
+            for entity_type, values in block.content.entities.items():
                 print(f"      {entity_type.title()}: {', '.join(values)}")
 
 

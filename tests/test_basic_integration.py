@@ -18,12 +18,10 @@ from hother.streamblocks.blocks import FileOperations
 async def test_basic_delimiter_preamble_syntax() -> None:
     """Test basic functionality with delimiter preamble syntax."""
     # Create syntax
-    syntax = DelimiterPreambleSyntax(
-        name="test_files_syntax",
-    )
+    syntax = DelimiterPreambleSyntax()
 
     # Setup registry with syntax and register block
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
 
     # Create processor
@@ -64,24 +62,22 @@ async def test_basic_delimiter_preamble_syntax() -> None:
     extracted_event = block_extracted_events[0]
     block = extracted_event.block
 
-    assert block.syntax_name == "test_files_syntax"
+    assert block.syntax_name == "DelimiterPreambleSyntax"
     assert block.metadata.id == "file01"
     assert block.metadata.block_type == "files_operations"
-    assert len(block.data.operations) == 2
-    assert block.data.operations[0].path == "src/main.py"
-    assert block.data.operations[0].action == "create"
-    assert block.data.operations[1].path == "src/utils.py"
-    assert block.data.operations[1].action == "edit"
+    assert len(block.content.operations) == 2
+    assert block.content.operations[0].path == "src/main.py"
+    assert block.content.operations[0].action == "create"
+    assert block.content.operations[1].path == "src/utils.py"
+    assert block.content.operations[1].action == "edit"
 
 
 @pytest.mark.asyncio
 async def test_multiple_blocks() -> None:
     """Test processing multiple blocks in a stream."""
-    syntax = DelimiterPreambleSyntax(
-        name="test_files_syntax",
-    )
+    syntax = DelimiterPreambleSyntax()
 
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
@@ -108,18 +104,16 @@ file3.py:D
     assert len(extracted_blocks) == 2
     assert extracted_blocks[0].metadata.id == "block1"
     assert extracted_blocks[1].metadata.id == "block2"
-    assert len(extracted_blocks[0].data.operations) == 1
-    assert len(extracted_blocks[1].data.operations) == 2
+    assert len(extracted_blocks[0].content.operations) == 1
+    assert len(extracted_blocks[1].content.operations) == 2
 
 
 @pytest.mark.asyncio
 async def test_unclosed_block_rejection() -> None:
     """Test that unclosed blocks are rejected."""
-    syntax = DelimiterPreambleSyntax(
-        name="test_files_syntax",
-    )
+    syntax = DelimiterPreambleSyntax()
 
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
@@ -137,7 +131,7 @@ file2.py:E"""
 
     rejected_events = [e for e in events if e.type == EventType.BLOCK_REJECTED]
     assert len(rejected_events) == 1
-    assert "Stream ended without closing marker" in rejected_events[0].content["reason"]
+    assert "Stream ended without closing marker" in rejected_events[0].reason
 
 
 if __name__ == "__main__":

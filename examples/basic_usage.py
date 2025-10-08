@@ -45,12 +45,10 @@ And some final text after all blocks.
 async def main() -> None:
     """Main example function."""
     # Create delimiter preamble syntax
-    syntax = DelimiterPreambleSyntax(
-        name="files_operations_syntax",
-    )
+    syntax = DelimiterPreambleSyntax()
 
     # Create type-specific registry and register block
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
 
     # Add a custom validator
     def no_root_delete(metadata: FileOperationsMetadata, content: FileOperationsContent) -> bool:
@@ -76,7 +74,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_DELTA:
             # Partial block update
-            print(f"[DELTA] {event.content['syntax']} - {event.data.strip()}")
+            print(f"[DELTA] {event.syntax} - {event.data.strip()}")
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
@@ -84,12 +82,12 @@ async def main() -> None:
             blocks_extracted.append(block)
             print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
             print("        Operations:")
-            for op in block.data.operations:
+            for op in block.content.operations:
                 print(f"          - {op.action}: {op.path}")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            print(f"[REJECT] {event.content['reason']} - {event.content['syntax']}")
+            print(f"[REJECT] {event.reason} - {event.syntax}")
 
     print("-" * 60)
     print(f"\nTotal blocks extracted: {len(blocks_extracted)}")

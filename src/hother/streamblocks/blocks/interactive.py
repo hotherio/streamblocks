@@ -7,7 +7,8 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockConfig
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 class InteractiveMetadata(BaseMetadata):
@@ -168,57 +169,33 @@ class FormContent(InteractiveContent):
 # Block classes (aggregated metadata + content)
 
 
-class YesNo(BlockConfig):
-    """Yes/No question block configuration."""
-
-    __metadata_class__ = YesNoMetadata
-    __content_class__ = YesNoContent
+class YesNo(Block[YesNoMetadata, YesNoContent]):
+    """Yes/No question block."""
 
 
-class Choice(BlockConfig):
-    """Single choice question block configuration."""
-
-    __metadata_class__ = ChoiceMetadata
-    __content_class__ = ChoiceContent
+class Choice(Block[ChoiceMetadata, ChoiceContent]):
+    """Single choice question block."""
 
 
-class MultiChoice(BlockConfig):
-    """Multiple choice question block configuration."""
-
-    __metadata_class__ = MultiChoiceMetadata
-    __content_class__ = MultiChoiceContent
+class MultiChoice(Block[MultiChoiceMetadata, MultiChoiceContent]):
+    """Multiple choice question block."""
 
 
-class Input(BlockConfig):
-    """Text input block configuration."""
-
-    __metadata_class__ = InputMetadata
-    __content_class__ = InputContent
+class Input(Block[InputMetadata, InputContent]):
+    """Text input block."""
 
 
-class Scale(BlockConfig):
-    """Scale rating block configuration."""
-
-    __metadata_class__ = ScaleMetadata
-    __content_class__ = ScaleContent
+class Scale(Block[ScaleMetadata, ScaleContent]):
+    """Scale rating block."""
 
 
-class Ranking(BlockConfig):
-    """Ranking block configuration."""
-
-    __metadata_class__ = RankingMetadata
-    __content_class__ = RankingContent
+class Ranking(Block[RankingMetadata, RankingContent]):
+    """Ranking block."""
 
 
-class Confirm(BlockConfig):
-    """Confirmation dialog block configuration."""
-
-    __metadata_class__ = ConfirmMetadata
-    __content_class__ = ConfirmContent
+class Confirm(Block[ConfirmMetadata, ConfirmContent]):
+    """Confirmation dialog block."""
 
 
-class Form(BlockConfig):
-    """Form block configuration."""
-
-    __metadata_class__ = FormMetadata
-    __content_class__ = FormContent
+class Form(Block[FormMetadata, FormContent]):
+    """Form block."""

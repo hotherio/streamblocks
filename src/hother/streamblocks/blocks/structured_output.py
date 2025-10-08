@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field, create_model
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
+from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -27,10 +28,10 @@ def create_structured_output_block(
     format: Literal["json", "yaml"] = "json",
     *,
     strict: bool = False,
-) -> type[BlockDefinition[StructuredOutputMetadata, BaseContent]]:
+) -> type[Block[StructuredOutputMetadata, BaseContent]]:
     """Create a structured output block with a custom Pydantic schema.
 
-    This factory function creates a specialized BlockDefinition class that parses content
+    This factory function creates a specialized Block class that parses content
     according to a user-defined Pydantic model. The content is automatically
     validated and typed according to the schema.
 
@@ -41,7 +42,7 @@ def create_structured_output_block(
         strict: If True, use strict parsing (raise errors). If False, fall back to raw_content
 
     Returns:
-        A BlockDefinition subclass typed with StructuredOutputMetadata and a dynamically
+        A Block subclass typed with StructuredOutputMetadata and a dynamically
         created content class that inherits from both BaseContent and the schema.
 
     Example:
@@ -93,24 +94,16 @@ def create_structured_output_block(
     # Apply the parsing decorator
     ContentClass = decorator(ContentClass)  # noqa: N806
 
-    # Create a BlockDefinition subclass with the specialized types
+    # Create a Block subclass with the specialized types
     block_class_name = f"{schema_name.title().replace('_', '')}Block"
 
-    # Create the base tuple - we need to store this for __orig_bases__
-    base_class = BlockDefinition[StructuredOutputMetadata, ContentClass]  # type: ignore[misc]
-
-    BlockClass: type[BlockDefinition[StructuredOutputMetadata, BaseContent]] = type(  # noqa: N806
+    # Create the generic Block type with the specialized metadata and content types
+    # The type parameters are automatically extracted by extract_block_types()
+    return type(
         block_class_name,
-        (base_class,),
+        (Block[StructuredOutputMetadata, ContentClass],),  # type: ignore[misc]
         {
             "__doc__": f"Structured output block for '{schema_name}' schema.",
             "__module__": __name__,
-            # Expose the classes for syntax extraction
-            "__metadata_class__": StructuredOutputMetadata,
-            "__content_class__": ContentClass,
-            # Explicitly set __orig_bases__ so _extract_type_params can find it
-            "__orig_bases__": (base_class,),
         },
     )
-
-    return BlockClass  # type: ignore[return-value]

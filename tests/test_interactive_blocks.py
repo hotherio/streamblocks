@@ -45,8 +45,8 @@ BLOCK_TYPE_MAPPING = {
 @pytest.fixture
 def interactive_registry() -> Registry:
     """Create a registry configured for interactive blocks."""
-    syntax = DelimiterFrontmatterSyntax(name="interactive")
-    registry = Registry(syntax)
+    syntax = DelimiterFrontmatterSyntax()
+    registry = Registry(syntax=syntax)
 
     # Register all interactive block types
     for block_type, block_class in BLOCK_TYPE_MAPPING.items():
@@ -96,8 +96,8 @@ prompt: "Do you accept the terms?"
     assert block.metadata.block_type == "yesno"
     assert block.metadata.yes_label == "Accept"
     assert block.metadata.no_label == "Decline"
-    assert block.data.prompt == "Do you accept the terms?"
-    assert block.data.response is None  # No response yet
+    assert block.content.prompt == "Do you accept the terms?"
+    assert block.content.response is None  # No response yet
 
 
 @pytest.mark.asyncio
@@ -141,8 +141,8 @@ options:
     block = blocks[0]
 
     assert block.metadata.display_style == "dropdown"
-    assert block.data.prompt == "Select your favorite color:"
-    assert block.data.options == ["Red", "Green", "Blue"]
+    assert block.content.prompt == "Select your favorite color:"
+    assert block.content.options == ["Red", "Green", "Blue"]
 
 
 @pytest.mark.asyncio
@@ -190,8 +190,8 @@ options:
 
     assert block.metadata.min_selections == 2
     assert block.metadata.max_selections == 3
-    assert len(block.data.options) == 5
-    assert block.data.response == []  # Empty list by default
+    assert len(block.content.options) == 5
+    assert block.content.response == []  # Empty list by default
 
 
 @pytest.mark.asyncio
@@ -239,7 +239,7 @@ labels:
     assert block.metadata.min_value == 0
     assert block.metadata.max_value == 10
     assert block.metadata.step == 2
-    assert block.data.labels == {0: "Very Poor", 5: "Average", 10: "Excellent"}
+    assert block.content.labels == {0: "Very Poor", 5: "Average", 10: "Excellent"}
 
 
 @pytest.mark.asyncio
@@ -299,20 +299,20 @@ fields:
 
     assert block.metadata.submit_label == "Register"
     assert block.metadata.cancel_label == "Skip"
-    assert len(block.data.fields) == 3
+    assert len(block.content.fields) == 3
 
     # Check fields
-    username_field = block.data.fields[0]
+    username_field = block.content.fields[0]
     assert username_field.name == "username"
     assert username_field.field_type == "text"
     assert username_field.required is True
     assert username_field.validation["min_length"] == 3
 
-    email_field = block.data.fields[1]
+    email_field = block.content.fields[1]
     assert email_field.name == "email"
     assert email_field.field_type == "email"
 
-    subscribe_field = block.data.fields[2]
+    subscribe_field = block.content.fields[2]
     assert subscribe_field.name == "subscribe"
     assert subscribe_field.field_type == "yesno"
     assert subscribe_field.required is False

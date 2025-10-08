@@ -3,28 +3,40 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from hother.streamblocks.core.models import BlockCandidate, BlockDefinition
-from hother.streamblocks.core.types import BlockState, EventType, StreamEvent
+from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
+from hother.streamblocks.core.types import (
+    BaseContent,
+    BaseMetadata,
+    BlockDeltaEvent,
+    BlockExtractedEvent,
+    BlockRejectedEvent,
+    BlockState,
+    RawTextEvent,
+    StreamEvent,
+)
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator
 
-    from hother.streamblocks.core.protocols import BlockSyntax
     from hother.streamblocks.core.registry import Registry
 
 
-class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
+def _get_syntax_name(syntax: object) -> str:
+    """Get the name of a syntax from its class name."""
+    return type(syntax).__name__
+
+
+class StreamBlockProcessor:
     """Main stream processing engine for a single syntax type.
 
-    This processor works with exactly one syntax type, ensuring type safety
-    and simplified processing logic.
+    This processor works with exactly one syntax.
     """
 
     def __init__(
         self,
-        registry: Registry[TSyntax],
+        registry: Registry,
         lines_buffer: int = 5,
         max_line_length: int = 16_384,
         max_block_size: int = 1_048_576,  # 1MB
@@ -32,7 +44,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         """Initialize the stream processor.
 
         Args:
-            registry: Type-specific registry with a single syntax
+            registry: Registry with a single syntax
             lines_buffer: Number of lines to keep in buffer
             max_line_length: Maximum line length before truncation
             max_block_size: Maximum block size in bytes
@@ -52,7 +64,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
     async def process_stream(
         self,
         stream: AsyncIterator[str],
-    ) -> AsyncGenerator[StreamEvent[Any, Any]]:
+    ) -> AsyncGenerator[StreamEvent[BaseMetadata, BaseContent]]:
         """Process stream and yield events.
 
         Args:
@@ -94,7 +106,7 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
     async def _process_line(
         self,
         line: str,
-    ) -> AsyncGenerator[StreamEvent[Any, Any]]:
+    ) -> AsyncGenerator[StreamEvent[BaseMetadata, BaseContent]]:
         """Process a single line through detection.
 
         Args:
@@ -120,15 +132,9 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
 
                 # Try to extract block
                 event = await self._try_extract_block(candidate)
-                if event:
-                    yield event
-                    self._candidates.remove(candidate)
-                    handled_by_candidate = True
-                else:
-                    # Validation failed, reject
-                    yield self._create_rejection_event(candidate, "Validation failed")
-                    self._candidates.remove(candidate)
-                    handled_by_candidate = True
+                yield event
+                self._candidates.remove(candidate)
+                handled_by_candidate = True
 
             elif detection.is_metadata_boundary:
                 # Syntax detected a metadata boundary
@@ -136,19 +142,14 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
                 # Syntax may update candidate.current_section internally
 
                 # Emit delta event
-                yield StreamEvent(
-                    type=EventType.BLOCK_DELTA,
+                yield BlockDeltaEvent(
                     data=line,
-                    content={
-                        "syntax": candidate.syntax.name,
-                        "start_line": candidate.start_line,
-                        "current_line": self._line_counter,
-                        "section": candidate.current_section,
-                        "partial_block": {
-                            "delta": line,
-                            "accumulated": candidate.raw_text,
-                        },
-                    },
+                    syntax=_get_syntax_name(candidate.syntax),
+                    start_line=candidate.start_line,
+                    current_line=self._line_counter,
+                    section=candidate.current_section,
+                    delta=line,
+                    accumulated=candidate.raw_text,
                 )
                 handled_by_candidate = True
 
@@ -170,19 +171,14 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
                 # (e.g., added to metadata_lines or content_lines)
 
                 # Emit delta event
-                yield StreamEvent(
-                    type=EventType.BLOCK_DELTA,
+                yield BlockDeltaEvent(
                     data=line,
-                    content={
-                        "syntax": candidate.syntax.name,
-                        "start_line": candidate.start_line,
-                        "current_line": self._line_counter,
-                        "section": candidate.current_section,
-                        "partial_block": {
-                            "delta": line,
-                            "accumulated": candidate.raw_text,
-                        },
-                    },
+                    syntax=_get_syntax_name(candidate.syntax),
+                    start_line=candidate.start_line,
+                    current_line=self._line_counter,
+                    section=candidate.current_section,
+                    delta=line,
+                    accumulated=candidate.raw_text,
                 )
                 handled_by_candidate = True
 
@@ -209,23 +205,22 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
 
             # If no candidates and no openings, emit raw text
             if not opening_found:
-                yield StreamEvent(
-                    type=EventType.RAW_TEXT,
+                yield RawTextEvent(
                     data=line,
-                    content={"line_number": self._line_counter},
+                    line_number=self._line_counter,
                 )
 
     async def _try_extract_block(
         self,
         candidate: BlockCandidate,
-    ) -> StreamEvent[Any, Any] | None:
+    ) -> BlockExtractedEvent[BaseMetadata, BaseContent] | BlockRejectedEvent[BaseMetadata, BaseContent]:
         """Try to parse and validate a complete block.
 
         Args:
             candidate: Block candidate to extract
 
         Returns:
-            BLOCK_EXTRACTED event or None if extraction failed
+            BlockExtractedEvent if successful, BlockRejectedEvent if validation fails
         """
         # Step 1: Extract block_type from candidate
         block_type = candidate.syntax.extract_block_type(candidate)
@@ -239,36 +234,36 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         parse_result = candidate.syntax.parse_block(candidate, block_class)
 
         if not parse_result.success:
-            return None
+            error = parse_result.error or "Parse failed"
+            return self._create_rejection_event(candidate, error, parse_result.exception)
 
         metadata = parse_result.metadata
         content = parse_result.content
 
         if metadata is None or content is None:
-            return None
+            return self._create_rejection_event(candidate, "Missing metadata or content")
 
         # Additional validation from syntax
         if not candidate.syntax.validate_block(metadata, content):
-            return None
+            return self._create_rejection_event(candidate, "Syntax validation failed")
 
         # Registry validation (user-defined validators)
-        final_block_type = getattr(metadata, "block_type", None) or getattr(metadata, "type", None)
+        final_block_type = getattr(metadata, "block_type", None)
         if final_block_type and not self.registry.validate_block(final_block_type, metadata, content):
-            return None
+            return self._create_rejection_event(candidate, "Registry validation failed")
 
-        # Create block envelope with separate metadata and data
-        block = BlockDefinition(
+        # Create extracted block with metadata, content, and extraction info
+        block = ExtractedBlock(
             metadata=metadata,
-            data=content,
-            syntax_name=candidate.syntax.name,
+            content=content,
+            syntax_name=_get_syntax_name(candidate.syntax),
             raw_text=candidate.raw_text,
             line_start=candidate.start_line,
             line_end=self._line_counter,
             hash_id=candidate.compute_hash(),
         )
 
-        return StreamEvent(
-            type=EventType.BLOCK_EXTRACTED,
+        return BlockExtractedEvent(
             data=candidate.raw_text,
             block=block,
         )
@@ -277,27 +272,28 @@ class StreamBlockProcessor[TSyntax: "BlockSyntax[Any, Any]"]:
         self,
         candidate: BlockCandidate,
         reason: str = "Validation failed",
-    ) -> StreamEvent[Any, Any]:
+        exception: Exception | None = None,
+    ) -> BlockRejectedEvent[BaseMetadata, BaseContent]:
         """Create a rejection event.
 
         Args:
             candidate: Rejected candidate
             reason: Reason for rejection
+            exception: Optional exception that caused rejection
 
         Returns:
             BLOCK_REJECTED event
         """
-        return StreamEvent(
-            type=EventType.BLOCK_REJECTED,
+        return BlockRejectedEvent(
             data=candidate.raw_text,
-            content={
-                "reason": reason,
-                "syntax": candidate.syntax.name,
-                "lines": (candidate.start_line, self._line_counter),
-            },
+            reason=reason,
+            syntax=_get_syntax_name(candidate.syntax),
+            start_line=candidate.start_line,
+            end_line=self._line_counter,
+            exception=exception,
         )
 
-    async def _flush_candidates(self) -> AsyncGenerator[StreamEvent[Any, Any]]:
+    async def _flush_candidates(self) -> AsyncGenerator[StreamEvent[BaseMetadata, BaseContent]]:
         """Flush remaining candidates as rejected.
 
         Yields:

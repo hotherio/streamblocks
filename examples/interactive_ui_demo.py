@@ -63,7 +63,7 @@ class YesNoWidget(InteractiveWidget):
     """Widget for yes/no questions."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"❓ {self.block.data.prompt}", classes="prompt")
+        yield Label(f"❓ {self.block.content.prompt}", classes="prompt")
         with Horizontal(classes="button-group"):
             yield Button(self.block.metadata.yes_label, id="yes", variant="primary")
             yield Button(self.block.metadata.no_label, id="no", variant="default")
@@ -78,14 +78,14 @@ class ChoiceWidget(InteractiveWidget):
     """Widget for single choice questions."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"🔘 {self.block.data.prompt}", classes="prompt")
+        yield Label(f"🔘 {self.block.content.prompt}", classes="prompt")
 
         if self.block.metadata.display_style == "dropdown":
-            options = [(opt, opt) for opt in self.block.data.options]
+            options = [(opt, opt) for opt in self.block.content.options]
             yield Select(options, prompt="Select an option", id="choice-select")
         else:
             with RadioSet(id="choice-radio"):
-                for opt in self.block.data.options:
+                for opt in self.block.content.options:
                     yield RadioButton(opt)
 
     def on_select_changed(self, event: Select.Changed) -> None:
@@ -108,7 +108,7 @@ class MultiChoiceWidget(InteractiveWidget):
         self.selected: set[str] = set()
 
     def compose(self) -> ComposeResult:
-        yield Label(f"☑️  {self.block.data.prompt}", classes="prompt")
+        yield Label(f"☑️  {self.block.content.prompt}", classes="prompt")
         if self.block.metadata.min_selections > 1 or self.block.metadata.max_selections:
             yield Label(
                 f"Select {self.block.metadata.min_selections}-{self.block.metadata.max_selections or 'all'} options",
@@ -116,7 +116,7 @@ class MultiChoiceWidget(InteractiveWidget):
             )
 
         with Container(id="checkbox-group"):
-            for i, opt in enumerate(self.block.data.options):
+            for i, opt in enumerate(self.block.content.options):
                 yield Checkbox(opt, id=f"check-{i}", value=False)
 
         yield Button("Submit", id="submit", variant="primary")
@@ -144,8 +144,8 @@ class InputWidget(InteractiveWidget):
     """Widget for text input."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"📝 {self.block.data.prompt}", classes="prompt")
-        yield Input(placeholder=self.block.data.placeholder, value=self.block.data.default_value, id="text-input")
+        yield Label(f"📝 {self.block.content.prompt}", classes="prompt")
+        yield Input(placeholder=self.block.content.placeholder, value=self.block.content.default_value, id="text-input")
         yield Button("Submit", id="submit", variant="primary")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -165,13 +165,13 @@ class ScaleWidget(InteractiveWidget):
     """Widget for scale rating."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"⭐ {self.block.data.prompt}", classes="prompt")
+        yield Label(f"⭐ {self.block.content.prompt}", classes="prompt")
 
         with RadioSet(id="scale-radio"):
             for value in range(
                 self.block.metadata.min_value, self.block.metadata.max_value + 1, self.block.metadata.step
             ):
-                label = self.block.data.labels.get(value, str(value))
+                label = self.block.content.labels.get(value, str(value))
                 yield RadioButton(f"{value} - {label}")
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
@@ -187,11 +187,11 @@ class RankingWidget(InteractiveWidget):
     """Widget for ranking items."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"🔢 {self.block.data.prompt}", classes="prompt")
+        yield Label(f"🔢 {self.block.content.prompt}", classes="prompt")
         yield Label("Use ↑/↓ to move items, Space to select", classes="hint")
 
         list_view = ListView(id="ranking-list")
-        for item in self.block.data.items:
+        for item in self.block.content.items:
             list_view.append(ListItem(Label(item)))
         yield list_view
 
@@ -215,8 +215,8 @@ class ConfirmWidget(InteractiveWidget):
     """Widget for confirmation dialogs."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"⚠️  {self.block.data.prompt}", classes="prompt")
-        yield Label(self.block.data.message, classes="message")
+        yield Label(f"⚠️  {self.block.content.prompt}", classes="prompt")
+        yield Label(self.block.content.message, classes="message")
 
         with Horizontal(classes="button-group"):
             variant = "error" if self.block.metadata.danger_mode else "primary"
@@ -237,10 +237,10 @@ class FormWidget(InteractiveWidget):
         self.form_data: dict[str, Any] = {}
 
     def compose(self) -> ComposeResult:
-        yield Label(f"📋 {self.block.data.prompt}", classes="prompt")
+        yield Label(f"📋 {self.block.content.prompt}", classes="prompt")
 
         with Container(id="form-fields"):
-            for field in self.block.data.fields:
+            for field in self.block.content.fields:
                 yield Label(f"{field.label}{' *' if field.required else ''}")
 
                 if field.field_type == "text":
@@ -487,7 +487,7 @@ class InteractiveBlocksApp(App):
         interactive_syntax = InteractiveSyntax(block_mapping=block_type_mapping)
 
         # Create type-specific registry
-        registry = Registry(interactive_syntax)
+        registry = Registry(syntax=interactive_syntax)
 
         # Create processor
         self.processor = StreamBlockProcessor(registry, lines_buffer=10)
@@ -499,7 +499,7 @@ class InteractiveBlocksApp(App):
                 self.log(f"Extracted block: {block.metadata.id} ({block.metadata.block_type})")
                 await self.add_interactive_block(block)
             elif event.type == EventType.BLOCK_REJECTED:
-                self.log(f"Block rejected: {event.content['reason']}")
+                self.log(f"Block rejected: {event.reason}")
 
     async def add_interactive_block(self, block: BlockDefinition[Any, Any]) -> None:
         """Add a new interactive block widget."""

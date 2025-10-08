@@ -14,17 +14,18 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockDefinition
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 @pytest.mark.asyncio
 async def test_minimal_api_no_models() -> None:
     """Test using syntax with no custom models."""
     # Create syntax with no parameters - uses BaseMetadata and BaseContent
-    syntax = DelimiterPreambleSyntax(name="test_base_syntax")
+    syntax = DelimiterPreambleSyntax()
 
     # Create type-specific registry (no blocks registered, will use base classes)
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
 
     processor = StreamBlockProcessor(registry)
 
@@ -51,7 +52,7 @@ No custom models needed.
 
     # Check data has raw_content from BaseContent
     # The content preserves original formatting including empty lines
-    lines = block.data.raw_content.strip().split("\n")
+    lines = block.content.raw_content.strip().split("\n")
     assert len(lines) == 3  # Two text lines and one empty line between
     assert lines[0] == "This is a simple note."
     assert lines[1] == ""
@@ -62,10 +63,10 @@ No custom models needed.
 async def test_auto_populated_fields_delimiter_frontmatter() -> None:
     """Test that id and block_type are auto-populated for DelimiterFrontmatterSyntax."""
     # Use base classes (no custom models)
-    syntax = DelimiterFrontmatterSyntax(name="test_frontmatter_syntax")
+    syntax = DelimiterFrontmatterSyntax()
 
     # Create type-specific registry (no blocks registered, will use base classes)
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
 
     processor = StreamBlockProcessor(registry)
 
@@ -100,10 +101,10 @@ assignee: john
 async def test_auto_populated_fields_markdown() -> None:
     """Test that id and block_type are auto-populated for MarkdownFrontmatterSyntax."""
     # Use base classes with info string
-    syntax = MarkdownFrontmatterSyntax(name="test_python_syntax", info_string="python")
+    syntax = MarkdownFrontmatterSyntax(info_string="python")
 
     # Create type-specific registry (no blocks registered, will use base classes)
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
 
     processor = StreamBlockProcessor(registry)
 
@@ -143,18 +144,11 @@ async def test_custom_metadata_inherits_base() -> None:
 
         model_config = {"extra": "allow"}
 
-    class CustomBlock(BlockDefinition):
-        __metadata_class__ = CustomMetadata
-        __content_class__ = BaseContent
+    class CustomBlock(Block[CustomMetadata, BaseContent]):
+        pass
 
-        id: str
-        block_type: str
-        priority: str = "normal"
-        tags: list[str] = Field(default_factory=list)
-        raw_content: str
-
-    syntax = DelimiterPreambleSyntax(name="test_custom_syntax")
-    registry = Registry(syntax)
+    syntax = DelimiterPreambleSyntax()
+    registry = Registry(syntax=syntax)
     registry.register("custom", CustomBlock)
 
     processor = StreamBlockProcessor(registry)
@@ -215,17 +209,11 @@ async def test_custom_content_inherits_base() -> None:
 
             return cls(raw_content=raw_text, items=items)
 
-    class TodoBlock(BlockDefinition):
-        __metadata_class__ = BaseMetadata
-        __content_class__ = TodoContent
+    class TodoBlock(Block[BaseMetadata, TodoContent]):
+        pass
 
-        id: str
-        block_type: str
-        raw_content: str
-        items: list[TodoItem] = Field(default_factory=list)
-
-    syntax = DelimiterPreambleSyntax(name="test_todo_syntax")
-    registry = Registry(syntax)
+    syntax = DelimiterPreambleSyntax()
+    registry = Registry(syntax=syntax)
     registry.register("todos", TodoBlock)
 
     processor = StreamBlockProcessor(registry)
@@ -248,25 +236,25 @@ async def test_custom_content_inherits_base() -> None:
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
 
-    # Check data has items from TodoContent
-    assert hasattr(block.data, "items")  # Custom field from TodoContent
+    # Check content has items from TodoContent
+    assert hasattr(block.content, "items")  # Custom field from TodoContent
 
     # Check raw_content is preserved (with extra newlines from stream processing)
     # The exact content depends on how lines are processed
-    lines = block.data.raw_content.strip().split("\n")
+    lines = block.content.raw_content.strip().split("\n")
     assert len(lines) == 5  # 3 todo items + 2 empty lines between them
     assert lines[0] == "- [ ] Buy groceries"
     assert lines[2] == "- [x] Call mom"
     assert lines[4] == "- Finish report"
 
     # Check parsed items from TodoContent
-    assert len(block.data.items) == 3
-    assert block.data.items[0].text == "Buy groceries"
-    assert block.data.items[0].done is False
-    assert block.data.items[1].text == "Call mom"
-    assert block.data.items[1].done is True
-    assert block.data.items[2].text == "Finish report"
-    assert block.data.items[2].done is False
+    assert len(block.content.items) == 3
+    assert block.content.items[0].text == "Buy groceries"
+    assert block.content.items[0].done is False
+    assert block.content.items[1].text == "Call mom"
+    assert block.content.items[1].done is True
+    assert block.content.items[2].text == "Finish report"
+    assert block.content.items[2].done is False
 
 
 # NOTE: The test for multiple syntaxes handling the same block type

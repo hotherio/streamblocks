@@ -2,15 +2,21 @@
 
 __version__ = "0.1.0"
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockCandidate, BlockConfig, BlockDefinition
+from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
 from hother.streamblocks.core.processor import StreamBlockProcessor
 from hother.streamblocks.core.registry import Registry
 from hother.streamblocks.core.types import (
+    BaseContent,
+    BaseMetadata,
+    BlockDeltaEvent,
+    BlockExtractedEvent,
+    BlockRejectedEvent,
     BlockState,
     DetectionResult,
     EventType,
     ParseResult,
+    RawTextEvent,
     StreamEvent,
 )
 from hother.streamblocks.syntaxes import (
@@ -19,16 +25,21 @@ from hother.streamblocks.syntaxes import (
     MarkdownFrontmatterSyntax,
 )
 
-# Rebuild StreamEvent model to resolve forward reference to BlockDefinition
-StreamEvent.model_rebuild()
+# Rebuild event models to resolve forward references to ExtractedBlock
+RawTextEvent.model_rebuild()
+BlockDeltaEvent.model_rebuild()
+BlockExtractedEvent.model_rebuild()
+BlockRejectedEvent.model_rebuild()
 
 __all__ = [
     # Core models
     "BaseContent",
     "BaseMetadata",
+    "Block",
     "BlockCandidate",
-    "BlockConfig",
-    "BlockDefinition",
+    "BlockDeltaEvent",
+    "BlockExtractedEvent",
+    "BlockRejectedEvent",
     # Core types
     "BlockState",
     # Built-in syntaxes
@@ -36,14 +47,18 @@ __all__ = [
     "DelimiterPreambleSyntax",
     "DetectionResult",
     "EventType",
+    "ExtractedBlock",
     "MarkdownFrontmatterSyntax",
     "ParseResult",
     # Parsing
     "ParseStrategy",
+    "RawTextEvent",
     # Core components
     "Registry",
     "StreamBlockProcessor",
+    # Events
     "StreamEvent",
+    # Parsing utilities
     "parse_as_json",
     "parse_as_yaml",
 ]

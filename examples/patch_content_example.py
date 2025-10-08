@@ -187,11 +187,10 @@ async def main() -> None:
     """Main example function."""
     # Create delimiter preamble syntax for patches
     patch_syntax = DelimiterPreambleSyntax(
-        name="patch_delimiter_syntax",
     )
 
     # Create type-specific registry and register block
-    registry = Registry(patch_syntax)
+    registry = Registry(syntax=patch_syntax)
 
     # Add validators for patch quality
     def validate_patch_content(metadata: SimplePatchMetadata, content: SimplePatchContent) -> bool:

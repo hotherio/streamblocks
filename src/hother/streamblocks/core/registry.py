@@ -3,25 +3,26 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from hother.streamblocks.syntaxes.models import get_syntax_instance
+
 if TYPE_CHECKING:
-    from hother.streamblocks.core.protocols import BlockSyntax
+    from hother.streamblocks.core.models import Block
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
+    from hother.streamblocks.syntaxes.base import BaseSyntax
+    from hother.streamblocks.syntaxes.models import Syntax
 
 type BlockType = str
 type ValidatorFunc = Callable[[BaseModel, BaseModel], bool]
 
-# Type variable for syntax types
-TSyntax = TypeVar("TSyntax", bound="BlockSyntax[Any, Any]")
 
-
-class Registry[TSyntax: "BlockSyntax[Any, Any]"]:
+class Registry:
     """Type-specific registry for a single syntax type.
 
     This registry holds exactly one syntax instance and maps block types to block classes.
-    Each registry is parameterized by the syntax type, ensuring type safety.
 
     Example:
         >>> syntax = DelimiterPreambleSyntax(name="my_syntax")
@@ -42,8 +43,9 @@ class Registry[TSyntax: "BlockSyntax[Any, Any]"]:
 
     def __init__(
         self,
-        syntax: TSyntax,
-        blocks: dict[str, type[Any]] | None = None,
+        *,
+        syntax: Syntax | BaseSyntax,
+        blocks: dict[str, type[Block[BaseMetadata, BaseContent]]] | None = None,
     ) -> None:
         """Initialize registry with a single syntax instance.
 
@@ -51,8 +53,8 @@ class Registry[TSyntax: "BlockSyntax[Any, Any]"]:
             syntax: The syntax instance for this registry
             blocks: Optional dict of block_type -> block_class for bulk registration
         """
-        self._syntax = syntax
-        self._block_classes: dict[BlockType, type[Any]] = {}
+        self._syntax = get_syntax_instance(syntax=syntax)
+        self._block_classes: dict[BlockType, type[Block[BaseMetadata, BaseContent]]] = {}
         self._validators: dict[BlockType, list[ValidatorFunc]] = {}
 
         # Bulk register blocks if provided
@@ -61,21 +63,21 @@ class Registry[TSyntax: "BlockSyntax[Any, Any]"]:
                 self.register(block_type, block_class)
 
     @property
-    def syntax(self) -> TSyntax:
+    def syntax(self) -> BaseSyntax:
         """Get the syntax instance."""
         return self._syntax
 
     def register(
         self,
         name: str,
-        block_class: type[Any],
+        block_class: type[Block[BaseMetadata, BaseContent]],
         validators: list[ValidatorFunc] | None = None,
     ) -> None:
         """Register a block class for a block type.
 
         Args:
             name: Block type name (e.g., "files_operations", "patch")
-            block_class: BlockDefinition class with __metadata_class__ and __content_class__
+            block_class: Block class inheriting from Block[M, C]
             validators: Optional list of validator functions for this block type
         """
         self._block_classes[name] = block_class
@@ -85,7 +87,7 @@ class Registry[TSyntax: "BlockSyntax[Any, Any]"]:
             for validator in validators:
                 self.add_validator(name, validator)
 
-    def get_block_class(self, block_type: str) -> type[Any] | None:
+    def get_block_class(self, block_type: str) -> type[Block[BaseMetadata, BaseContent]] | None:
         """Get the block class for a given block type.
 
         Args:

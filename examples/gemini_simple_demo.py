@@ -160,13 +160,12 @@ async def main() -> None:
 
     # Create a single syntax for all Gemini responses
     syntax = DelimiterFrontmatterSyntax(
-        name="gemini_syntax",
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
     # Create registry and register all Gemini block types
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
     registry.register("file_operations", GeminiBlock)
     registry.register("file_content", GeminiBlock)
     registry.register("message", GeminiBlock)

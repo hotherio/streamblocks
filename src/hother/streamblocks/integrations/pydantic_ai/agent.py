@@ -15,12 +15,11 @@ from hother.streamblocks.integrations.pydantic_ai.processor import AgentStreamPr
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator
 
-    from hother.streamblocks.core.protocols import BlockSyntax
     from hother.streamblocks.core.registry import Registry
     from hother.streamblocks.core.types import StreamEvent
 
 
-class BlockAwareAgent[TSyntax: "BlockSyntax[Any, Any]"]:
+class BlockAwareAgent:
     """PydanticAI agent that generates StreamBlocks-compatible output.
 
     This wrapper makes a PydanticAI agent aware of StreamBlocks syntaxes,
@@ -29,7 +28,7 @@ class BlockAwareAgent[TSyntax: "BlockSyntax[Any, Any]"]:
 
     def __init__(
         self,
-        registry: Registry[TSyntax],
+        registry: Registry,
         model: str | Agent | None = None,
         system_prompt: str | None = None,
         **agent_kwargs: Any,

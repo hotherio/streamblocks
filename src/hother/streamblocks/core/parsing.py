@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-from enum import StrEnum
-from typing import TYPE_CHECKING, TypeVar
+from enum import StrEnum, auto
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import yaml
 from pydantic import ValidationError
@@ -20,8 +20,8 @@ T = TypeVar("T", bound="BaseModel")
 class ParseStrategy(StrEnum):
     """Strategy for handling parsing errors."""
 
-    STRICT = "strict"  # Raise exception on parse error
-    PERMISSIVE = "permissive"  # Fall back to raw_content on error
+    STRICT = auto()  # Raise exception on parse error
+    PERMISSIVE = auto()  # Fall back to raw_content on error
 
 
 def parse_as_yaml(
@@ -48,28 +48,30 @@ def parse_as_yaml(
                 return cls_inner(raw_content=raw_text)
 
             try:
-                data = yaml.safe_load(raw_text) or {}
+                loaded_data: Any = yaml.safe_load(raw_text)
 
-                # Handle non-dict YAML values
-                if handle_non_dict and not isinstance(data, dict):
-                    data = {"value": data}
+                # Build data dict - explicit branches help type inference
+                if isinstance(loaded_data, dict):
+                    data: dict[str, Any] = loaded_data
+                elif handle_non_dict and loaded_data is not None:
+                    data = {"value": loaded_data}
+                else:
+                    data = {}
 
                 return cls_inner(raw_content=raw_text, **data)
 
-            except yaml.YAMLError as e:
+            except yaml.YAMLError:
                 if strategy == ParseStrategy.STRICT:
-                    msg = f"Invalid YAML: {e}"
-                    raise ValueError(msg) from e
+                    raise
                 # PERMISSIVE: fall back to raw content
                 return cls_inner(raw_content=raw_text)
-            except (TypeError, ValidationError) as e:
+            except (TypeError, ValidationError):
                 # Pydantic validation error
                 if strategy == ParseStrategy.STRICT:
-                    msg = f"YAML data doesn't match model: {e}"
-                    raise ValueError(msg) from e
+                    raise
                 return cls_inner(raw_content=raw_text)
 
-        cls.parse = classmethod(parse)
+        cls.parse = classmethod(parse)  # Dynamic method addition for decorator
         return cls
 
     return decorator
@@ -99,28 +101,30 @@ def parse_as_json(
                 return cls_inner(raw_content=raw_text)
 
             try:
-                data = json.loads(raw_text)
+                loaded_data: Any = json.loads(raw_text)
 
-                # Handle non-dict JSON values
-                if handle_non_dict and not isinstance(data, dict):
-                    data = {"value": data}
+                # Build data dict - explicit branches help type inference
+                if isinstance(loaded_data, dict):
+                    data: dict[str, Any] = loaded_data
+                elif handle_non_dict:
+                    data = {"value": loaded_data}
+                else:
+                    data = {}
 
                 return cls_inner(raw_content=raw_text, **data)
 
-            except json.JSONDecodeError as e:
+            except json.JSONDecodeError:
                 if strategy == ParseStrategy.STRICT:
-                    msg = f"Invalid JSON: {e}"
-                    raise ValueError(msg) from e
+                    raise
                 # PERMISSIVE: fall back to raw content
                 return cls_inner(raw_content=raw_text)
-            except (TypeError, ValidationError) as e:
+            except (TypeError, ValidationError):
                 # Pydantic validation error
                 if strategy == ParseStrategy.STRICT:
-                    msg = f"JSON data doesn't match model: {e}"
-                    raise ValueError(msg) from e
+                    raise
                 return cls_inner(raw_content=raw_text)
 
-        cls.parse = classmethod(parse)
+        cls.parse = classmethod(parse)  # Dynamic method addition for decorator
         return cls
 
     return decorator

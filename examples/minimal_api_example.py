@@ -49,10 +49,10 @@ That's all folks!
 async def main() -> None:
     """Main example function."""
     # Create syntax with NO custom models - uses BaseMetadata and BaseContent
-    syntax = DelimiterPreambleSyntax(name="base_syntax")
+    syntax = DelimiterPreambleSyntax()
 
     # Create type-specific registry
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
 
     # Create processor with the registry
     processor = StreamBlockProcessor(registry, lines_buffer=5)

@@ -1,6 +1,6 @@
-site_name: CHANGE-ME
-repo_url: https://github.com/hotherio/CHANGE-ME
-repo_name: hotherio/CHANGE-ME
+site_name: Streamblocks
+repo_url: https://github.com/hotherio/streamblocks
+repo_name: hotherio/streamblocks
 edit_uri: ""
 dev_addr: 0.0.0.0:1234
 site_dir: "static/docs"
@@ -10,6 +10,7 @@ nav:
 theme:
   name: material
   language: en
+  logo: assets/logo.png
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default

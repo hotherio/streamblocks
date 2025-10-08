@@ -3,65 +3,45 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.types import BlockState, TContent, TMetadata
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState, TContent, TMetadata
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.protocols import BlockSyntax
+    from hother.streamblocks.syntaxes.base import BaseSyntax
 
 
-class BlockConfig:
-    """Configuration holder for block type registration.
+def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], type[BaseContent]]:
+    """Extract metadata and content type parameters from a Block class.
 
-    Used to link metadata and content classes for a block type.
-    Subclass this to create block type configurations for the registry.
+    For classes inheriting from Block[M, C], Pydantic resolves the concrete
+    types and stores them in the field annotations. We simply extract them
+    from the model_fields.
 
-    Example:
-        class FileOperations(BlockConfig):
-            __metadata_class__ = FileOperationsMetadata
-            __content_class__ = FileOperationsContent
+    Args:
+        block_class: The block class to extract types from
+
+    Returns:
+        Tuple of (metadata_class, content_class)
     """
+    # Extract from Pydantic field annotations
+    if hasattr(block_class, "model_fields"):
+        metadata_field = block_class.model_fields.get("metadata")
+        content_field = block_class.model_fields.get("content")
 
-    # Class attributes for metadata/content classes - subclasses should override
-    __metadata_class__: type[BaseModel]
-    __content_class__: type[BaseModel]
+        if metadata_field and content_field:
+            return (metadata_field.annotation, content_field.annotation)
 
-
-class BaseMetadata(BaseModel):
-    """Base metadata model with standard fields.
-
-    All custom metadata models should inherit from this class.
-    """
-
-    id: str = Field(..., description="Block identifier")
-    block_type: str = Field(..., description="Type of the block")
-
-
-class BaseContent(BaseModel):
-    """Base content model with raw content field.
-
-    All custom content models should inherit from this class.
-    The raw_content field always contains the unparsed block content.
-    """
-
-    raw_content: str = Field(..., description="Raw unparsed content from the block")
-
-    @classmethod
-    def parse(cls, raw_text: str) -> BaseContent:
-        """Default parse method that just stores raw content.
-
-        Override this in subclasses to add custom parsing logic.
-        """
-        return cls(raw_content=raw_text)
+    # Fallback to base classes
+    return (BaseMetadata, BaseContent)
 
 
 class BlockCandidate:
     """Tracks a potential block being accumulated."""
 
-    def __init__(self, syntax: BlockSyntax[TMetadata, TContent], start_line: int) -> None:
+    def __init__(self, syntax: BaseSyntax, start_line: int) -> None:
         """Initialize a new block candidate.
 
         Args:
@@ -91,23 +71,37 @@ class BlockCandidate:
         return hashlib.sha256(text_slice.encode()).hexdigest()[:8]
 
 
-class BlockDefinition(BaseModel, Generic[TMetadata, TContent]):
-    """Extracted block with parsed metadata and content.
+class Block(BaseModel, Generic[TMetadata, TContent]):
+    """User-facing base class for defining block types.
 
-    This is the envelope containing the parsed metadata and data plus
-    extraction/processing information.
+    This minimal class contains only the essential fields (metadata and content).
+    Users inherit from this to define their block types.
 
-    The metadata and data fields are typed generics, allowing type-safe
-    access to block-specific fields.
+    Usage:
+        class YesNo(Block[YesNoMetadata, YesNoContent]):
+            pass
 
-    Example:
-        block: BlockDefinition[FileOperationsMetadata, FileOperationsContent]
-        block.metadata.id  # Type-safe access to metadata fields
-        block.data.operations  # Type-safe access to content fields
+        # Access fields
+        block: Block[YesNoMetadata, YesNoContent]
+        block.metadata.prompt  # Type-safe access to metadata fields
+        block.content.response  # Type-safe access to content fields
     """
 
     metadata: TMetadata = Field(..., description="Parsed block metadata")
-    data: TContent = Field(..., description="Parsed block data/content")
+    content: TContent = Field(..., description="Parsed block content")
+
+
+class ExtractedBlock[TMetadata: BaseMetadata, TContent: BaseContent](Block[TMetadata, TContent]):
+    """Full runtime representation of an extracted block.
+
+    This class extends the minimal Block with extraction metadata like
+    line numbers, syntax name, and hash ID. The processor creates instances
+    of this class when blocks are successfully extracted.
+
+    The metadata and content fields are typed generics, allowing type-safe
+    access to block-specific fields.
+    """
+
     syntax_name: str = Field(..., description="Name of the syntax that extracted this block")
     raw_text: str = Field(..., description="Original raw text of the block")
     line_start: int = Field(..., description="Starting line number")

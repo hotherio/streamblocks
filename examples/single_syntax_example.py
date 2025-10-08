@@ -68,11 +68,10 @@ async def main() -> None:
 
     # Create syntax for file operations
     file_ops_syntax = DelimiterPreambleSyntax(
-        name="files_operations_syntax",
     )
 
     # Create type-specific registry and register block
-    registry = Registry(file_ops_syntax)
+    registry = Registry(syntax=file_ops_syntax)
 
     # Add a validator for critical operations
     def validate_critical_ops(metadata: FileOperationsMetadata, content: FileOperationsContent) -> bool:
@@ -113,11 +112,11 @@ async def main() -> None:
             print(f"        Syntax: {block.syntax_name}")
 
             # Access operations directly from data
-            creates = [op for op in block.data.operations if op.action == "create"]
-            edits = [op for op in block.data.operations if op.action == "edit"]
-            deletes = [op for op in block.data.operations if op.action == "delete"]
+            creates = [op for op in block.content.operations if op.action == "create"]
+            edits = [op for op in block.content.operations if op.action == "edit"]
+            deletes = [op for op in block.content.operations if op.action == "delete"]
 
-            print(f"        Total operations: {len(block.data.operations)}")
+            print(f"        Total operations: {len(block.content.operations)}")
 
             if creates:
                 print(f"\n        ✅ CREATE ({len(creates)} files):")
@@ -144,7 +143,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            reason = event.content["reason"]
+            reason = event.reason
             print(f"\n[REJECT] {reason}")
 
     # Summary

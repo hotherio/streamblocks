@@ -9,12 +9,11 @@ from hother.streamblocks.core.processor import StreamBlockProcessor
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator, Callable
 
-    from hother.streamblocks.core.protocols import BlockSyntax
     from hother.streamblocks.core.registry import Registry
     from hother.streamblocks.core.types import StreamEvent
 
 
-class AgentStreamProcessor[TSyntax: "BlockSyntax[Any, Any]"](StreamBlockProcessor[TSyntax]):
+class AgentStreamProcessor(StreamBlockProcessor):
     """Enhanced processor designed to work with PydanticAI agent streaming output.
 
     This processor is optimized for handling streaming text from AI agents,
@@ -23,7 +22,7 @@ class AgentStreamProcessor[TSyntax: "BlockSyntax[Any, Any]"](StreamBlockProcesso
 
     def __init__(
         self,
-        registry: Registry[TSyntax],
+        registry: Registry,
         lines_buffer: int = 5,
         max_line_length: int = 16_384,
         max_block_size: int = 1_048_576,
@@ -32,7 +31,7 @@ class AgentStreamProcessor[TSyntax: "BlockSyntax[Any, Any]"](StreamBlockProcesso
         """Initialize the agent stream processor.
 
         Args:
-            registry: Type-specific registry with a single syntax
+            registry: Registry with a single syntax
             lines_buffer: Number of lines to keep in buffer
             max_line_length: Maximum line length before truncation
             max_block_size: Maximum block size in bytes

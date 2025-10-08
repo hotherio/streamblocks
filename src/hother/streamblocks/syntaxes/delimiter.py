@@ -3,19 +3,28 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Protocol
 
 import yaml
-from pydantic import BaseModel
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
-from hother.streamblocks.core.types import DetectionResult, ParseResult
+from hother.streamblocks.core.models import extract_block_types
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+from hother.streamblocks.syntaxes.base import BaseSyntax
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate
 
 
-class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel]:
+class ContentParser(Protocol):
+    """Protocol for content classes with a parse method."""
+
+    @classmethod
+    def parse(cls, raw_text: str) -> BaseContent:
+        """Parse raw text into content."""
+        ...
+
+
+class DelimiterPreambleSyntax(BaseSyntax):
     """Syntax: !! delimiter with inline metadata.
 
     Format: !!<id>:<type>[:param1:param2...]
@@ -23,24 +32,16 @@ class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
     def __init__(
         self,
-        name: str,
         delimiter: str = "!!",
     ) -> None:
         """Initialize delimiter preamble syntax.
 
         Args:
-            name: Unique name for this syntax instance
             delimiter: Delimiter string to use
         """
-        self._name = name
         self.delimiter = delimiter
         self._opening_pattern = re.compile(rf"^{re.escape(delimiter)}(\w+):(\w+)(:.+)?$")
         self._closing_pattern = re.compile(rf"^{re.escape(delimiter)}end$")
-
-    @property
-    def name(self) -> str:
-        """Get syntax name."""
-        return self._name
 
     def detect_line(self, line: str, candidate: BlockCandidate | None = None) -> DetectionResult:
         """Detect delimiter-based markers."""
@@ -87,18 +88,17 @@ class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
     def parse_block(
         self, candidate: BlockCandidate, block_class: type[Any] | None = None
-    ) -> ParseResult[TMetadata, TContent]:
+    ) -> ParseResult[BaseMetadata, BaseContent]:
         """Parse the complete block using the specified block class."""
 
         # Extract metadata and content classes from block_class
         if block_class is None:
             # Default to base classes
-            metadata_class = cast("type[TMetadata]", BaseMetadata)
-            content_class = cast("type[TContent]", BaseContent)
+            metadata_class = BaseMetadata
+            content_class = BaseContent
         else:
-            # Extract from block class
-            metadata_class = cast("type[TMetadata]", getattr(block_class, "__metadata_class__", BaseMetadata))
-            content_class = cast("type[TContent]", getattr(block_class, "__content_class__", BaseContent))
+            # Extract from block class using type parameters
+            metadata_class, content_class = extract_block_types(block_class)
 
         # Metadata was already extracted during detection
         detection = self.detect_line(candidate.lines[0], None)
@@ -117,25 +117,25 @@ class DelimiterPreambleSyntax[TMetadata: BaseModel, TContent: BaseModel]:
             typed_metadata = {k: str(v) for k, v in detection.metadata.items()}
             metadata = metadata_class(**typed_metadata)
         except Exception as e:
-            return ParseResult(success=False, error=f"Invalid metadata: {e}")
+            return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
 
         # Parse content (skip first and last lines)
         content_text = "\n".join(candidate.lines[1:-1])
 
         try:
             # All content classes must have parse method
-            content = cast("TContent", content_class.parse(content_text))  # type: ignore[attr-defined]
+            content = content_class.parse(content_text)
         except Exception as e:
-            return ParseResult(success=False, error=f"Invalid content: {e}")
+            return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
-    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
+    def validate_block(self, metadata: BaseMetadata, content: BaseContent) -> bool:
         """Additional validation after parsing."""
         return True
 
 
-class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
+class DelimiterFrontmatterSyntax(BaseSyntax):
     """Syntax: Delimiter markers with YAML frontmatter.
 
     Format:
@@ -149,26 +149,18 @@ class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
     def __init__(
         self,
-        name: str,
         start_delimiter: str = "!!start",
         end_delimiter: str = "!!end",
     ) -> None:
         """Initialize delimiter frontmatter syntax.
 
         Args:
-            name: Unique name for this syntax instance
             start_delimiter: Starting delimiter
             end_delimiter: Ending delimiter
         """
-        self._name = name
         self.start_delimiter = start_delimiter
         self.end_delimiter = end_delimiter
         self._frontmatter_pattern = re.compile(r"^---\s*$")
-
-    @property
-    def name(self) -> str:
-        """Get syntax name."""
-        return self._name
 
     def detect_line(self, line: str, candidate: BlockCandidate | None = None) -> DetectionResult:
         """Detect delimiter markers and frontmatter boundaries."""
@@ -219,18 +211,17 @@ class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
 
     def parse_block(
         self, candidate: BlockCandidate, block_class: type[Any] | None = None
-    ) -> ParseResult[TMetadata, TContent]:
+    ) -> ParseResult[BaseMetadata, BaseContent]:
         """Parse the complete block using the specified block class."""
 
         # Extract metadata and content classes from block_class
         if block_class is None:
             # Default to base classes
-            metadata_class = cast("type[TMetadata]", BaseMetadata)
-            content_class = cast("type[TContent]", BaseContent)
+            metadata_class = BaseMetadata
+            content_class = BaseContent
         else:
-            # Extract from block class
-            metadata_class = cast("type[TMetadata]", getattr(block_class, "__metadata_class__", BaseMetadata))
-            content_class = cast("type[TContent]", getattr(block_class, "__content_class__", BaseContent))
+            # Extract from block class using type parameters
+            metadata_class, content_class = extract_block_types(block_class)
 
         # Parse metadata from accumulated metadata lines
         metadata_dict: dict[str, Any] = {}
@@ -239,7 +230,7 @@ class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
             try:
                 metadata_dict = yaml.safe_load(yaml_content) or {}
             except Exception as e:
-                return ParseResult(success=False, error=f"Invalid YAML: {e}")
+                return ParseResult(success=False, error=f"Invalid YAML: {e}", exception=e)
 
         # Ensure id and block_type have defaults
         # Only fill in defaults if using BaseMetadata (no custom class provided)
@@ -255,18 +246,18 @@ class DelimiterFrontmatterSyntax[TMetadata: BaseModel, TContent: BaseModel]:
             typed_metadata = {k: str(v) if not isinstance(v, str) else v for k, v in metadata_dict.items()}
             metadata = metadata_class(**typed_metadata)
         except Exception as e:
-            return ParseResult(success=False, error=f"Invalid metadata: {e}")
+            return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
 
         content_text = "\n".join(candidate.content_lines)
 
         try:
             # All content classes must have parse method
-            content = cast("TContent", content_class.parse(content_text))  # type: ignore[attr-defined]
+            content = content_class.parse(content_text)
         except Exception as e:
-            return ParseResult(success=False, error=f"Invalid content: {e}")
+            return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
-    def validate_block(self, metadata: TMetadata, content: TContent) -> bool:
+    def validate_block(self, metadata: BaseMetadata, content: BaseContent) -> bool:
         """Additional validation after parsing."""
         return True

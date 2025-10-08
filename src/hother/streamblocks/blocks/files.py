@@ -6,7 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata, BlockConfig
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 class FileOperation(BaseModel):
@@ -60,15 +61,9 @@ class FileOperationsContent(BaseContent):
 class FileOperationsMetadata(BaseMetadata):
     """Metadata for file operations blocks."""
 
-    # Additional fields beyond BaseMetadata
-    type: Literal["files_operations"] = "files_operations"  # Alias for compatibility
+    # Override block_type with specific literal and default
+    block_type: Literal["files_operations"] = "files_operations"  # type: ignore[assignment]
     description: str | None = None
-
-    def __init__(self, **data: object) -> None:
-        # Set default block_type if not provided
-        if "block_type" not in data:
-            data["block_type"] = "files_operations"
-        super().__init__(**data)
 
 
 class FileContentMetadata(BaseMetadata):
@@ -95,18 +90,12 @@ class FileContentContent(BaseContent):
         return cls(raw_content=raw_text)
 
 
-# Block configuration classes
+# Block type definitions
 
 
-class FileOperations(BlockConfig):
-    """File operations block configuration."""
-
-    __metadata_class__ = FileOperationsMetadata
-    __content_class__ = FileOperationsContent
+class FileOperations(Block[FileOperationsMetadata, FileOperationsContent]):
+    """File operations block."""
 
 
-class FileContent(BlockConfig):
-    """File content block configuration."""
-
-    __metadata_class__ = FileContentMetadata
-    __content_class__ = FileContentContent
+class FileContent(Block[FileContentMetadata, FileContentContent]):
+    """File content block."""

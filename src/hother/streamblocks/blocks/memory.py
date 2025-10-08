@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 import yaml
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 class MemoryMetadata(BaseMetadata):

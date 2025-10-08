@@ -85,13 +85,12 @@ async def main() -> None:
     # To handle multiple info strings (patch/yaml/diff), you would need separate processors
     # or a custom syntax that handles multiple patterns internally.
     syntax = MarkdownFrontmatterSyntax(
-        name="patch_syntax",
         fence="```",
         info_string="patch",  # Will match ```patch blocks
     )
 
     # Create type-specific registry and register block
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
     registry.register("patch", Patch)
 
     # Create processor
@@ -112,14 +111,11 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_DELTA:
             # Track partial block updates
-            syntax = event.content["syntax"]
-            section = event.content.get("section", "unknown")
+            syntax = event.syntax
+            section = event.section
             if current_partial != syntax:
                 print(f"\n[DELTA] Started {syntax} block (section: {section})")
                 current_partial = syntax
-            # Only show section changes
-            if "metadata_boundary" in str(event.content):
-                print(f"[DELTA] Moved to {section} section")
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
@@ -139,7 +135,7 @@ async def main() -> None:
 
             # Show patch preview
             print("        Patch preview:")
-            lines = block.data.diff.strip().split("\\n")
+            lines = block.content.diff.strip().split("\\n")
             for line in lines[:3]:  # Show first 3 lines
                 print(f"          {line}")
             if len(lines) > 3:
@@ -147,8 +143,8 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            reason = event.content["reason"]
-            syntax = event.content["syntax"]
+            reason = event.reason
+            syntax = event.syntax
             print(f"\n[REJECT] {syntax} block rejected: {reason}")
 
     print("-" * 70)

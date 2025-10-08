@@ -44,23 +44,21 @@ async def basic_example() -> None:
 
     # Create syntax for file operations
     file_ops_syntax = DelimiterFrontmatterSyntax(
-        name="file_operations_syntax",
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
     # Create syntax for file content
     file_content_syntax = DelimiterFrontmatterSyntax(
-        name="file_content_syntax",
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
     # Create separate registries and register blocks
-    file_ops_registry = Registry(file_ops_syntax)
+    file_ops_registry = Registry(syntax=file_ops_syntax)
     file_ops_registry.register("files_operations", FileOperations)
 
-    file_content_registry = Registry(file_content_syntax)
+    file_content_registry = Registry(syntax=file_content_syntax)
     file_content_registry.register("file_content", FileContent)
 
     # Create a block-aware agent with custom system prompt
@@ -158,7 +156,7 @@ Make sure to include proper project structure with an app module and a simple Fa
             print(f"\n📦 EXTRACTED BLOCK: {block.metadata.id}")
             print(f"   Type: {block.metadata.block_type}")
             print("   Operations:")
-            for op in block.data.operations:
+            for op in block.content.operations:
                 icon = {"create": "✅", "edit": "📝", "delete": "❌"}.get(op.action, "❓")
                 print(f"     {icon} {op.action}: {op.path}")
 
@@ -175,7 +173,7 @@ Make sure to include proper project structure with an app module and a simple Fa
             print(f"   File: {block.metadata.file}")
             if block.metadata.description:
                 print(f"   Description: {block.metadata.description}")
-            lines = block.data.raw_content.strip().split("\n")
+            lines = block.content.raw_content.strip().split("\n")
             print(f"   Content preview ({len(lines)} lines):")
             preview_lines = 5
             for i, line in enumerate(lines[:preview_lines]):
@@ -221,11 +219,10 @@ Mix explanatory text with structured blocks.
 
     # Create StreamBlocks components
     syntax = DelimiterFrontmatterSyntax(
-        name="files_operations_syntax",
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     processor = AgentStreamProcessor(registry)
 
@@ -249,7 +246,7 @@ Mix explanatory text with structured blocks.
         elif event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
             print(f"\n📦 BLOCK: {block.metadata.id}")
-            for op in block.data.operations:
+            for op in block.content.operations:
                 print(f"   - {op.action}: {op.path}")
 
 

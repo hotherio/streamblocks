@@ -264,7 +264,7 @@ async def main() -> None:
     interactive_syntax = InteractiveSyntax(block_mapping=block_type_mapping)
 
     # Create type-specific registry
-    registry = Registry(interactive_syntax)
+    registry = Registry(syntax=interactive_syntax)
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)
@@ -288,7 +288,7 @@ async def main() -> None:
 
             print(f"\n✅ Block Extracted: {block.metadata.id}")
             print(f"   Type: {block.metadata.block_type}")
-            print(f"   Prompt: {block.data.prompt}")
+            print(f"   Prompt: {block.content.prompt}")
 
             # Show block-specific details
             if block.metadata.block_type == "yesno":
@@ -296,48 +296,46 @@ async def main() -> None:
 
             elif block.metadata.block_type == "choice":
                 print(f"   Style: {block.metadata.display_style}")
-                print(f"   Options: {len(block.data.options)} choices")
-                for i, opt in enumerate(block.data.options, 1):
+                print(f"   Options: {len(block.content.options)} choices")
+                for i, opt in enumerate(block.content.options, 1):
                     print(f"     {i}. {opt}")
 
             elif block.metadata.block_type == "multichoice":
                 print(f"   Selections: {block.metadata.min_selections}-{block.metadata.max_selections or 'all'}")
-                print(f"   Options: {len(block.data.options)} choices")
+                print(f"   Options: {len(block.content.options)} choices")
 
             elif block.metadata.block_type == "input":
                 print(f"   Type: {block.metadata.input_type}")
                 print(f"   Length: {block.metadata.min_length}-{block.metadata.max_length or 'unlimited'}")
                 if block.metadata.pattern:
                     print(f"   Pattern: {block.metadata.pattern}")
-                if block.data.placeholder:
-                    print(f"   Placeholder: {block.data.placeholder}")
+                if block.content.placeholder:
+                    print(f"   Placeholder: {block.content.placeholder}")
 
             elif block.metadata.block_type == "scale":
                 print(f"   Range: {block.metadata.min_value}-{block.metadata.max_value}")
-                if block.data.labels:
-                    print(f"   Labels: {block.data.labels}")
+                if block.content.labels:
+                    print(f"   Labels: {block.content.labels}")
 
             elif block.metadata.block_type == "ranking":
-                print(f"   Items to rank: {len(block.data.items)}")
+                print(f"   Items to rank: {len(block.content.items)}")
                 print(f"   Allow partial: {block.metadata.allow_partial}")
 
             elif block.metadata.block_type == "confirm":
                 print(f"   Danger mode: {block.metadata.danger_mode}")
                 print(f"   Buttons: [{block.metadata.confirm_label}] / [{block.metadata.cancel_label}]")
-                print(f"   Message preview: {block.data.message[:50]}...")
+                print(f"   Message preview: {block.content.message[:50]}...")
 
             elif block.metadata.block_type == "form":
-                print(f"   Fields: {len(block.data.fields)}")
-                for field in block.data.fields:
+                print(f"   Fields: {len(block.content.fields)}")
+                for field in block.content.fields:
                     req = "required" if field.required else "optional"
                     print(f"     - {field.name} ({field.field_type}, {req})")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            print(f"\n❌ Block Rejected: {event.content['reason']}")
-            print(f"   Syntax: {event.content['syntax']}")
-            if "error" in event.content:
-                print(f"   Error: {event.content['error']}")
+            print(f"\n❌ Block Rejected: {event.reason}")
+            print(f"   Syntax: {event.syntax}")
 
     print("\n" + "=" * 70)
     print(f"📊 Total blocks extracted: {len(blocks_extracted)}")

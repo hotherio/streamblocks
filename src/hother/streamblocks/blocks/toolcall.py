@@ -7,7 +7,7 @@ from typing import Any
 import yaml
 from pydantic import Field
 
-from hother.streamblocks.core.models import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 class ToolCallMetadata(BaseMetadata):

@@ -161,13 +161,12 @@ async def main() -> None:
     # Create delimiter frontmatter syntax for tasks
     # Using standard !!start/!!end delimiters
     task_syntax = DelimiterFrontmatterSyntax(
-        name="task_syntax",
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
     # Create type-specific registry and register block
-    registry = Registry(task_syntax)
+    registry = Registry(syntax=task_syntax)
     registry.register("task", Task)
 
     # Add validators

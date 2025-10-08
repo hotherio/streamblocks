@@ -238,13 +238,12 @@ IMPORTANT: Communicate as much as possible with the user.
 def setup_processor() -> StreamBlockProcessor:
     """Set up a single processor with unified syntax."""
     syntax = DelimiterFrontmatterSyntax(
-        name="unified_syntax",
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
     # Create registry and register all block types
-    registry = Registry(syntax)
+    registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     registry.register("patch", Patch)
     registry.register("tool_call", ToolCall)
@@ -353,14 +352,14 @@ async def process_visualization(block) -> None:
 
     # Show data preview
     if metadata.viz_type == "diagram":
-        nodes = content.data.get("nodes", [])
-        edges = content.data.get("edges", [])
+        nodes = content.content.get("nodes", [])
+        edges = content.content.get("edges", [])
         print(f"\n🔵 Nodes: {', '.join(nodes[:5])}")
         if len(nodes) > 5:
             print(f"   ... and {len(nodes) - 5} more")
         print(f"🔗 Edges: {len(edges)}")
     else:
-        print(f"\n📊 Data keys: {list(content.data.keys())}")
+        print(f"\n📊 Data keys: {list(content.content.keys())}")
 
 
 async def process_file_content(block) -> None:
@@ -508,16 +507,11 @@ async def main() -> None:
                     print(f"\n💬 {text}")
 
             elif event.type == EventType.BLOCK_REJECTED:
-                reason = event.content.get("reason", "Unknown")
+                reason = event.reason
                 print(f"\n⚠️  Block rejected: {reason}")
-                # Show more details about the rejection
-                if "raw_text" in event.metadata:
-                    preview = event.content["raw_text"][:200]
-                    print(f"   Preview: {preview}...")
-                else:
-                    # Show the raw data that was rejected
-                    preview = event.data[:200] if len(event.data) > 200 else event.data
-                    print(f"   Raw data preview: {preview!r}")
+                # Show the raw data that was rejected
+                preview = event.data[:200] if len(event.data) > 200 else event.data
+                print(f"   Raw data preview: {preview!r}")
 
     except Exception as e:
         print(f"\n❌ Error: {e}")

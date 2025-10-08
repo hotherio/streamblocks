@@ -1,9 +1,11 @@
 """Tests for parsing decorators."""
 
+import json
 from typing import Any
 
 import pytest
-from pydantic import Field
+import yaml
+from pydantic import Field, ValidationError
 
 from hother.streamblocks import ParseStrategy, parse_as_json, parse_as_yaml
 from hother.streamblocks.core.models import BaseContent
@@ -80,7 +82,7 @@ def test_parse_as_yaml_strict_invalid() -> None:
     """Test STRICT strategy raises on invalid YAML."""
     invalid_yaml = "name: test\n  invalid: [unclosed"
 
-    with pytest.raises(ValueError, match="Invalid YAML"):
+    with pytest.raises(yaml.YAMLError):
         StrictYAMLContent.parse(invalid_yaml)
 
 
@@ -129,7 +131,7 @@ def test_parse_as_yaml_validation_error_strict() -> None:
         number: int = 0
 
     # Valid YAML but wrong type
-    with pytest.raises(ValueError, match="YAML data doesn't match model"):
+    with pytest.raises((ValidationError, TypeError)):
         StrictTypedContent.parse("number: not_a_number")
 
 
@@ -165,7 +167,7 @@ def test_parse_as_json_strict_invalid() -> None:
     """Test STRICT strategy raises on invalid JSON."""
     invalid_json = '{"id": "test", "count": }'
 
-    with pytest.raises(ValueError, match="Invalid JSON"):
+    with pytest.raises(json.JSONDecodeError):
         StrictJSONContent.parse(invalid_json)
 
 
@@ -214,7 +216,7 @@ def test_parse_as_json_validation_error_strict() -> None:
         number: int = 0
 
     # Valid JSON but wrong type
-    with pytest.raises(ValueError, match="JSON data doesn't match model"):
+    with pytest.raises((ValidationError, TypeError)):
         StrictTypedJSONContent.parse('{"number": "not_a_number"}')
 
 
