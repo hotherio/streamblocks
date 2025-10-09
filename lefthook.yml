@@ -62,13 +62,13 @@ pre-commit:
 
     # File format validation
     check-json:
-      run: python -m json.tool {staged_files} > /dev/null
+      run: python3 -m json.tool {staged_files} > /dev/null
       glob: "*.json"
 
     check-yaml:
       run: |
         for file in {staged_files}; do
-          python -c "import yaml; yaml.safe_load(open('$file'))"
+          uv run python -c "import yaml; yaml.safe_load(open('$file'))"
         done
       glob: "*.{yml,yaml}"
       exclude: "mkdocs.yml"
@@ -76,7 +76,7 @@ pre-commit:
     check-toml:
       run: |
         for file in {staged_files}; do
-          python -c "import tomllib; tomllib.load(open('$file', 'rb'))"
+          python3 -c "import tomllib; tomllib.load(open('$file', 'rb'))"
         done
       glob: "*.toml"
 
@@ -85,9 +85,9 @@ pre-commit:
       run: |
         if [ ! -f .secrets.baseline ]; then
           echo "Creating initial secrets baseline..."
-          detect-secrets scan > .secrets.baseline
+          uv run detect-secrets scan > .secrets.baseline
         fi
-        git diff --staged --name-only -z | xargs -0 detect-secrets-hook --baseline .secrets.baseline
+        git diff --staged --name-only -z | xargs -0 uv run detect-secrets-hook --baseline .secrets.baseline
       glob: "*"
       exclude: "*.lock|*.egg-info/*|.secrets.baseline"
 
@@ -96,12 +96,12 @@ pre-push:
   commands:
     # Full test suite
     test:
-      run: pytest --cov=hother.streamblocks --cov-report=term-missing --cov-report=xml
+      run: uv run pytest --cov=hother.streamblocks --cov-report=term-missing --cov-report=xml
       glob: "*.py"
 
     # Comprehensive type checking
     type-check-full:
-      run: basedpyright
+      run: uv run basedpyright
       glob: "*.py"
 
     # Verify dependency lock
@@ -110,12 +110,12 @@ pre-push:
 
     # Build and validate package
     build-validate:
-      run: uv build --wheel --sdist --no-dev
+      run: uv build --wheel --sdist
       glob: "*.py"
 
     # Documentation check
     doc-check:
-      run: mkdocs build --strict
+      run: uv run mkdocs build --strict
       glob: "*.md"
 
 commit-msg:
