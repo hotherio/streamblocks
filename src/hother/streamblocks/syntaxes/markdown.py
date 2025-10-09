@@ -12,7 +12,7 @@ from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionR
 from hother.streamblocks.syntaxes.base import BaseSyntax
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.models import BlockCandidate
+    from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
 
 
 class MarkdownFrontmatterSyntax(BaseSyntax):
@@ -140,9 +140,8 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
                     metadata_dict["block_type"] = "markdown"
 
         try:
-            # Convert all metadata values to proper types for type safety
-            typed_metadata = {k: str(v) if not isinstance(v, str) else v for k, v in metadata_dict.items()}
-            metadata = metadata_class(**typed_metadata)
+            # Pass metadata dict directly to Pydantic for validation
+            metadata = metadata_class(**metadata_dict)
         except Exception as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
 
@@ -157,6 +156,6 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
-    def validate_block(self, metadata: BaseMetadata, content: BaseContent) -> bool:
+    def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing."""
         return True

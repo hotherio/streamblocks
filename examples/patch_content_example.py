@@ -13,11 +13,12 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.core.models import BaseContent, BlockDefinition
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 # Custom models for this example
-class SimplePatchMetadata(BaseModel):
+class SimplePatchMetadata(BaseMetadata):
     """Simplified metadata for patch blocks."""
 
     id: str
@@ -47,23 +48,8 @@ class SimplePatchContent(BaseContent):
         return cls(raw_content=raw_text, diff=raw_text.strip())
 
 
-class SimplePatch(BlockDefinition):
-    """Simple patch block combining metadata and content."""
-
-    __metadata_class__ = SimplePatchMetadata
-    __content_class__ = SimplePatchContent
-
-    # From metadata:
-    id: str
-    block_type: Literal["patch"] = "patch"
-    category: str | None = None
-    priority: str | None = None
-    file: str = ""
-    start_line: int = 0
-
-    # From content:
-    raw_content: str
-    diff: str = ""
+# Create the block type
+SimplePatch = Block[SimplePatchMetadata, SimplePatchContent]
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -193,18 +179,18 @@ async def main() -> None:
     registry = Registry(syntax=patch_syntax)
 
     # Add validators for patch quality
-    def validate_patch_content(metadata: SimplePatchMetadata, content: SimplePatchContent) -> bool:
+    def validate_patch_content(block: SimplePatch) -> bool:
         """Ensure patches have actual changes."""
-        lines = content.diff.strip().split("\n")
+        lines = block.content.diff.strip().split("\n")
         has_additions = any(line.startswith("+") for line in lines)
         has_deletions = any(line.startswith("-") for line in lines)
         return has_additions or has_deletions
 
-    def validate_critical_patches(metadata: SimplePatchMetadata, content: SimplePatchContent) -> bool:
+    def validate_critical_patches(block: SimplePatch) -> bool:
         """Extra validation for critical patches."""
-        if hasattr(metadata, "param_1") and metadata.param_1 == "critical":
+        if hasattr(block.metadata, "param_1") and block.metadata.param_1 == "critical":
             # Critical patches must have a description in the diff
-            lines = content.diff.strip().split("\n")
+            lines = block.content.diff.strip().split("\n")
             return any("Fixed:" in line or "SECURITY:" in line for line in lines)
         return True
 
@@ -241,7 +227,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete patch extracted
-            block = event.metadata["extracted_block"]
+            block = event.block
             patches.append(block)
 
             print(f"\n{'-' * 70}")
@@ -302,8 +288,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            reason = event.metadata["reason"]
-            print(f"\n[REJECT] Patch rejected: {reason}")
+            print(f"\n[REJECT] Patch rejected: {event.reason}")
 
     # Print comprehensive summary
     print("\n" + "=" * 80)

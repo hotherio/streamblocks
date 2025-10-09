@@ -29,7 +29,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import (
+from hother.streamblocks.blocks.interactive import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -47,13 +47,13 @@ from hother.streamblocks.blocks import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks.core.models import BlockDefinition
+from hother.streamblocks.core.models import Block
 
 
 class InteractiveWidget(Static):
     """Base class for interactive block widgets."""
 
-    def __init__(self, block: BlockDefinition[Any, Any]) -> None:
+    def __init__(self, block: Block[Any, Any]) -> None:
         super().__init__()
         self.block = block
         self.response: Any = None
@@ -103,7 +103,7 @@ class ChoiceWidget(InteractiveWidget):
 class MultiChoiceWidget(InteractiveWidget):
     """Widget for multiple choice questions."""
 
-    def __init__(self, block: BlockDefinition[Any, Any]) -> None:
+    def __init__(self, block: Block[Any, Any]) -> None:
         super().__init__(block)
         self.selected: set[str] = set()
 
@@ -232,7 +232,7 @@ class ConfirmWidget(InteractiveWidget):
 class FormWidget(InteractiveWidget):
     """Widget for form blocks."""
 
-    def __init__(self, block: BlockDefinition[Any, Any]) -> None:
+    def __init__(self, block: Block[Any, Any]) -> None:
         super().__init__(block)
         self.form_data: dict[str, Any] = {}
 
@@ -451,36 +451,35 @@ class InteractiveBlocksApp(App):
         # Create a custom syntax that can handle different block types
         class InteractiveSyntax(DelimiterFrontmatterSyntax):
             def __init__(self, block_mapping: dict[str, tuple[type, type]]) -> None:
-                super().__init__(name="interactive_syntax")
+                super().__init__()
                 self.block_mapping = block_mapping
 
-            def parse_block(self, candidate: Any) -> Any:
+            def parse_block(self, candidate: Any, block_class: type[Any] | None = None) -> Any:
                 # First, parse just the metadata to determine block type
+                from hother.streamblocks.core.types import BaseContent, BaseMetadata, ParseResult
+
                 metadata_dict = {}
                 if candidate.metadata_lines:
                     yaml_content = "\n".join(candidate.metadata_lines)
                     try:
                         metadata_dict = yaml.safe_load(yaml_content) or {}
                     except Exception as e:
-                        from hother.streamblocks.core.types import ParseResult
-
-                        return ParseResult(success=False, error=f"Invalid YAML: {e}")
+                        return ParseResult(success=False, error=f"Invalid YAML: {e}", exception=e)
 
                 # Get the block type
                 block_type = metadata_dict.get("block_type", "unknown")
 
-                # Set the appropriate classes
+                # Determine the appropriate block class based on block_type
                 if block_type in self.block_mapping:
-                    self.metadata_class, self.content_class = self.block_mapping[block_type]
+                    metadata_class, content_class = self.block_mapping[block_type]
+                    # Create a block class with these types
+                    dynamic_block_class = Block[metadata_class, content_class]
                 else:
-                    # Use base classes as fallback
-                    from hother.streamblocks.core.models import BaseContent, BaseMetadata
+                    # Use None to fall back to base classes
+                    dynamic_block_class = None
 
-                    self.metadata_class = BaseMetadata
-                    self.content_class = BaseContent
-
-                # Now parse with the correct classes
-                return super().parse_block(candidate)
+                # Now parse with the correct block class
+                return super().parse_block(candidate, dynamic_block_class)
 
         # Create a single syntax that can handle multiple block types
         # This is a workaround - in the new design, you'd normally have separate processors
@@ -501,7 +500,7 @@ class InteractiveBlocksApp(App):
             elif event.type == EventType.BLOCK_REJECTED:
                 self.log(f"Block rejected: {event.reason}")
 
-    async def add_interactive_block(self, block: BlockDefinition[Any, Any]) -> None:
+    async def add_interactive_block(self, block: Block[Any, Any]) -> None:
         """Add a new interactive block widget."""
         widget_class = {
             "yesno": YesNoWidget,

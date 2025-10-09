@@ -9,7 +9,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import Patch, PatchContent, PatchMetadata
+from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:

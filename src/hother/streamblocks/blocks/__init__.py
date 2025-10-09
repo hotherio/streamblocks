@@ -38,11 +38,11 @@ from hother.streamblocks.blocks.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks.blocks.memory import MemoryContent, MemoryMetadata
+from hother.streamblocks.blocks.memory import Memory, MemoryContent, MemoryMetadata
 from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
 from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
-from hother.streamblocks.blocks.toolcall import ToolCallContent, ToolCallMetadata
-from hother.streamblocks.blocks.visualization import VisualizationContent, VisualizationMetadata
+from hother.streamblocks.blocks.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
+from hother.streamblocks.blocks.visualization import Visualization, VisualizationContent, VisualizationMetadata
 
 __all__ = [
     # Base
@@ -72,6 +72,7 @@ __all__ = [
     # Interactive base
     "InteractiveMetadata",
     # Memory
+    "Memory",
     "MemoryContent",
     "MemoryMetadata",
     "Message",
@@ -92,9 +93,11 @@ __all__ = [
     "ScaleContent",
     "ScaleMetadata",
     # Tool calling
+    "ToolCall",
     "ToolCallContent",
     "ToolCallMetadata",
     # Visualization
+    "Visualization",
     "VisualizationContent",
     "VisualizationMetadata",
     "YesNo",

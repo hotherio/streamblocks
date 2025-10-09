@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.models import BlockCandidate
+    from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
 
 
@@ -107,15 +107,14 @@ class BaseSyntax(ABC):
 
     # Default implementations
 
-    def validate_block(self, _metadata: BaseMetadata, _content: BaseContent) -> bool:
+    def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing.
 
         Default implementation always returns True. Override this method
         to add custom validation logic specific to your syntax or block type.
 
         Args:
-            _metadata: Parsed metadata
-            _content: Parsed content
+            _block: Extracted block to validate
 
         Returns:
             True if the block is valid, False otherwise

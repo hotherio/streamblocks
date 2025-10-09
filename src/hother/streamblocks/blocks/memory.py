@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 import yaml
 
+from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
@@ -40,3 +41,7 @@ class MemoryContent(BaseContent):
         except yaml.YAMLError:
             # If YAML parsing fails, treat as plain text value
             return cls(raw_content=raw_text, value=raw_text.strip())
+
+
+# Block type alias
+Memory = Block[MemoryMetadata, MemoryContent]

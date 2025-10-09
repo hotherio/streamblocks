@@ -29,15 +29,19 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import (
+from hother.streamblocks.blocks.files import (
     FileContent,
+    FileContentContent,
+    FileContentMetadata,
     FileOperations,
-    Memory,
-    Message,
-    Patch,
-    ToolCall,
-    Visualization,
+    FileOperationsContent,
+    FileOperationsMetadata,
 )
+from hother.streamblocks.blocks.memory import Memory, MemoryContent, MemoryMetadata
+from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
+from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
+from hother.streamblocks.blocks.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
+from hother.streamblocks.blocks.visualization import Visualization, VisualizationContent, VisualizationMetadata
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator

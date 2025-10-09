@@ -5,18 +5,16 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
-
 from hother.streamblocks.syntaxes.models import get_syntax_instance
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.models import Block
+    from hother.streamblocks.core.models import Block, ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
     from hother.streamblocks.syntaxes.base import BaseSyntax
     from hother.streamblocks.syntaxes.models import Syntax
 
 type BlockType = str
-type ValidatorFunc = Callable[[BaseModel, BaseModel], bool]
+type ValidatorFunc = Callable[[ExtractedBlock], bool]
 
 
 class Registry:
@@ -107,7 +105,7 @@ class Registry:
 
         Args:
             block_type: Type of block to validate
-            validator: Function that validates metadata and content
+            validator: Function that validates a block
         """
         if block_type not in self._validators:
             self._validators[block_type] = []
@@ -115,19 +113,19 @@ class Registry:
 
     def validate_block(
         self,
-        block_type: BlockType,
-        metadata: BaseModel,
-        content: BaseModel,
+        block: ExtractedBlock,
     ) -> bool:
-        """Run all validators for a block type.
+        """Run all validators for a block.
 
         Args:
-            block_type: Type of block being validated
-            metadata: Block metadata to validate
-            content: Block content to validate
+            block: Extracted block to validate
 
         Returns:
             True if all validators pass
         """
+        block_type = getattr(block.metadata, "block_type", None)
+        if not block_type:
+            return True
+
         validators = self._validators.get(block_type, [])
-        return all(v(metadata, content) for v in validators)
+        return all(v(block) for v in validators)

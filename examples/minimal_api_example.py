@@ -71,7 +71,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.metadata["extracted_block"]
+            block = event.block
             blocks_extracted.append(block)
 
             print("\n[BLOCK] Extracted!")
@@ -85,7 +85,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            print(f"\n[REJECT] {event.metadata['reason']}")
+            print(f"\n[REJECT] {event.reason}")
 
     print("\n" + "-" * 60)
     print(f"Total blocks extracted: {len(blocks_extracted)}")

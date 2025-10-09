@@ -15,11 +15,12 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.core.models import BaseContent, BlockDefinition
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 # Custom content models for this example
-class TaskMetadata(BaseModel):
+class TaskMetadata(BaseMetadata):
     """Metadata for task blocks."""
 
     id: str
@@ -28,7 +29,7 @@ class TaskMetadata(BaseModel):
     priority: str = "medium"
     assignee: str | None = None
     due_date: str | None = None
-    tags: list[str] = []
+    tags: list[str] = Field(default_factory=list)
     status: str = "todo"
 
 
@@ -56,26 +57,8 @@ class TaskContent(BaseContent):
         return cls(raw_content=raw_text, description=description, subtasks=subtasks)
 
 
-class Task(BlockDefinition):
-    """Task block combining metadata and content."""
-
-    __metadata_class__ = TaskMetadata
-    __content_class__ = TaskContent
-
-    # From metadata:
-    id: str
-    block_type: str
-    title: str = "Untitled Task"
-    priority: str = "medium"
-    assignee: str | None = None
-    due_date: str | None = None
-    tags: list[str] = Field(default_factory=list)
-    status: str = "todo"
-
-    # From content:
-    raw_content: str
-    description: str = ""
-    subtasks: list[str] = Field(default_factory=list)
+# Create the block type
+TaskBlock = Block[TaskMetadata, TaskContent]
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -91,7 +74,10 @@ title: Implement authentication
 priority: high
 assignee: alice
 due_date: "2024-01-15"
-tags: [backend, api, urgent]
+tags:
+  - backend
+  - api
+  - urgent
 status: in_progress
 ---
 Implement user authentication API
@@ -136,7 +122,9 @@ id: task-004
 block_type: task
 title: Performance optimization
 assignee: charlie
-tags: [performance, backend]
+tags:
+  - performance
+  - backend
 ---
 Optimize database queries
 - Add proper indexes
@@ -167,7 +155,7 @@ async def main() -> None:
 
     # Create type-specific registry and register block
     registry = Registry(syntax=task_syntax)
-    registry.register("task", Task)
+    registry.register("task", TaskBlock)
 
     # Add validators
     def validate_task_priority(metadata: TaskMetadata, content: TaskContent) -> bool:
@@ -199,7 +187,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
-            block = event.metadata["extracted_block"]
+            block = event.block
             blocks_extracted.append(block)
 
             metadata: TaskMetadata = block.metadata
@@ -225,8 +213,7 @@ async def main() -> None:
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
-            reason = event.metadata["reason"]
-            print(f"\n[REJECT] {reason}")
+            print(f"\n[REJECT] {event.reason}")
 
     print("\n\nEXTRACTED BLOCKS SUMMARY:")
     print(f"Total blocks: {len(blocks_extracted)}")

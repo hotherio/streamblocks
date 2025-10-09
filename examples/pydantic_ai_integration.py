@@ -9,13 +9,8 @@ import asyncio
 import os
 from collections.abc import AsyncIterator
 
-from hother.streamblocks import (
-    DelimiterFrontmatterSyntax,
-    EventType,
-    Registry,
-    StreamBlockProcessor,
-)
-from hother.streamblocks.blocks import (
+from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks.blocks.files import (
     FileContent,
     FileContentContent,
     FileContentMetadata,
@@ -28,10 +23,7 @@ from hother.streamblocks.blocks import (
 try:
     from pydantic_ai import Agent
 
-    from hother.streamblocks.integrations.pydantic_ai import (
-        AgentStreamProcessor,
-        BlockAwareAgent,
-    )
+    from hother.streamblocks.integrations.pydantic_ai import AgentStreamProcessor, BlockAwareAgent
 
     PYDANTIC_AI_AVAILABLE = True
 except ImportError:
@@ -128,7 +120,11 @@ Make sure to include proper project structure with an app module and a simple Fa
     # For multiple block types, we demonstrate processing the raw stream multiple times
 
     # Get the raw stream from a standard PydanticAI agent
-    agent = Agent(model="openai:gpt-4o", system_prompt=system_prompt)
+    # agent = Agent(model="openai:gpt-4o", system_prompt=system_prompt)
+    from pydantic_ai.models.google import GoogleModel
+
+    model = GoogleModel("gemini-2.5-flash")
+    agent = Agent(model=model, system_prompt=system_prompt)
 
     print("\n[STREAMING] Receiving response from AI...")
     raw_text = ""
@@ -152,13 +148,15 @@ Make sure to include proper project structure with an app module and a simple Fa
     async for event in file_ops_processor.process_stream(text_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
-            extracted_blocks.append(block)
-            print(f"\n📦 EXTRACTED BLOCK: {block.metadata.id}")
-            print(f"   Type: {block.metadata.block_type}")
-            print("   Operations:")
-            for op in block.content.operations:
-                icon = {"create": "✅", "edit": "📝", "delete": "❌"}.get(op.action, "❓")
-                print(f"     {icon} {op.action}: {op.path}")
+            # Only process blocks of the expected type
+            if block.metadata.block_type == "files_operations":
+                extracted_blocks.append(block)
+                print(f"\n📦 EXTRACTED BLOCK: {block.metadata.id}")
+                print(f"   Type: {block.metadata.block_type}")
+                print("   Operations:")
+                for op in block.content.operations:
+                    icon = {"create": "✅", "edit": "📝", "delete": "❌"}.get(op.action, "❓")
+                    print(f"     {icon} {op.action}: {op.path}")
 
     # Process same stream for file content blocks
     print("\n📄 Processing for file content blocks...")
@@ -167,19 +165,21 @@ Make sure to include proper project structure with an app module and a simple Fa
     async for event in file_content_processor.process_stream(text_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
-            extracted_blocks.append(block)
-            print(f"\n📄 EXTRACTED BLOCK: {block.metadata.id}")
-            print(f"   Type: {block.metadata.block_type}")
-            print(f"   File: {block.metadata.file}")
-            if block.metadata.description:
-                print(f"   Description: {block.metadata.description}")
-            lines = block.content.raw_content.strip().split("\n")
-            print(f"   Content preview ({len(lines)} lines):")
-            preview_lines = 5
-            for i, line in enumerate(lines[:preview_lines]):
-                print(f"     {i + 1}: {line}")
-            if len(lines) > preview_lines:
-                print(f"     ... and {len(lines) - preview_lines} more lines")
+            # Only process blocks of the expected type
+            if block.metadata.block_type == "file_content":
+                extracted_blocks.append(block)
+                print(f"\n📄 EXTRACTED BLOCK: {block.metadata.id}")
+                print(f"   Type: {block.metadata.block_type}")
+                print(f"   File: {block.metadata.file}")
+                if block.metadata.description:
+                    print(f"   Description: {block.metadata.description}")
+                lines = block.content.raw_content.strip().split("\n")
+                print(f"   Content preview ({len(lines)} lines):")
+                preview_lines = 5
+                for i, line in enumerate(lines[:preview_lines]):
+                    print(f"     {i + 1}: {line}")
+                if len(lines) > preview_lines:
+                    print(f"     ... and {len(lines) - preview_lines} more lines")
 
     # Summary
     print("\n" + "=" * 60)

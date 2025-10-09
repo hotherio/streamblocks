@@ -7,6 +7,7 @@ from typing import Any
 import yaml
 from pydantic import Field
 
+from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
@@ -36,3 +37,7 @@ class ToolCallContent(BaseContent):
             raise ValueError(msg) from e
 
         return cls(raw_content=raw_text, parameters=params)
+
+
+# Block type alias
+ToolCall = Block[ToolCallMetadata, ToolCallContent]

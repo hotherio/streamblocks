@@ -243,15 +243,6 @@ class StreamBlockProcessor:
         if metadata is None or content is None:
             return self._create_rejection_event(candidate, "Missing metadata or content")
 
-        # Additional validation from syntax
-        if not candidate.syntax.validate_block(metadata, content):
-            return self._create_rejection_event(candidate, "Syntax validation failed")
-
-        # Registry validation (user-defined validators)
-        final_block_type = getattr(metadata, "block_type", None)
-        if final_block_type and not self.registry.validate_block(final_block_type, metadata, content):
-            return self._create_rejection_event(candidate, "Registry validation failed")
-
         # Create extracted block with metadata, content, and extraction info
         block = ExtractedBlock(
             metadata=metadata,
@@ -262,6 +253,14 @@ class StreamBlockProcessor:
             line_end=self._line_counter,
             hash_id=candidate.compute_hash(),
         )
+
+        # Additional validation from syntax
+        if not candidate.syntax.validate_block(block):
+            return self._create_rejection_event(candidate, "Syntax validation failed")
+
+        # Registry validation (user-defined validators)
+        if not self.registry.validate_block(block):
+            return self._create_rejection_event(candidate, "Registry validation failed")
 
         return BlockExtractedEvent(
             data=candidate.raw_text,

@@ -9,7 +9,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import FileOperations, FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.blocks.files import FileOperations
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -51,9 +51,9 @@ async def main() -> None:
     registry = Registry(syntax=syntax)
 
     # Add a custom validator
-    def no_root_delete(metadata: FileOperationsMetadata, content: FileOperationsContent) -> bool:
+    def no_root_delete(block: FileOperations) -> bool:
         """Don't allow deleting files from root directory."""
-        return all(not (op.action == "delete" and op.path.startswith("/")) for op in content.operations)
+        return all(not (op.action == "delete" and op.path.startswith("/")) for op in block.content.operations)
 
     registry.register("files_operations", FileOperations, validators=[no_root_delete])
 

@@ -23,11 +23,12 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.core.models import BaseContent, BlockDefinition
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 # Unified metadata model for all Gemini blocks
-class GeminiBlockMetadata(BaseModel):
+class GeminiBlockMetadata(BaseMetadata):
     """Metadata for Gemini AI blocks."""
 
     id: str
@@ -51,21 +52,8 @@ class GeminiBlockContent(BaseContent):
         return cls(raw_content=raw_text.strip())
 
 
-class GeminiBlock(BlockDefinition):
-    """Unified block for all Gemini responses."""
-
-    __metadata_class__ = GeminiBlockMetadata
-    __content_class__ = GeminiBlockContent
-
-    # From metadata:
-    id: str
-    block_type: Literal["file_operations", "file_content", "message"]
-    description: str | None = None
-    file_path: str | None = None
-    message_type: Literal["info", "warning", "error", "status"] | None = None
-
-    # From content:
-    raw_content: str = ""
+# Create the block type
+GeminiBlock = Block[GeminiBlockMetadata, GeminiBlockContent]
 
 
 def create_simple_prompt() -> str:
@@ -211,7 +199,7 @@ async def main() -> None:
     try:
         async for event in processor.process_stream(stream_from_gemini(user_prompt)):
             if event.type == EventType.BLOCK_EXTRACTED:
-                block = event.metadata["extracted_block"]
+                block = event.block
                 extracted_blocks.append(block)
 
                 metadata: GeminiBlockMetadata = block.metadata
@@ -267,7 +255,7 @@ async def main() -> None:
 
             elif event.type == EventType.BLOCK_DELTA:
                 # Show progress
-                size = len(event.metadata.get("partial_block", {}).get("accumulated", ""))
+                size = len(event.accumulated)
                 print(f"\r⏳ Processing block... {size} bytes", end="", flush=True)
 
             elif event.type == EventType.RAW_TEXT:
@@ -277,7 +265,7 @@ async def main() -> None:
                     raw_text.append(text)
 
             elif event.type == EventType.BLOCK_REJECTED:
-                print(f"\n⚠️  Block rejected: {event.metadata['reason']}")
+                print(f"\n⚠️  Block rejected: {event.reason}")
 
     except Exception as e:
         print(f"\n❌ Error: {e}")
