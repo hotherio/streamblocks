@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import yaml
 
@@ -33,8 +33,8 @@ class MemoryContent(BaseContent):
             return cls(raw_content=raw_text)
 
         try:
-            data = yaml.safe_load(raw_text) or {}
-            if isinstance(data, dict) and "value" in data:
+            data = cast("dict[str, Any]", yaml.safe_load(raw_text) or {})
+            if "value" in data:
                 return cls(raw_content=raw_text, **data)
             # If not a dict with 'value' key, treat entire content as value
             return cls(raw_content=raw_text, value=data)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.syntaxes.models import get_syntax_instance
 
@@ -13,8 +13,9 @@ if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
     from hother.streamblocks.syntaxes.models import Syntax
 
+
 type BlockType = str
-type ValidatorFunc = Callable[[ExtractedBlock], bool]
+type ValidatorFunc = Callable[[ExtractedBlock[Any, Any]], bool]
 
 
 class Registry:
@@ -113,7 +114,7 @@ class Registry:
 
     def validate_block(
         self,
-        block: ExtractedBlock,
+        block: ExtractedBlock[Any, Any],
     ) -> bool:
         """Run all validators for a block.
 
@@ -128,4 +129,6 @@ class Registry:
             return True
 
         validators = self._validators.get(block_type, [])
+        return all(v(block) for v in validators)
+        return all(v(block) for v in validators)
         return all(v(block) for v in validators)

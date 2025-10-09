@@ -1,6 +1,5 @@
 """Block definitions and content models for StreamBlocks."""
 
-from hother.streamblocks.blocks.base import BaseContent
 from hother.streamblocks.blocks.files import (
     FileContent,
     FileContentContent,
@@ -45,8 +44,6 @@ from hother.streamblocks.blocks.toolcall import ToolCall, ToolCallContent, ToolC
 from hother.streamblocks.blocks.visualization import Visualization, VisualizationContent, VisualizationMetadata
 
 __all__ = [
-    # Base
-    "BaseContent",
     # Block classes
     "Choice",
     "ChoiceContent",

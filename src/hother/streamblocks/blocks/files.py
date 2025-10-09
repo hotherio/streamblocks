@@ -20,7 +20,7 @@ class FileOperation(BaseModel):
 class FileOperationsContent(BaseContent):
     """Content model for file operations blocks."""
 
-    operations: list[FileOperation] = Field(default_factory=list)
+    operations: list[FileOperation] = Field(default_factory=list[FileOperation])
 
     @classmethod
     def parse(cls, raw_text: str) -> FileOperationsContent:
@@ -69,14 +69,9 @@ class FileOperationsMetadata(BaseMetadata):
 class FileContentMetadata(BaseMetadata):
     """Metadata for file content blocks."""
 
+    block_type: Literal["file_content"] = "file_content"  # type: ignore[assignment]
     file: str  # Path to the file
     description: str | None = None
-
-    def __init__(self, **data: object) -> None:
-        # Set default block_type if not provided
-        if "block_type" not in data:
-            data["block_type"] = "file_content"
-        super().__init__(**data)
 
 
 class FileContentContent(BaseContent):

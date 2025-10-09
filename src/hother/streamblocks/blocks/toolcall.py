@@ -29,9 +29,7 @@ class ToolCallContent(BaseContent):
     def parse(cls, raw_text: str) -> ToolCallContent:
         """Parse YAML parameters."""
         try:
-            params = yaml.safe_load(raw_text) or {}
-            if not isinstance(params, dict):
-                params = {"value": params}
+            params: dict[str, Any] = yaml.safe_load(raw_text) or {}
         except yaml.YAMLError as e:
             msg = f"Invalid YAML parameters: {e}"
             raise ValueError(msg) from e

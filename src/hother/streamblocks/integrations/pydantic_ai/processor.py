@@ -39,14 +39,8 @@ class AgentStreamProcessor(StreamBlockProcessor):
         """
         super().__init__(registry, lines_buffer, max_line_length, max_block_size)
         self.enable_partial_blocks = enable_partial_blocks
-        self._agent_stream_active = False
-        self._stream_metadata: dict[str, Any] = {}
 
-    async def process_agent_stream(
-        self,
-        agent_stream: AsyncIterator[str],
-        stream_metadata: dict[str, Any] | None = None,
-    ) -> AsyncGenerator[StreamEvent[Any, Any]]:
+    async def process_agent_stream(self, agent_stream: AsyncIterator[str]) -> AsyncGenerator[StreamEvent[Any, Any]]:
         """Process streaming output from a PydanticAI agent.
 
         This method is specifically designed to handle the streaming output
@@ -54,26 +48,12 @@ class AgentStreamProcessor(StreamBlockProcessor):
 
         Args:
             agent_stream: Async iterator from agent streaming (e.g., stream_text())
-            stream_metadata: Optional metadata about the agent stream
 
         Yields:
             StreamEvent objects as blocks are detected and extracted
         """
-        self._agent_stream_active = True
-        self._stream_metadata = stream_metadata or {}
-
-        # Add agent stream indicator to events
         async for event in self.process_stream(agent_stream):
-            # Enhance events with agent stream metadata
-            if event.metadata is None:
-                event.metadata = {}
-            event.metadata["from_agent"] = True
-            if self._stream_metadata:
-                event.metadata["agent_info"] = self._stream_metadata
-
             yield event
-
-        self._agent_stream_active = False
 
     async def process_agent_with_events(
         self,

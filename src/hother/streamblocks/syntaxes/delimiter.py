@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 import yaml
 
@@ -204,7 +204,7 @@ class DelimiterFrontmatterSyntax(BaseSyntax):
         # Parse YAML to extract block_type
         yaml_content = "\n".join(candidate.metadata_lines)
         try:
-            metadata_dict = yaml.safe_load(yaml_content) or {}
+            metadata_dict = cast("dict[str, Any]", yaml.safe_load(yaml_content) or {})
             return str(metadata_dict.get("block_type")) if "block_type" in metadata_dict else None
         except Exception:
             return None

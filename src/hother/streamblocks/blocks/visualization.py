@@ -30,9 +30,7 @@ class VisualizationContent(BaseContent):
     def parse(cls, raw_text: str) -> VisualizationContent:
         """Parse YAML data for visualization."""
         try:
-            data = yaml.safe_load(raw_text) or {}
-            if not isinstance(data, dict):
-                data = {"content": data}
+            data: dict[str, Any] = yaml.safe_load(raw_text) or {}
         except yaml.YAMLError as e:
             msg = f"Invalid YAML data: {e}"
             raise ValueError(msg) from e

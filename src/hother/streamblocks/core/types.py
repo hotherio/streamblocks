@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Annotated, Literal, TypeVar
+from typing import TYPE_CHECKING, Annotated, Literal, Self, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,7 +31,7 @@ class BaseContent(BaseModel):
     raw_content: str = Field(..., description="Raw unparsed content from the block")
 
     @classmethod
-    def parse(cls, raw_text: str) -> BaseContent:
+    def parse(cls, raw_text: str) -> Self:
         """Default parse method that just stores raw content.
 
         Override this in subclasses to add custom parsing logic.

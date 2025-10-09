@@ -172,8 +172,7 @@ That's all the patches for this update!
 async def main() -> None:
     """Main example function."""
     # Create delimiter preamble syntax for patches
-    patch_syntax = DelimiterPreambleSyntax(
-    )
+    patch_syntax = DelimiterPreambleSyntax()
 
     # Create type-specific registry and register block
     registry = Registry(syntax=patch_syntax)

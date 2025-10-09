@@ -70,11 +70,15 @@ def create_structured_output_block(
     )
 
     # Build field definitions from the schema model
-    field_definitions: dict[str, tuple[type, Any]] = {}
+    field_definitions: dict[str, Any] = {}
 
     for field_name, field_info in schema_model.model_fields.items():
         # Get the field annotation (type)
         field_type = field_info.annotation
+
+        # Skip fields without type annotation
+        if field_type is None:
+            continue
 
         # Get the default value or use ... for required fields
         field_default = ... if field_info.is_required() else field_info.default
@@ -85,7 +89,7 @@ def create_structured_output_block(
     # This class inherits from BaseContent and includes all schema fields
     content_class_name = f"{schema_name.title().replace('_', '')}Content"
 
-    ContentClass = create_model(  # noqa: N806
+    ContentClass: type[BaseContent] = create_model(  # noqa: N806
         content_class_name,
         __base__=BaseContent,
         **field_definitions,
@@ -101,7 +105,7 @@ def create_structured_output_block(
     # The type parameters are automatically extracted by extract_block_types()
     return type(
         block_class_name,
-        (Block[StructuredOutputMetadata, ContentClass],),  # type: ignore[misc]
+        (Block[StructuredOutputMetadata, ContentClass],),
         {
             "__doc__": f"Structured output block for '{schema_name}' schema.",
             "__module__": __name__,

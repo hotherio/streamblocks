@@ -22,6 +22,7 @@ from hother.streamblocks.blocks.files import (
 # Check if pydantic-ai is installed
 try:
     from pydantic_ai import Agent
+    from pydantic_ai.models.google import GoogleModel
 
     from hother.streamblocks.integrations.pydantic_ai import AgentStreamProcessor, BlockAwareAgent
 
@@ -121,7 +122,6 @@ Make sure to include proper project structure with an app module and a simple Fa
 
     # Get the raw stream from a standard PydanticAI agent
     # agent = Agent(model="openai:gpt-4o", system_prompt=system_prompt)
-    from pydantic_ai.models.google import GoogleModel
 
     model = GoogleModel("gemini-2.5-flash")
     agent = Agent(model=model, system_prompt=system_prompt)
@@ -197,8 +197,9 @@ async def advanced_example_with_standard_agent() -> None:
     """Advanced example: Using standard PydanticAI agent with StreamBlocks processor."""
 
     # Create a standard PydanticAI agent
+    model = GoogleModel("gemini-2.5-flash")
     agent = Agent(
-        "openai:gpt-4o",
+        model,
         system_prompt="""
 You are a helpful assistant that creates structured content.
 
@@ -271,7 +272,7 @@ async def main() -> None:
     await basic_example()
     print("\n" + "=" * 60)
 
-    # await advanced_example_with_standard_agent()
+    await advanced_example_with_standard_agent()
 
     print("\n✅ Examples completed!")
 

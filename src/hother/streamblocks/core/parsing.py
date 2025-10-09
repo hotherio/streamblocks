@@ -12,9 +12,9 @@ from pydantic import ValidationError
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from pydantic import BaseModel
+    from hother.streamblocks.core.types import BaseContent
 
-T = TypeVar("T", bound="BaseModel")
+T = TypeVar("T", bound="BaseContent")
 
 
 class ParseStrategy(StrEnum):
@@ -48,9 +48,7 @@ def parse_as_yaml(
                 return cls_inner(raw_content=raw_text)
 
             try:
-                loaded_data: Any = yaml.safe_load(raw_text)
-
-                # Build data dict - explicit branches help type inference
+                loaded_data: dict[str, Any] | str | None = yaml.safe_load(raw_text)
                 if isinstance(loaded_data, dict):
                     data: dict[str, Any] = loaded_data
                 elif handle_non_dict and loaded_data is not None:
@@ -71,7 +69,7 @@ def parse_as_yaml(
                     raise
                 return cls_inner(raw_content=raw_text)
 
-        cls.parse = classmethod(parse)  # Dynamic method addition for decorator
+        cls.parse = classmethod(parse)  # type: ignore[assignment]
         return cls
 
     return decorator
@@ -101,9 +99,7 @@ def parse_as_json(
                 return cls_inner(raw_content=raw_text)
 
             try:
-                loaded_data: Any = json.loads(raw_text)
-
-                # Build data dict - explicit branches help type inference
+                loaded_data: dict[str, Any] | str | None = json.loads(raw_text)
                 if isinstance(loaded_data, dict):
                     data: dict[str, Any] = loaded_data
                 elif handle_non_dict:
@@ -124,7 +120,7 @@ def parse_as_json(
                     raise
                 return cls_inner(raw_content=raw_text)
 
-        cls.parse = classmethod(parse)  # Dynamic method addition for decorator
+        cls.parse = classmethod(parse)  # type: ignore[assignment]
         return cls
 
     return decorator

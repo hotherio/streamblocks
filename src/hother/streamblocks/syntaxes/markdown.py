@@ -95,12 +95,12 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
         # Parse YAML to extract block_type
         yaml_content = "\n".join(candidate.metadata_lines)
         try:
-            metadata_dict = yaml.safe_load(yaml_content) or {}
+            metadata_dict: dict[str, Any] = yaml.safe_load(yaml_content) or {}
             if "block_type" in metadata_dict:
                 return str(metadata_dict["block_type"])
-            # Fall back to info string
-            return self.info_string  # noqa: TRY300
         except Exception:
+            pass
+        else:
             return self.info_string
 
     def parse_block(
