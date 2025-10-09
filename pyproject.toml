@@ -28,6 +28,11 @@ dependencies = [
 "Source" = "https://github.com/streamblocks/streamblocks"
 "Documentation" = "https://streamblocks.github.io/streamblocks/latest/"
 
+# Optional dependencies for enhanced logging
+[project.optional-dependencies]
+structlog = ["structlog>=24.1.0"]
+loguru = ["loguru>=0.7.0"]
+
 # Corrected build system to use UV build backend
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
@@ -256,6 +261,12 @@ line-ending = "auto"
 ]
 "src/hother/streamblocks/content/**/*" = [
     "ANN401",  # Any types needed for generic content parsing
+]
+"src/hother/streamblocks/core/_logger.py" = [
+    "ANN401",  # Any types needed for logger protocol and adapter
+]
+"src/hother/streamblocks/syntaxes/markdown.py" = [
+    "TRY300",   # Conflicts with RET505 - allow simple return after if
 ]
 
 # Complexity settings

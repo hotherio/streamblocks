@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.syntaxes.models import get_syntax_instance
 
 if TYPE_CHECKING:
+    from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.models import Block, ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
     from hother.streamblocks.syntaxes.base import BaseSyntax
@@ -44,17 +47,21 @@ class Registry:
         self,
         *,
         syntax: Syntax | BaseSyntax,
+        logger: Logger | None = None,
         blocks: dict[str, type[Block[BaseMetadata, BaseContent]]] | None = None,
     ) -> None:
         """Initialize registry with a single syntax instance.
 
         Args:
             syntax: The syntax instance for this registry
+            logger: Optional logger (any object with debug/info/warning/error/exception methods).
+                   Defaults to stdlib logging.getLogger(__name__)
             blocks: Optional dict of block_type -> block_class for bulk registration
         """
         self._syntax = get_syntax_instance(syntax=syntax)
         self._block_classes: dict[BlockType, type[Block[BaseMetadata, BaseContent]]] = {}
         self._validators: dict[BlockType, list[ValidatorFunc]] = {}
+        self.logger = logger or StdlibLoggerAdapter(logging.getLogger(__name__))
 
         # Bulk register blocks if provided
         if blocks:
@@ -80,6 +87,13 @@ class Registry:
             validators: Optional list of validator functions for this block type
         """
         self._block_classes[name] = block_class
+
+        self.logger.debug(
+            "block_type_registered",
+            block_type=name,
+            block_class=block_class.__name__,
+            has_validators=validators is not None and len(validators) > 0,
+        )
 
         # Add validators if provided
         if validators:
@@ -112,6 +126,13 @@ class Registry:
             self._validators[block_type] = []
         self._validators[block_type].append(validator)
 
+        self.logger.debug(
+            "validator_added",
+            block_type=block_type,
+            validator_name=validator.__name__,
+            total_validators=len(self._validators[block_type]),
+        )
+
     def validate_block(
         self,
         block: ExtractedBlock[Any, Any],
@@ -129,6 +150,4 @@ class Registry:
             return True
 
         validators = self._validators.get(block_type, [])
-        return all(v(block) for v in validators)
-        return all(v(block) for v in validators)
         return all(v(block) for v in validators)

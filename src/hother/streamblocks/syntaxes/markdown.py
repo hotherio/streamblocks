@@ -98,9 +98,10 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
             metadata_dict: dict[str, Any] = yaml.safe_load(yaml_content) or {}
             if "block_type" in metadata_dict:
                 return str(metadata_dict["block_type"])
+            # No block_type found in metadata, return info_string
+            return self.info_string
         except Exception:
-            pass
-        else:
+            # YAML parsing failed, return info_string as fallback
             return self.info_string
 
     def parse_block(

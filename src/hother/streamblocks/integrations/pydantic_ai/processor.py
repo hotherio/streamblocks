@@ -37,7 +37,12 @@ class AgentStreamProcessor(StreamBlockProcessor):
             max_block_size: Maximum block size in bytes
             enable_partial_blocks: Whether to emit BLOCK_DELTA events for partial blocks
         """
-        super().__init__(registry, lines_buffer, max_line_length, max_block_size)
+        super().__init__(
+            registry,
+            lines_buffer=lines_buffer,
+            max_line_length=max_line_length,
+            max_block_size=max_block_size,
+        )
         self.enable_partial_blocks = enable_partial_blocks
 
     async def process_agent_stream(self, agent_stream: AsyncIterator[str]) -> AsyncGenerator[StreamEvent[Any, Any]]:

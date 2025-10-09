@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 from collections import deque
 from typing import TYPE_CHECKING
 
+from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.types import (
     BaseContent,
@@ -20,6 +22,7 @@ from hother.streamblocks.core.types import (
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator
 
+    from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.registry import Registry
 
 
@@ -37,6 +40,8 @@ class StreamBlockProcessor:
     def __init__(
         self,
         registry: Registry,
+        *,
+        logger: Logger | None = None,
         lines_buffer: int = 5,
         max_line_length: int = 16_384,
         max_block_size: int = 1_048_576,  # 1MB
@@ -45,12 +50,15 @@ class StreamBlockProcessor:
 
         Args:
             registry: Registry with a single syntax
+            logger: Optional logger (any object with debug/info/warning/error/exception methods).
+                   Defaults to stdlib logging.getLogger(__name__)
             lines_buffer: Number of lines to keep in buffer
             max_line_length: Maximum line length before truncation
             max_block_size: Maximum block size in bytes
         """
         self.registry = registry
         self.syntax = registry.syntax  # Direct access to the syntax
+        self.logger = logger or StdlibLoggerAdapter(logging.getLogger(__name__))
         self.lines_buffer = lines_buffer
         self.max_line_length = max_line_length
         self.max_block_size = max_block_size
@@ -74,6 +82,15 @@ class StreamBlockProcessor:
             StreamEvent objects for different processing stages
         """
         async for chunk in stream:
+            # Log stream processing start on first chunk
+            if self._line_counter == 0 and not self._accumulated_text:
+                self.logger.debug(
+                    "stream_processing_started",
+                    syntax=_get_syntax_name(self.syntax),
+                    lines_buffer=self.lines_buffer,
+                    max_block_size=self.max_block_size,
+                )
+
             # Accumulate chunks until we have complete lines
             self._accumulated_text.append(chunk)
 
@@ -203,6 +220,13 @@ class StreamBlockProcessor:
                 self._candidates.append(candidate)
                 opening_found = True
 
+                self.logger.debug(
+                    "block_candidate_created",
+                    syntax=_get_syntax_name(candidate.syntax),
+                    start_line=candidate.start_line,
+                    inline_metadata=bool(detection.metadata),
+                )
+
             # If no candidates and no openings, emit raw text
             if not opening_found:
                 yield RawTextEvent(
@@ -225,6 +249,15 @@ class StreamBlockProcessor:
         # Step 1: Extract block_type from candidate
         block_type = candidate.syntax.extract_block_type(candidate)
 
+        self.logger.debug(
+            "extracting_block",
+            syntax=_get_syntax_name(candidate.syntax),
+            block_type=block_type,
+            start_line=candidate.start_line,
+            end_line=self._line_counter,
+            size_bytes=len(candidate.raw_text),
+        )
+
         # Step 2: Look up block_class from registry
         block_class = None
         if block_type:
@@ -235,6 +268,13 @@ class StreamBlockProcessor:
 
         if not parse_result.success:
             error = parse_result.error or "Parse failed"
+            self.logger.warning(
+                "block_parse_failed",
+                block_type=block_type,
+                error=error,
+                syntax=_get_syntax_name(candidate.syntax),
+                exc_info=parse_result.exception,
+            )
             return self._create_rejection_event(candidate, error, parse_result.exception)
 
         metadata = parse_result.metadata
@@ -256,11 +296,30 @@ class StreamBlockProcessor:
 
         # Additional validation from syntax
         if not candidate.syntax.validate_block(block):
+            self.logger.warning(
+                "syntax_validation_failed",
+                block_type=block_type,
+                syntax=block.syntax_name,
+            )
             return self._create_rejection_event(candidate, "Syntax validation failed")
 
         # Registry validation (user-defined validators)
         if not self.registry.validate_block(block):
+            self.logger.warning(
+                "registry_validation_failed",
+                block_type=block_type,
+                syntax=block.syntax_name,
+            )
             return self._create_rejection_event(candidate, "Registry validation failed")
+
+        self.logger.info(
+            "block_extracted",
+            block_type=block_type,
+            block_id=block.hash_id,
+            syntax=block.syntax_name,
+            lines=(block.line_start, block.line_end),
+            size_bytes=len(block.raw_text),
+        )
 
         return BlockExtractedEvent(
             data=candidate.raw_text,
@@ -283,6 +342,15 @@ class StreamBlockProcessor:
         Returns:
             BLOCK_REJECTED event
         """
+        self.logger.warning(
+            "block_rejected",
+            reason=reason,
+            syntax=_get_syntax_name(candidate.syntax),
+            lines=(candidate.start_line, self._line_counter),
+            has_exception=exception is not None,
+            exc_info=exception if exception else None,
+        )
+
         return BlockRejectedEvent(
             data=candidate.raw_text,
             reason=reason,
