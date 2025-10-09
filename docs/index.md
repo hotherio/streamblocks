@@ -4,7 +4,7 @@
 
 Streamblocks is a Python library that helps you defining and extracting semantic blocks from a stream. It is primarily intended to be used to build AI agents differently, completely independent from any LLM model or model provider capabilities (e.g. OpenAPI specification support for function calling). It does not replace LLM frameworks and can be easily integrated to your framework such as LangGraph, Agno, Autogen or Pydantic AI.
 
-## 
+##
 
 - Better semantic
 - LLM agnostic

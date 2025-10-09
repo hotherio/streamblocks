@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -29,7 +29,7 @@ class InteractiveContent(BaseContent):
     @classmethod
     def parse(cls, raw_text: str) -> InteractiveContent:
         """Parse YAML content directly into model."""
-        data = cast("dict[str, Any]", yaml.safe_load(raw_text) or {})
+        data: dict[str, Any] = yaml.safe_load(raw_text) or {}
         return cls(raw_content=raw_text, **data)
 
 
@@ -106,7 +106,7 @@ class ScaleMetadata(InteractiveMetadata):
 class ScaleContent(InteractiveContent):
     """Content for scale rating questions."""
 
-    labels: dict[int, str] = Field(default_factory=dict)
+    labels: dict[int, str] = Field(default_factory=dict[int, str])
     response: int | None = None
 
 

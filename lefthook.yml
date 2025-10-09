@@ -8,12 +8,12 @@ pre-commit:
   commands:
     # Fast checks first - Python formatting and linting
     ruff:
-      run: ruff check --fix --unsafe-fixes {staged_files}
+      run: uv run ruff check --fix --unsafe-fixes {staged_files}
       glob: "*.py"
       stage_fixed: true
 
     ruff-format:
-      run: ruff format {staged_files}
+      run: uv run ruff format {staged_files}
       glob: "*.py"
       stage_fixed: true
 
@@ -21,32 +21,21 @@ pre-commit:
     # Note: Run 'uv run basedpyright src/' manually for type checking
     # Skipped in pre-commit because basedpyright doesn't respect pyproject.toml ignores when run via lefthook
     type-check:
-      run: echo "Type checking skipped - run 'uv run basedpyright src/' manually"
+      run: 'uv run basedpyright'
       skip:
         - merge
         - rebase
 
     # Security checks
     security:
-      run: ruff check --select=S {staged_files}
+      run: uv run ruff check --select=S {staged_files}
       glob: "*.py"
 
     # Import organization
     imports:
-      run: ruff check --select=I {staged_files}
+      run: uv run ruff check --select=I {staged_files}
       glob: "*.py"
       stage_fixed: true
-
-    # Non-Python file checks
-    trailing-whitespace:
-      run: |
-        for file in {staged_files}; do
-          if [[ "$file" != *.py ]]; then
-            sed -i.bak 's/[[:space:]]*$//' "$file" && rm -f "$file.bak"
-          fi
-        done
-      glob: "*"
-      exclude: "*.py|*.egg-info/*"
 
     end-of-file:
       run: |
