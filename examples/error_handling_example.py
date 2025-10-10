@@ -5,17 +5,17 @@ from BlockRejectedEvent, including the original exception objects.
 """
 
 import asyncio
+from typing import TYPE_CHECKING
 
 import yaml
 from pydantic import ValidationError
 
-from hother.streamblocks import (
-    EventType,
-    Registry,
-    StreamBlockProcessor,
-)
-from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks import EventType, Registry, StreamBlockProcessor
 from hother.streamblocks.syntaxes.models import Syntax
+
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockRejectedEvent
 
 
 async def main() -> None:
@@ -77,8 +77,8 @@ Some more text at the end.
     print("STRUCTURED ERROR HANDLING DEMONSTRATION")
     print("=" * 60)
 
-    extracted_blocks = []
-    rejected_blocks = []
+    extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
+    rejected_blocks: list[BlockRejectedEvent[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
@@ -101,10 +101,14 @@ Some more text at the end.
                 # Handle different exception types differently
                 if isinstance(event.exception, yaml.YAMLError):
                     print("   → YAML parsing error detected")
-                    print(f"   → Problem: {event.exception.problem}")
-                    if hasattr(event.exception, "problem_mark"):
-                        mark = event.exception.problem_mark
-                        print(f"   → Location: line {mark.line + 1}, column {mark.column + 1}")
+                    # Use getattr for attributes not in type stubs
+                    problem = getattr(event.exception, "problem", "Unknown YAML error")
+                    print(f"   → Problem: {problem}")
+                    problem_mark = getattr(event.exception, "problem_mark", None)
+                    if problem_mark is not None:
+                        line = getattr(problem_mark, "line", -1)
+                        column = getattr(problem_mark, "column", -1)
+                        print(f"   → Location: line {line + 1}, column {column + 1}")
 
                 elif isinstance(event.exception, ValidationError):
                     print("   → Pydantic validation error detected")

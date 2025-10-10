@@ -17,9 +17,9 @@ import asyncio
 import os
 import sys
 import traceback
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from google import genai
+from google import genai  # type: ignore[import-not-found]
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -45,6 +45,9 @@ from hother.streamblocks.blocks.visualization import Visualization, Visualizatio
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
+
+    from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 def create_system_prompt() -> str:
@@ -259,17 +262,23 @@ def setup_processor() -> StreamBlockProcessor:
     return StreamBlockProcessor(registry, lines_buffer=5)
 
 
-async def process_file_operations(block) -> None:
+async def process_file_operations(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a file operations block."""
+    # Type narrow with isinstance checks
+    if not isinstance(block.metadata, FileOperationsMetadata):
+        return
+    if not isinstance(block.content, FileOperationsContent):
+        return
+
     metadata = block.metadata
-    content = block.data
+    content = block.content
 
     print(f"\n📁 File Operations: {metadata.id}")
     if metadata.description:
         print(f"📝 {metadata.description}")
 
     # Group operations by type
-    ops_by_type = {"create": [], "edit": [], "delete": []}
+    ops_by_type: dict[str, list[str]] = {"create": [], "edit": [], "delete": []}
     for op in content.operations:
         ops_by_type[op.action].append(op.path)
 
@@ -291,10 +300,16 @@ async def process_file_operations(block) -> None:
             print(f"   - {path}")
 
 
-async def process_patch(block) -> None:
+async def process_patch(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a patch block."""
+    # Type narrow with isinstance checks
+    if not isinstance(block.metadata, PatchMetadata):
+        return
+    if not isinstance(block.content, PatchContent):
+        return
+
     metadata = block.metadata
-    content = block.data
+    content = block.content
 
     print(f"\n🔧 Patch: {metadata.id}")
     print(f"📄 File: {metadata.file}")
@@ -311,10 +326,16 @@ async def process_patch(block) -> None:
             print(f"  {line}")
 
 
-async def process_tool_call(block) -> None:
+async def process_tool_call(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a tool call block."""
+    # Type narrow with isinstance checks
+    if not isinstance(block.metadata, ToolCallMetadata):
+        return
+    if not isinstance(block.content, ToolCallContent):
+        return
+
     metadata = block.metadata
-    content = block.data
+    content = block.content
 
     print(f"\n🛠️  Tool Call: {metadata.id}")
     print(f"🔧 Tool: {metadata.tool_name}")
@@ -326,10 +347,16 @@ async def process_tool_call(block) -> None:
         print(f"   - {key}: {value}")
 
 
-async def process_memory(block) -> None:
+async def process_memory(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a memory block."""
+    # Type narrow with isinstance checks
+    if not isinstance(block.metadata, MemoryMetadata):
+        return
+    if not isinstance(block.content, MemoryContent):
+        return
+
     metadata = block.metadata
-    content = block.data
+    content = block.content
 
     print(f"\n🧠 Memory: {metadata.id}")
     print(f"🔑 Type: {metadata.memory_type}")
@@ -344,10 +371,16 @@ async def process_memory(block) -> None:
         print("📋 Listing keys")
 
 
-async def process_visualization(block) -> None:
+async def process_visualization(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a visualization block."""
+    # Type narrow with isinstance checks
+    if not isinstance(block.metadata, VisualizationMetadata):
+        return
+    if not isinstance(block.content, VisualizationContent):
+        return
+
     metadata = block.metadata
-    content = block.data
+    content = block.content
 
     print(f"\n📊 Visualization: {metadata.id}")
     print(f"📈 Type: {metadata.viz_type}")
@@ -356,20 +389,26 @@ async def process_visualization(block) -> None:
 
     # Show data preview
     if metadata.viz_type == "diagram":
-        nodes = content.content.get("nodes", [])
-        edges = content.content.get("edges", [])
-        print(f"\n🔵 Nodes: {', '.join(nodes[:5])}")
+        nodes = content.data.get("nodes", [])
+        edges = content.data.get("edges", [])
+        print(f"\n🔵 Nodes: {', '.join(str(n) for n in nodes[:5])}")
         if len(nodes) > 5:
             print(f"   ... and {len(nodes) - 5} more")
         print(f"🔗 Edges: {len(edges)}")
     else:
-        print(f"\n📊 Data keys: {list(content.content.keys())}")
+        print(f"\n📊 Data keys: {list(content.data.keys())}")
 
 
-async def process_file_content(block) -> None:
+async def process_file_content(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a file content block."""
+    # Type narrow with isinstance checks
+    if not isinstance(block.metadata, FileContentMetadata):
+        return
+    if not isinstance(block.content, FileContentContent):
+        return
+
     metadata = block.metadata
-    content = block.data
+    content = block.content
 
     print(f"\n📄 File Content: {metadata.id}")
     print(f"📁 File: {metadata.file}")
@@ -385,10 +424,16 @@ async def process_file_content(block) -> None:
         print(f"   ... and {len(lines) - 10} more lines")
 
 
-async def process_message(block) -> None:
+async def process_message(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a message block."""
+    # Type narrow with isinstance checks
+    if not isinstance(block.metadata, MessageMetadata):
+        return
+    if not isinstance(block.content, MessageContent):
+        return
+
     metadata = block.metadata
-    content = block.data
+    content = block.content
 
     # Choose emoji based on message type
     emoji_map = {"info": "ℹ️", "warning": "⚠️", "error": "❌", "success": "✅", "status": "📊", "explanation": "💡"}
@@ -413,7 +458,7 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
         msg = "Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable"
         raise ValueError(msg)
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=api_key)  # type: ignore[attr-defined]
     model_id = "gemini-2.5-flash"
 
     # Get system prompt
@@ -421,10 +466,10 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
     full_prompt = f"{system_prompt}\n\nUser request: {prompt}"
 
     # Stream the response
-    response = await client.aio.models.generate_content_stream(model=model_id, contents=full_prompt)
-    async for chunk in response:
-        if chunk.text:
-            yield chunk.text
+    response = await client.aio.models.generate_content_stream(model=model_id, contents=full_prompt)  # type: ignore[attr-defined]
+    async for chunk in response:  # type: ignore[var-annotated]
+        if chunk.text:  # type: ignore[attr-defined]
+            yield chunk.text  # type: ignore[attr-defined]
 
 
 async def main() -> None:

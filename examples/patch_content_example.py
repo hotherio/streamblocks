@@ -3,9 +3,7 @@
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator
-from typing import Literal
-
-from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING, Any, Literal
 
 from hother.streamblocks import (
     DelimiterPreambleSyntax,
@@ -16,13 +14,16 @@ from hother.streamblocks import (
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import ExtractedBlock
+
 
 # Custom models for this example
 class SimplePatchMetadata(BaseMetadata):
     """Simplified metadata for patch blocks."""
 
     id: str
-    block_type: Literal["patch"] = "patch"
+    block_type: Literal["patch"] = "patch"  # type: ignore[assignment]
     category: str | None = None
     priority: str | None = None
 
@@ -187,10 +188,12 @@ async def main() -> None:
 
     def validate_critical_patches(block: SimplePatch) -> bool:
         """Extra validation for critical patches."""
-        if hasattr(block.metadata, "param_1") and block.metadata.param_1 == "critical":
-            # Critical patches must have a description in the diff
-            lines = block.content.diff.strip().split("\n")
-            return any("Fixed:" in line or "SECURITY:" in line for line in lines)
+        if hasattr(block.metadata, "param_1"):
+            param_1 = getattr(block.metadata, "param_1", None)
+            if param_1 == "critical":
+                # Critical patches must have a description in the diff
+                lines = block.content.diff.strip().split("\n")
+                return any("Fixed:" in line or "SECURITY:" in line for line in lines)
         return True
 
     registry.register("patch", SimplePatch, validators=[validate_patch_content, validate_critical_patches])
@@ -202,8 +205,8 @@ async def main() -> None:
     print("Processing patch content examples...")
     print("=" * 80)
 
-    patches = []
-    patch_stats = {
+    patches: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
+    patch_stats: dict[str, Any] = {
         "total_lines": 0,
         "additions": 0,
         "deletions": 0,
@@ -229,41 +232,56 @@ async def main() -> None:
             block = event.block
             patches.append(block)
 
-            print(f"\n{'-' * 70}")
-            print(f"[PATCH] {block.metadata.id}")
+            # Type narrowing for SimplePatchContent and SimplePatchMetadata
+            if not isinstance(block.content, SimplePatchContent):
+                continue
+            if not isinstance(block.metadata, SimplePatchMetadata):
+                continue
 
-            # Get category from params
+            content = block.content
+            metadata = block.metadata
+
+            print(f"\n{'-' * 70}")
+            print(f"[PATCH] {metadata.id}")
+
+            # Get category from params (dynamic attributes from DelimiterPreambleSyntax)
             category = "general"
-            if hasattr(block.metadata, "param_0") and block.metadata.param_0:
-                category = block.metadata.param_0
-            patch_stats["categories"][category] = patch_stats["categories"].get(category, 0) + 1
+            if hasattr(metadata, "param_0"):
+                param_0 = getattr(metadata, "param_0", None)
+                if param_0:
+                    category = str(param_0)
+            categories_dict: dict[str, int] = patch_stats["categories"]
+            categories_dict[category] = categories_dict.get(category, 0) + 1
 
             # Parse file info from first line of content
-            lines = block.content.diff.strip().split("\n")
+            lines: list[str] = content.diff.strip().split("\n")
             if lines and ":" in lines[0]:
-                file_path, start_line = lines[0].split(":")
+                file_path, start_line_str = lines[0].split(":")
                 with contextlib.suppress(ValueError):
-                    block.metadata.start_line = int(start_line)
+                    metadata.start_line = int(start_line_str)
+                file_path_final = file_path
             else:
-                file_path = "unknown"
-            block.metadata.file = file_path
-            patch_stats["files"].add(file_path)
+                file_path_final = "unknown"
+            metadata.file = file_path_final
+            files_set: set[str] = patch_stats["files"]
+            files_set.add(file_path_final)
 
             print(f"        Category: {category}")
-            if hasattr(block.metadata, "param_1") and block.metadata.param_1:
-                print(f"        Priority: {block.metadata.param_1}")
-            print(f"        File: {file_path}")
-            print(f"        Starting at line: {block.metadata.start_line}")
+            if hasattr(metadata, "param_1"):
+                param_1 = getattr(metadata, "param_1", None)
+                if param_1:
+                    print(f"        Priority: {param_1}")
+            print(f"        File: {file_path_final}")
+            print(f"        Starting at line: {metadata.start_line}")
 
             # Analyze patch content
-            lines = block.content.diff.strip().split("\n")
             additions = [l for l in lines if l.startswith("+")]
             deletions = [l for l in lines if l.startswith("-")]
             context = [l for l in lines if l.startswith(" ")]
 
-            patch_stats["total_lines"] += len(lines)
-            patch_stats["additions"] += len(additions)
-            patch_stats["deletions"] += len(deletions)
+            patch_stats["total_lines"] = int(patch_stats["total_lines"]) + len(lines)
+            patch_stats["additions"] = int(patch_stats["additions"]) + len(additions)
+            patch_stats["deletions"] = int(patch_stats["deletions"]) + len(deletions)
 
             print(f"        Changes: +{len(additions)} -{len(deletions)} ({len(context)} context lines)")
 
@@ -299,23 +317,36 @@ async def main() -> None:
     print(f"  Total deletions: -{patch_stats['deletions']}")
 
     print("\n  Patches by category:")
-    for category, count in sorted(patch_stats["categories"].items()):
+    categories_dict_final: dict[str, int] = patch_stats["categories"]
+    for category, count in sorted(categories_dict_final.items()):
         print(f"    - {category}: {count}")
 
     print("\n  Modified files:")
-    for file_path in sorted(patch_stats["files"]):
-        patches_for_file = [p for p in patches if p.metadata.file == file_path]
+    files_set_final: set[str] = patch_stats["files"]
+    for file_path in sorted(files_set_final):
+        # Filter patches by file with type checking
+        patches_for_file: list[Any] = []
+        for p in patches:
+            if isinstance(p.metadata, SimplePatchMetadata) and p.metadata.file == file_path:
+                patches_for_file.append(p)
         print(f"    - {file_path} ({len(patches_for_file)} patch{'es' if len(patches_for_file) > 1 else ''})")
 
     # Show patch timeline
     print("\n  Patch application order:")
     for i, patch in enumerate(patches, 1):
+        if not isinstance(patch.metadata, SimplePatchMetadata):
+            continue
+
         category = "general"
-        if hasattr(patch.metadata, "param_0") and patch.metadata.param_0:
-            category = patch.metadata.param_0
+        if hasattr(patch.metadata, "param_0"):
+            param_0 = getattr(patch.metadata, "param_0", None)
+            if param_0:
+                category = str(param_0)
         priority = ""
-        if hasattr(patch.metadata, "param_1") and patch.metadata.param_1:
-            priority = f" [{patch.metadata.param_1}]"
+        if hasattr(patch.metadata, "param_1"):
+            param_1 = getattr(patch.metadata, "param_1", None)
+            if param_1:
+                priority = f" [{param_1}]"
         print(f"    {i}. {patch.metadata.id} - {category}{priority}")
 
     print("\n✓ Successfully processed all patches!")

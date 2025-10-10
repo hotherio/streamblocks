@@ -12,7 +12,6 @@ from hother.streamblocks.syntaxes.models import get_syntax_instance
 if TYPE_CHECKING:
     from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.models import Block, ExtractedBlock
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata
     from hother.streamblocks.syntaxes.base import BaseSyntax
     from hother.streamblocks.syntaxes.models import Syntax
 
@@ -48,7 +47,7 @@ class Registry:
         *,
         syntax: Syntax | BaseSyntax,
         logger: Logger | None = None,
-        blocks: dict[str, type[Block[BaseMetadata, BaseContent]]] | None = None,
+        blocks: dict[str, type[Block[Any, Any]]] | None = None,
     ) -> None:
         """Initialize registry with a single syntax instance.
 
@@ -59,7 +58,7 @@ class Registry:
             blocks: Optional dict of block_type -> block_class for bulk registration
         """
         self._syntax = get_syntax_instance(syntax=syntax)
-        self._block_classes: dict[BlockType, type[Block[BaseMetadata, BaseContent]]] = {}
+        self._block_classes: dict[BlockType, type[Block[Any, Any]]] = {}
         self._validators: dict[BlockType, list[ValidatorFunc]] = {}
         self.logger = logger or StdlibLoggerAdapter(logging.getLogger(__name__))
 
@@ -76,7 +75,7 @@ class Registry:
     def register(
         self,
         name: str,
-        block_class: type[Block[BaseMetadata, BaseContent]],
+        block_class: type[Block[Any, Any]],
         validators: list[ValidatorFunc] | None = None,
     ) -> None:
         """Register a block class for a block type.
@@ -100,7 +99,7 @@ class Registry:
             for validator in validators:
                 self.add_validator(name, validator)
 
-    def get_block_class(self, block_type: str) -> type[Block[BaseMetadata, BaseContent]] | None:
+    def get_block_class(self, block_type: str) -> type[Block[Any, Any]] | None:
         """Get the block class for a given block type.
 
         Args:

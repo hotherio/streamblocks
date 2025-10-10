@@ -9,10 +9,9 @@ import asyncio
 import os
 import sys
 from collections.abc import AsyncIterator
-from typing import Literal
+from typing import TYPE_CHECKING
 
-from google import genai
-from pydantic import BaseModel, Field
+from google import genai  # type: ignore[import-not-found]
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,37 +22,19 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.core.models import Block
-from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks.blocks.files import (
+    FileContent,
+    FileContentContent,
+    FileContentMetadata,
+    FileOperations,
+    FileOperationsContent,
+    FileOperationsMetadata,
+)
+from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
 
-
-# Unified metadata model for all Gemini blocks
-class GeminiBlockMetadata(BaseMetadata):
-    """Metadata for Gemini AI blocks."""
-
-    id: str
-    block_type: Literal["file_operations", "file_content", "message"]
-    description: str | None = None
-
-    # File-specific fields (optional)
-    file_path: str | None = None
-
-    # Message-specific fields (optional)
-    message_type: Literal["info", "warning", "error", "status"] | None = None
-
-
-# Unified content model
-class GeminiBlockContent(BaseContent):
-    """Content for Gemini AI blocks."""
-
-    @classmethod
-    def parse(cls, raw_text: str) -> "GeminiBlockContent":
-        """Parse content from raw text."""
-        return cls(raw_content=raw_text.strip())
-
-
-# Create the block type
-GeminiBlock = Block[GeminiBlockMetadata, GeminiBlockContent]
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 def create_simple_prompt() -> str:
@@ -63,21 +44,18 @@ def create_simple_prompt() -> str:
 !!start
 ---
 id: unique_id
-block_type: file_operations | file_content | message
-description: Brief description of what this block contains
-file_path: path/to/file (only for file_content blocks)
-message_type: info | warning | error | status (only for message blocks)
+block_type: files_operations | file_content | message
 ---
 Content goes here
 !!end
 
 Examples:
 
-1. For file operations:
+1. For file operations (use block_type: files_operations):
 !!start
 ---
 id: create_files_01
-block_type: file_operations
+block_type: files_operations
 description: Creating initial project structure
 ---
 src/main.py:C
@@ -86,13 +64,15 @@ tests/test_main.py:C
 README.md:C
 !!end
 
-2. For file content:
+Note: C=create, E=edit, D=delete
+
+2. For file content (use block_type: file_content, MUST include 'file' field):
 !!start
 ---
 id: main_py_content
 block_type: file_content
+file: src/main.py
 description: Main application entry point
-file_path: src/main.py
 ---
 def main():
     print("Hello, World!")
@@ -101,16 +81,18 @@ if __name__ == "__main__":
     main()
 !!end
 
-3. For messages/communication:
+3. For messages/communication (use block_type: message, MUST include 'message_type'):
 !!start
 ---
 id: status_01
 block_type: message
-description: Explaining the approach
 message_type: info
+title: Explaining the approach
 ---
 I'll create a simple Flask web application with proper structure and tests.
 !!end
+
+Note: message_type can be: info, warning, error, success, status, explanation
 
 Always use this format for ALL content - whether it's file operations, code content, or communication."""
 
@@ -123,21 +105,21 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
         msg = "Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable"
         raise ValueError(msg)
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=api_key)  # type: ignore[attr-defined]
 
     # Combine system prompt with user prompt
     system_prompt = create_simple_prompt()
     full_prompt = f"{system_prompt}\n\nUser: {prompt}"
 
     # Stream the response
-    response = await client.aio.models.generate_content_stream(
+    response = await client.aio.models.generate_content_stream(  # type: ignore[attr-defined]
         model="gemini-2.0-flash-exp",  # or "gemini-1.5-flash" for stable
         contents=full_prompt,
     )
 
-    async for chunk in response:
-        if chunk.text:
-            yield chunk.text
+    async for chunk in response:  # type: ignore[attr-defined]
+        if chunk.text:  # type: ignore[attr-defined]
+            yield chunk.text  # type: ignore[attr-defined]
 
 
 async def main() -> None:
@@ -152,11 +134,11 @@ async def main() -> None:
         end_delimiter="!!end",
     )
 
-    # Create registry and register all Gemini block types
+    # Create registry and register all block types using default blocks
     registry = Registry(syntax=syntax)
-    registry.register("file_operations", GeminiBlock)
-    registry.register("file_content", GeminiBlock)
-    registry.register("message", GeminiBlock)
+    registry.register("files_operations", FileOperations)
+    registry.register("file_content", FileContent)
+    registry.register("message", Message)
     processor = StreamBlockProcessor(registry, lines_buffer=10)
 
     # Example prompts
@@ -192,8 +174,8 @@ async def main() -> None:
     print("=" * 60)
 
     # Track extracted blocks
-    extracted_blocks = []
-    raw_text = []
+    extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
+    raw_text: list[str] = []
 
     # Process the stream
     try:
@@ -202,28 +184,25 @@ async def main() -> None:
                 block = event.block
                 extracted_blocks.append(block)
 
-                metadata: GeminiBlockMetadata = block.metadata
-                content: GeminiBlockContent = block.content
+                # Handle different block types with proper type narrowing
+                if block.metadata.block_type == "files_operations":
+                    # Type narrow to FileOperations block
+                    if not isinstance(block.metadata, FileOperationsMetadata):
+                        continue
+                    if not isinstance(block.content, FileOperationsContent):
+                        continue
 
-                print(f"\n📦 Block: {metadata.id} ({metadata.block_type})")
-                if metadata.description:
-                    print(f"   Description: {metadata.description}")
+                    metadata = block.metadata
+                    content = block.content
 
-                # Handle different block types
-                if metadata.block_type == "file_operations":
-                    # Parse file operations from content
-                    lines = content.raw_content.strip().split("\n")
-                    operations = {"create": [], "edit": [], "delete": []}
+                    print(f"\n📦 Block: {metadata.id} (files_operations)")
+                    if metadata.description:
+                        print(f"   Description: {metadata.description}")
 
-                    for line in lines:
-                        if ":" in line:
-                            path, op = line.rsplit(":", 1)
-                            if op.upper() == "C":
-                                operations["create"].append(path)
-                            elif op.upper() == "E":
-                                operations["edit"].append(path)
-                            elif op.upper() == "D":
-                                operations["delete"].append(path)
+                    # Use the structured operations from the parsed content
+                    operations: dict[str, list[str]] = {"create": [], "edit": [], "delete": []}
+                    for op in content.operations:
+                        operations[op.action].append(op.path)
 
                     if operations["create"]:
                         print(f"   ✅ Create: {', '.join(operations['create'])}")
@@ -232,8 +211,21 @@ async def main() -> None:
                     if operations["delete"]:
                         print(f"   ❌ Delete: {', '.join(operations['delete'])}")
 
-                elif metadata.block_type == "file_content":
-                    print(f"   📄 File: {metadata.file_path}")
+                elif block.metadata.block_type == "file_content":
+                    # Type narrow to FileContent block
+                    if not isinstance(block.metadata, FileContentMetadata):
+                        continue
+                    if not isinstance(block.content, FileContentContent):
+                        continue
+
+                    metadata = block.metadata
+                    content = block.content
+
+                    print(f"\n📦 Block: {metadata.id} (file_content)")
+                    print(f"   📄 File: {metadata.file}")
+                    if metadata.description:
+                        print(f"   Description: {metadata.description}")
+
                     # Show preview of content
                     lines = content.raw_content.split("\n")
                     preview_lines = 3
@@ -242,10 +234,31 @@ async def main() -> None:
                     if len(lines) > preview_lines:
                         print(f"      ... ({len(lines) - preview_lines} more lines)")
 
-                elif metadata.block_type == "message":
-                    icons = {"info": "ℹ️ ", "warning": "⚠️ ", "error": "❌", "status": "📊"}
+                elif block.metadata.block_type == "message":
+                    # Type narrow to Message block
+                    if not isinstance(block.metadata, MessageMetadata):
+                        continue
+                    if not isinstance(block.content, MessageContent):
+                        continue
+
+                    metadata = block.metadata
+                    content = block.content
+
+                    print(f"\n📦 Block: {metadata.id} (message)")
+                    icons = {
+                        "info": "ℹ️ ",
+                        "warning": "⚠️ ",
+                        "error": "❌",
+                        "success": "✅",
+                        "status": "📊",
+                        "explanation": "💡",
+                    }
                     icon = icons.get(metadata.message_type, "💬")
-                    print(f"   {icon} {metadata.message_type or 'message'}:")
+                    if metadata.title:
+                        print(f"   {icon} {metadata.title} ({metadata.message_type}):")
+                    else:
+                        print(f"   {icon} {metadata.message_type}:")
+
                     # Show first few lines of message
                     lines = content.raw_content.split("\n")
                     for line in lines[:5]:
@@ -255,8 +268,7 @@ async def main() -> None:
 
             elif event.type == EventType.BLOCK_DELTA:
                 # Show progress
-                size = len(event.accumulated)
-                print(f"\r⏳ Processing block... {size} bytes", end="", flush=True)
+                print("\r⏳ Processing block...", end="", flush=True)
 
             elif event.type == EventType.RAW_TEXT:
                 # Collect any text outside blocks
@@ -279,7 +291,7 @@ async def main() -> None:
     print(f"  ✅ Extracted {len(extracted_blocks)} blocks")
 
     # Count block types
-    block_types = {}
+    block_types: dict[str, int] = {}
     for block in extracted_blocks:
         bt = block.metadata.block_type
         block_types[bt] = block_types.get(bt, 0) + 1

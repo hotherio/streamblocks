@@ -2,14 +2,9 @@
 
 import asyncio
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from hother.streamblocks import (
-    DelimiterFrontmatterSyntax,
-    EventType,
-    Registry,
-    StreamBlockProcessor,
-)
+from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
 from hother.streamblocks.blocks.interactive import (
     ChoiceContent,
     ChoiceMetadata,
@@ -28,6 +23,10 @@ from hother.streamblocks.blocks.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
+
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -234,18 +233,18 @@ async def main() -> None:
             import yaml
 
             from hother.streamblocks.core.models import Block
-            from hother.streamblocks.core.types import BaseContent, BaseMetadata, ParseResult
+            from hother.streamblocks.core.types import ParseResult
 
-            metadata_dict = {}
+            metadata_dict: dict[str, Any] = {}
             if candidate.metadata_lines:
                 yaml_content = "\n".join(candidate.metadata_lines)
                 try:
-                    metadata_dict = yaml.safe_load(yaml_content) or {}
+                    metadata_dict = yaml.safe_load(yaml_content)
                 except Exception as e:
-                    return ParseResult(success=False, error=f"Invalid YAML: {e}", exception=e)
+                    return ParseResult[Any, Any](success=False, error=f"Invalid YAML: {e}", exception=e)
 
             # Get the block type
-            block_type = metadata_dict.get("block_type", "unknown")
+            block_type: str = str(metadata_dict.get("block_type", "unknown"))
 
             # Determine the appropriate block class based on block_type
             if block_type in self.block_mapping:
@@ -273,7 +272,7 @@ async def main() -> None:
     print("🎯 Interactive Blocks Demo")
     print("=" * 70)
 
-    blocks_extracted = []
+    blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(example_stream()):
         if event.type == EventType.RAW_TEXT:
@@ -288,49 +287,72 @@ async def main() -> None:
 
             print(f"\n✅ Block Extracted: {block.metadata.id}")
             print(f"   Type: {block.metadata.block_type}")
-            print(f"   Prompt: {block.content.prompt}")
 
-            # Show block-specific details
+            # Access prompt - all interactive content types have this field
+            if isinstance(
+                block.content,
+                (
+                    YesNoContent,
+                    ChoiceContent,
+                    MultiChoiceContent,
+                    InputContent,
+                    ScaleContent,
+                    RankingContent,
+                    ConfirmContent,
+                    FormContent,
+                ),
+            ):
+                print(f"   Prompt: {block.content.prompt}")
+
+            # Show block-specific details with type narrowing
             if block.metadata.block_type == "yesno":
-                print(f"   Labels: [{block.metadata.yes_label}] / [{block.metadata.no_label}]")
+                if isinstance(block.metadata, YesNoMetadata):
+                    print(f"   Labels: [{block.metadata.yes_label}] / [{block.metadata.no_label}]")
 
             elif block.metadata.block_type == "choice":
-                print(f"   Style: {block.metadata.display_style}")
-                print(f"   Options: {len(block.content.options)} choices")
-                for i, opt in enumerate(block.content.options, 1):
-                    print(f"     {i}. {opt}")
+                if isinstance(block.metadata, ChoiceMetadata) and isinstance(block.content, ChoiceContent):
+                    print(f"   Style: {block.metadata.display_style}")
+                    print(f"   Options: {len(block.content.options)} choices")
+                    for i, opt in enumerate(block.content.options, 1):
+                        print(f"     {i}. {opt}")
 
             elif block.metadata.block_type == "multichoice":
-                print(f"   Selections: {block.metadata.min_selections}-{block.metadata.max_selections or 'all'}")
-                print(f"   Options: {len(block.content.options)} choices")
+                if isinstance(block.metadata, MultiChoiceMetadata) and isinstance(block.content, MultiChoiceContent):
+                    print(f"   Selections: {block.metadata.min_selections}-{block.metadata.max_selections or 'all'}")
+                    print(f"   Options: {len(block.content.options)} choices")
 
             elif block.metadata.block_type == "input":
-                print(f"   Type: {block.metadata.input_type}")
-                print(f"   Length: {block.metadata.min_length}-{block.metadata.max_length or 'unlimited'}")
-                if block.metadata.pattern:
-                    print(f"   Pattern: {block.metadata.pattern}")
-                if block.content.placeholder:
-                    print(f"   Placeholder: {block.content.placeholder}")
+                if isinstance(block.metadata, InputMetadata) and isinstance(block.content, InputContent):
+                    print(f"   Type: {block.metadata.input_type}")
+                    print(f"   Length: {block.metadata.min_length}-{block.metadata.max_length or 'unlimited'}")
+                    if block.metadata.pattern:
+                        print(f"   Pattern: {block.metadata.pattern}")
+                    if block.content.placeholder:
+                        print(f"   Placeholder: {block.content.placeholder}")
 
             elif block.metadata.block_type == "scale":
-                print(f"   Range: {block.metadata.min_value}-{block.metadata.max_value}")
-                if block.content.labels:
-                    print(f"   Labels: {block.content.labels}")
+                if isinstance(block.metadata, ScaleMetadata) and isinstance(block.content, ScaleContent):
+                    print(f"   Range: {block.metadata.min_value}-{block.metadata.max_value}")
+                    if block.content.labels:
+                        print(f"   Labels: {block.content.labels}")
 
             elif block.metadata.block_type == "ranking":
-                print(f"   Items to rank: {len(block.content.items)}")
-                print(f"   Allow partial: {block.metadata.allow_partial}")
+                if isinstance(block.metadata, RankingMetadata) and isinstance(block.content, RankingContent):
+                    print(f"   Items to rank: {len(block.content.items)}")
+                    print(f"   Allow partial: {block.metadata.allow_partial}")
 
             elif block.metadata.block_type == "confirm":
-                print(f"   Danger mode: {block.metadata.danger_mode}")
-                print(f"   Buttons: [{block.metadata.confirm_label}] / [{block.metadata.cancel_label}]")
-                print(f"   Message preview: {block.content.message[:50]}...")
+                if isinstance(block.metadata, ConfirmMetadata) and isinstance(block.content, ConfirmContent):
+                    print(f"   Danger mode: {block.metadata.danger_mode}")
+                    print(f"   Buttons: [{block.metadata.confirm_label}] / [{block.metadata.cancel_label}]")
+                    print(f"   Message preview: {block.content.message[:50]}...")
 
             elif block.metadata.block_type == "form":
-                print(f"   Fields: {len(block.content.fields)}")
-                for field in block.content.fields:
-                    req = "required" if field.required else "optional"
-                    print(f"     - {field.name} ({field.field_type}, {req})")
+                if isinstance(block.metadata, FormMetadata) and isinstance(block.content, FormContent):
+                    print(f"   Fields: {len(block.content.fields)}")
+                    for field in block.content.fields:
+                        req = "required" if field.required else "optional"
+                        print(f"     - {field.name} ({field.field_type}, {req})")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
@@ -341,7 +363,7 @@ async def main() -> None:
     print(f"📊 Total blocks extracted: {len(blocks_extracted)}")
 
     # Summary by type
-    type_counts = {}
+    type_counts: dict[str, int] = {}
     for block in blocks_extracted:
         block_type = block.metadata.block_type
         type_counts[block_type] = type_counts.get(block_type, 0) + 1

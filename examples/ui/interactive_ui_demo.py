@@ -23,12 +23,7 @@ from textual.widgets import (
     Static,
 )
 
-from hother.streamblocks import (
-    DelimiterFrontmatterSyntax,
-    EventType,
-    Registry,
-    StreamBlockProcessor,
-)
+from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
 from hother.streamblocks.blocks.interactive import (
     ChoiceContent,
     ChoiceMetadata,
@@ -71,7 +66,7 @@ class YesNoWidget(InteractiveWidget):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         self.response = event.button.id == "yes"
-        self.app.handle_response(self.block.metadata.id, self.response)
+        self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
 
 class ChoiceWidget(InteractiveWidget):
@@ -91,13 +86,13 @@ class ChoiceWidget(InteractiveWidget):
     def on_select_changed(self, event: Select.Changed) -> None:
         """Handle dropdown selection."""
         self.response = str(event.value)
-        self.app.handle_response(self.block.metadata.id, self.response)
+        self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         """Handle radio button selection."""
         if event.pressed:
             self.response = str(event.pressed.label)
-            self.app.handle_response(self.block.metadata.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
 
 class MultiChoiceWidget(InteractiveWidget):
@@ -123,7 +118,7 @@ class MultiChoiceWidget(InteractiveWidget):
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         """Handle checkbox changes."""
-        option = event.checkbox.label
+        option = str(event.checkbox.label)
         if event.value:
             self.selected.add(option)
         else:
@@ -137,7 +132,7 @@ class MultiChoiceWidget(InteractiveWidget):
             <= (self.block.metadata.max_selections or float("inf"))
         ):
             self.response = list(self.selected)
-            self.app.handle_response(self.block.metadata.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
 
 class InputWidget(InteractiveWidget):
@@ -158,7 +153,7 @@ class InputWidget(InteractiveWidget):
             if len(value) >= self.block.metadata.min_length:
                 if self.block.metadata.max_length is None or len(value) <= self.block.metadata.max_length:
                     self.response = value
-                    self.app.handle_response(self.block.metadata.id, self.response)
+                    self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
 
 class ScaleWidget(InteractiveWidget):
@@ -180,7 +175,7 @@ class ScaleWidget(InteractiveWidget):
             # Extract value from label
             value_str = str(event.pressed.label).split(" - ")[0]
             self.response = int(value_str)
-            self.app.handle_response(self.block.metadata.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
 
 class RankingWidget(InteractiveWidget):
@@ -201,14 +196,14 @@ class RankingWidget(InteractiveWidget):
         """Handle submit button."""
         if event.button.id == "submit":
             list_view = self.query_one("#ranking-list", ListView)
-            ranked_items = []
+            ranked_items: list[Any] = []
             for item in list_view.children:
                 if isinstance(item, ListItem):
                     label = item.query_one(Label)
-                    ranked_items.append(label.renderable)
+                    ranked_items.append(label.renderable)  # type: ignore[attr-defined]
 
             self.response = ranked_items
-            self.app.handle_response(self.block.metadata.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
 
 class ConfirmWidget(InteractiveWidget):
@@ -226,7 +221,7 @@ class ConfirmWidget(InteractiveWidget):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
         self.response = event.button.id == "confirm"
-        self.app.handle_response(self.block.metadata.id, self.response)
+        self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
 
 
 class FormWidget(InteractiveWidget):
@@ -260,9 +255,9 @@ class FormWidget(InteractiveWidget):
         if event.button.id == "submit":
             # Collect form data
             self.response = self.form_data  # Simplified for demo
-            self.app.handle_response(self.block.metadata.id, self.response)
+            self.app.handle_response(self.block.metadata.id, self.response)  # type: ignore[attr-defined]
         elif event.button.id == "cancel":
-            self.app.handle_response(self.block.metadata.id, None)
+            self.app.handle_response(self.block.metadata.id, None)  # type: ignore[attr-defined]
 
 
 class ResponseHistory(Static):
@@ -282,7 +277,7 @@ class ResponseHistory(Static):
         if not self.responses:
             return "[dim]No responses yet[/dim]"
 
-        lines = []
+        lines: list[str] = []
         for block_id, timestamp, response in self.responses[-10:]:  # Show last 10
             lines.append(f"[cyan]{timestamp}[/cyan] {block_id}")
             lines.append(f"  Response: {response}")
@@ -291,7 +286,7 @@ class ResponseHistory(Static):
         return "\n".join(lines)
 
 
-class InteractiveBlocksApp(App):
+class InteractiveBlocksApp(App[None]):
     """Textual app for interactive blocks."""
 
     CSS = """
@@ -456,18 +451,18 @@ class InteractiveBlocksApp(App):
 
             def parse_block(self, candidate: Any, block_class: type[Any] | None = None) -> Any:
                 # First, parse just the metadata to determine block type
-                from hother.streamblocks.core.types import BaseContent, BaseMetadata, ParseResult
+                from hother.streamblocks.core.types import ParseResult
 
-                metadata_dict = {}
+                metadata_dict: dict[str, Any] = {}
                 if candidate.metadata_lines:
                     yaml_content = "\n".join(candidate.metadata_lines)
                     try:
-                        metadata_dict = yaml.safe_load(yaml_content) or {}
+                        metadata_dict = yaml.safe_load(yaml_content)
                     except Exception as e:
-                        return ParseResult(success=False, error=f"Invalid YAML: {e}", exception=e)
+                        return ParseResult[Any, Any](success=False, error=f"Invalid YAML: {e}", exception=e)
 
                 # Get the block type
-                block_type = metadata_dict.get("block_type", "unknown")
+                block_type: str = str(metadata_dict.get("block_type", "unknown"))
 
                 # Determine the appropriate block class based on block_type
                 if block_type in self.block_mapping:

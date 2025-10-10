@@ -110,21 +110,25 @@ Processing complete.
             block = event.block
             print(f"\n✅ Extracted Config Block: {block.metadata.id}")
 
-            # Type-safe access to parsed YAML data
-            if block.content.app_name:
-                print(f"   App: {block.content.app_name} v{block.content.version}")
-                print(f"   Debug: {block.content.debug}")
-                print(f"   Port: {block.content.port}")
+            # Type narrowing for ConfigContent
+            if isinstance(block.content, ConfigContent):
+                content = block.content
 
-                if block.content.features:
-                    print("   Features:")
-                    for feature, enabled in block.content.features.items():
-                        status = "✓" if enabled else "✗"
-                        print(f"      {status} {feature}")
-            else:
-                # Malformed YAML - fell back to raw_content
-                print("   ⚠️  YAML parsing failed (PERMISSIVE mode)")
-                print(f"   Raw content preserved: {block.content.raw_content[:50]}...")
+                # Type-safe access to parsed YAML data
+                if content.app_name:
+                    print(f"   App: {content.app_name} v{content.version}")
+                    print(f"   Debug: {content.debug}")
+                    print(f"   Port: {content.port}")
+
+                    if content.features:
+                        print("   Features:")
+                        for feature, enabled in content.features.items():
+                            status = "✓" if enabled else "✗"
+                            print(f"      {status} {feature}")
+                else:
+                    # Malformed YAML - fell back to raw_content
+                    print("   ⚠️  YAML parsing failed (PERMISSIVE mode)")
+                    print(f"   Raw content preserved: {content.raw_content[:50]}...")
 
         elif event.type == EventType.RAW_TEXT:
             if event.data.strip():
@@ -223,22 +227,28 @@ All responses processed.
     async for event in processor.process_stream(api_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
-            print(f"\n📡 API Response from {block.metadata.endpoint}")
 
-            # Type-safe access to JSON data
-            status_emoji = "✅" if block.content.status < 300 else "❌"
-            print(f"   {status_emoji} Status: {block.content.status}")
-            print(f"   Message: {block.content.message}")
+            # Type narrowing for API blocks
+            if isinstance(block.metadata, APIMetadata) and isinstance(block.content, APIResponseContent):
+                metadata = block.metadata
+                content = block.content
 
-            if block.content.data:
-                print("   Data:")
-                for key, value in block.content.data.items():
-                    print(f"      {key}: {value}")
+                print(f"\n📡 API Response from {metadata.endpoint}")
 
-            if block.content.errors:
-                print("   Errors:")
-                for error in block.content.errors:
-                    print(f"      ❗ {error}")
+                # Type-safe access to JSON data
+                status_emoji = "✅" if content.status < 300 else "❌"
+                print(f"   {status_emoji} Status: {content.status}")
+                print(f"   Message: {content.message}")
+
+                if content.data:
+                    print("   Data:")
+                    for key, value in content.data.items():
+                        print(f"      {key}: {value}")
+
+                if content.errors:
+                    print("   Errors:")
+                    for error in content.errors:
+                        print(f"      ❗ {error}")
 
         elif event.type == EventType.BLOCK_REJECTED:
             print(f"\n❌ Block Rejected: {event.reason}")
@@ -319,7 +329,8 @@ Done.
     async for event in processor.process_stream(scalar_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
-            print(f"   Block {block.metadata.id}: value = {block.content.value!r}")
+            if isinstance(block.content, ScalarWrapperContent):
+                print(f"   Block {block.metadata.id}: value = {block.content.value!r}")
 
         elif event.type == EventType.RAW_TEXT:
             if event.data.strip():
@@ -354,10 +365,11 @@ Done.
     async for event in processor2.process_stream(scalar_stream2()):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
-            if block.content.message:
-                print(f"   ✅ Block {block.metadata.id}: message = {block.content.message!r}")
-            else:
-                print(f"   ⚠️  Block {block.metadata.id}: fell back to raw_content")
+            if isinstance(block.content, ScalarNoWrapContent):
+                if block.content.message:
+                    print(f"   ✅ Block {block.metadata.id}: message = {block.content.message!r}")
+                else:
+                    print(f"   ⚠️  Block {block.metadata.id}: fell back to raw_content")
 
         elif event.type == EventType.RAW_TEXT:
             if event.data.strip():
@@ -469,8 +481,9 @@ Report complete.
 
     # Process with type-aware handling
     print("\nProcessing mixed content stream...")
-    db_configs = []
-    metrics_samples = []
+
+    db_configs: list[Any] = []
+    metrics_samples: list[Any] = []
 
     async for event in processor.process_stream(mixed_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
@@ -478,18 +491,26 @@ Report complete.
 
             if block.metadata.block_type == "db_config":
                 db_configs.append(block)
-                print(f"\n🗄️  Database Config: {block.metadata.id}")
-                print(f"   Host: {block.content.host}:{block.content.port}")
-                print(f"   Database: {block.content.database}")
-                print(f"   Pool: {block.content.pool_size} connections")
+
+                # Type narrowing for DatabaseConfigContent
+                if isinstance(block.content, DatabaseConfigContent):
+                    content = block.content
+                    print(f"\n🗄️  Database Config: {block.metadata.id}")
+                    print(f"   Host: {content.host}:{content.port}")
+                    print(f"   Database: {content.database}")
+                    print(f"   Pool: {content.pool_size} connections")
 
             elif block.metadata.block_type == "metrics":
                 metrics_samples.append(block)
-                print(f"\n📊 Metrics: {block.metadata.id}")
-                print(f"   CPU: {block.content.cpu_usage}%")
-                print(f"   Memory: {block.content.memory_mb} MB")
-                print(f"   RPS: {block.content.requests_per_sec}")
-                print(f"   Error rate: {block.content.error_rate}%")
+
+                # Type narrowing for MetricsContent
+                if isinstance(block.content, MetricsContent):
+                    content = block.content
+                    print(f"\n📊 Metrics: {block.metadata.id}")
+                    print(f"   CPU: {content.cpu_usage}%")
+                    print(f"   Memory: {content.memory_mb} MB")
+                    print(f"   RPS: {content.requests_per_sec}")
+                    print(f"   Error rate: {content.error_rate}%")
 
         elif event.type == EventType.RAW_TEXT:
             if event.data.strip():
@@ -501,8 +522,15 @@ Report complete.
     print(f"   Metric Samples: {len(metrics_samples)}")
 
     if metrics_samples:
-        avg_cpu = sum(m.content.cpu_usage or 0 for m in metrics_samples) / len(metrics_samples)
-        print(f"   Average CPU: {avg_cpu:.1f}%")
+        # Calculate average CPU with type checking
+        cpu_values: list[float] = []
+        for m in metrics_samples:
+            if isinstance(m.content, MetricsContent) and m.content.cpu_usage is not None:
+                cpu_values.append(m.content.cpu_usage)
+
+        if cpu_values:
+            avg_cpu = sum(cpu_values) / len(cpu_values)
+            print(f"   Average CPU: {avg_cpu:.1f}%")
 
 
 # ============================================================================
@@ -578,12 +606,14 @@ Done.
     async for event in processor_permissive.process_stream(permissive_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
-            if block.content.status:
-                print(f"   ✅ {block.metadata.id}: Parsed successfully")
-                print(f"       status={block.content.status!r}, count={block.content.count}")
-            else:
-                print(f"   ⚠️  {block.metadata.id}: Parsing failed, using raw_content")
-                print(f"       Raw: {block.content.raw_content.strip()[:50]}...")
+            if isinstance(block.content, PermissiveJSONContent):
+                content = block.content
+                if content.status:
+                    print(f"   ✅ {block.metadata.id}: Parsed successfully")
+                    print(f"       status={content.status!r}, count={content.count}")
+                else:
+                    print(f"   ⚠️  {block.metadata.id}: Parsing failed, using raw_content")
+                    print(f"       Raw: {content.raw_content.strip()[:50]}...")
 
         elif event.type == EventType.RAW_TEXT:
             if event.data.strip():
@@ -606,8 +636,10 @@ Done.
     async for event in processor_strict.process_stream(strict_stream()):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
-            print(f"   ✅ {block.metadata.id}: Parsed successfully")
-            print(f"       status={block.content.status!r}, count={block.content.count}")
+            if isinstance(block.content, StrictJSONContent):
+                content = block.content
+                print(f"   ✅ {block.metadata.id}: Parsed successfully")
+                print(f"       status={content.status!r}, count={content.count}")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # STRICT mode causes parsing failures to reject the block

@@ -2,14 +2,14 @@
 
 import asyncio
 from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING
 
-from hother.streamblocks import (
-    DelimiterPreambleSyntax,
-    EventType,
-    Registry,
-    StreamBlockProcessor,
-)
-from hother.streamblocks.blocks.files import FileOperations
+from hother.streamblocks import DelimiterPreambleSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks.blocks.files import FileOperations, FileOperationsContent, FileOperationsMetadata
+from hother.streamblocks.core.models import ExtractedBlock
+
+if TYPE_CHECKING:
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -51,7 +51,7 @@ async def main() -> None:
     registry = Registry(syntax=syntax)
 
     # Add a custom validator
-    def no_root_delete(block: FileOperations) -> bool:
+    def no_root_delete(block: ExtractedBlock[FileOperationsMetadata, FileOperationsContent]) -> bool:
         """Don't allow deleting files from root directory."""
         return all(not (op.action == "delete" and op.path.startswith("/")) for op in block.content.operations)
 
@@ -64,7 +64,7 @@ async def main() -> None:
     print("Processing stream...")
     print("-" * 60)
 
-    blocks_extracted = []
+    blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(example_stream()):
         if event.type == EventType.RAW_TEXT:
@@ -81,9 +81,12 @@ async def main() -> None:
             block = event.block
             blocks_extracted.append(block)
             print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
-            print("        Operations:")
-            for op in block.content.operations:
-                print(f"          - {op.action}: {op.path}")
+
+            # Type narrow to FileOperationsContent for specific access
+            if isinstance(block.content, FileOperationsContent):
+                print("        Operations:")
+                for op in block.content.operations:
+                    print(f"          - {op.action}: {op.path}")
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
@@ -96,9 +99,13 @@ async def main() -> None:
     print("\nBlock metadata:")
     for block in blocks_extracted:
         print(f"  - {block.metadata.id}: {block.metadata.block_type}")
-        if hasattr(block.metadata, "param_0"):
-            print(f"    Extra param: {block.metadata.param_0}")
+        # Check for dynamic extra parameters (e.g., param_0 from preamble)
+        param_0 = getattr(block.metadata, "param_0", None)
+        if param_0 is not None:
+            print(f"    Extra param: {param_0}")
 
 
 if __name__ == "__main__":
+    asyncio.run(main())
+    asyncio.run(main())
     asyncio.run(main())

@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING
 
 from hother.streamblocks import (
     DelimiterPreambleSyntax,
@@ -9,6 +10,10 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
+
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -61,7 +66,7 @@ async def main() -> None:
     print("Processing with minimal API...")
     print("-" * 60)
 
-    blocks_extracted = []
+    blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(example_stream()):
         if event.type == EventType.RAW_TEXT:

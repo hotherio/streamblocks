@@ -2,14 +2,14 @@
 
 import asyncio
 from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING
 
-from hother.streamblocks import (
-    EventType,
-    MarkdownFrontmatterSyntax,
-    Registry,
-    StreamBlockProcessor,
-)
-from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
+from hother.streamblocks import EventType, MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks.blocks.patch import Patch
+
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -100,7 +100,7 @@ async def main() -> None:
     print("Processing markdown frontmatter blocks...")
     print("-" * 70)
 
-    blocks_extracted = []
+    blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
     current_partial = None
 
     async for event in processor.process_stream(example_stream()):
@@ -123,19 +123,30 @@ async def main() -> None:
             blocks_extracted.append(block)
             current_partial = None
 
-            print(f"\n[BLOCK] Extracted: {block.metadata.id} (syntax: {block.syntax_name})")
-            print(f"        File: {block.metadata.file}")
-            print(f"        Start line: {block.metadata.start_line}")
+            # Type narrowing for patch blocks
+            from hother.streamblocks.blocks.patch import PatchContent, PatchMetadata
+
+            if not isinstance(block.metadata, PatchMetadata):
+                continue
+            if not isinstance(block.content, PatchContent):
+                continue
+
+            metadata = block.metadata
+            content = block.content
+
+            print(f"\n[BLOCK] Extracted: {metadata.id} (syntax: {block.syntax_name})")
+            print(f"        File: {metadata.file}")
+            print(f"        Start line: {metadata.start_line}")
 
             # Show extra metadata if present
-            if hasattr(block.metadata, "author"):
-                print(f"        Author: {block.metadata.author}")
-            if hasattr(block.metadata, "priority"):
-                print(f"        Priority: {block.metadata.priority}")
+            if hasattr(metadata, "author"):
+                print(f"        Author: {metadata.author}")
+            if hasattr(metadata, "priority"):
+                print(f"        Priority: {metadata.priority}")
 
             # Show patch preview
             print("        Patch preview:")
-            lines = block.content.diff.strip().split("\\n")
+            lines: list[str] = content.diff.strip().split("\\n")
             for line in lines[:3]:  # Show first 3 lines
                 print(f"          {line}")
             if len(lines) > 3:
@@ -153,10 +164,12 @@ async def main() -> None:
     # Summary
     print("\nBlock summary:")
     for i, block in enumerate(blocks_extracted, 1):
-        print(
-            f"  {i}. {block.metadata.id} - {block.metadata.file} "
-            f"({block.syntax_name.replace('markdown_frontmatter_', '')} syntax)"
-        )
+        # Type narrowing for summary
+        from hother.streamblocks.blocks.patch import PatchMetadata
+
+        if isinstance(block.metadata, PatchMetadata):
+            syntax_display = block.syntax_name.replace("markdown_frontmatter_", "")
+            print(f"  {i}. {block.metadata.id} - {block.metadata.file} ({syntax_display} syntax)")
 
 
 if __name__ == "__main__":

@@ -62,7 +62,7 @@ class BasicTools:
         return text[::-1]
 
     @staticmethod
-    def word_count(text: str) -> dict:
+    def word_count(text: str) -> dict[str, int]:
         """Count words in text."""
         words = text.split()
         return {
@@ -119,6 +119,6 @@ class BasicTools:
         return json.dumps(data, indent=indent, ensure_ascii=False)
 
     @staticmethod
-    def get_environment_variable(name: str, default: str | None = None) -> str:
+    def get_environment_variable(name: str, default: str | None = None) -> str | None:
         """Get an environment variable."""
         return os.environ.get(name, default)

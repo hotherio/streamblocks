@@ -84,14 +84,7 @@ class BlockAwareAgent:
                     yield delta_text
 
             # Process through StreamBlocks
-            stream_metadata = {
-                "agent_model": self.agent.model_name if hasattr(self.agent, "model_name") else "unknown",
-                "user_prompt": user_prompt,
-            }
-
-            async for event in self.processor.process_agent_stream(
-                agent_text_stream(), stream_metadata=stream_metadata
-            ):
+            async for event in self.processor.process_agent_stream(agent_text_stream()):
                 yield event
 
     async def run(

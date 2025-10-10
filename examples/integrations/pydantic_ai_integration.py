@@ -8,32 +8,37 @@ StreamBlocks-compatible output that is extracted in real-time.
 import asyncio
 import os
 from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING
 
 from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.files import (
-    FileContent,
-    FileContentContent,
-    FileContentMetadata,
-    FileOperations,
-    FileOperationsContent,
-    FileOperationsMetadata,
-)
+from hother.streamblocks.blocks.files import FileContent, FileOperations
+
+if TYPE_CHECKING:
+    from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 # Check if pydantic-ai is installed
 try:
     from pydantic_ai import Agent
     from pydantic_ai.models.google import GoogleModel
 
-    from hother.streamblocks.integrations.pydantic_ai import AgentStreamProcessor, BlockAwareAgent
+    from hother.streamblocks.integrations.pydantic_ai import AgentStreamProcessor
 
-    PYDANTIC_AI_AVAILABLE = True
+    pydantic_ai_available = True
 except ImportError:
-    PYDANTIC_AI_AVAILABLE = False
+    Agent = None
+    GoogleModel = None
+    AgentStreamProcessor = None
+    pydantic_ai_available = False
     print("pydantic-ai is not installed. Install with: pip install pydantic-ai")
 
 
 async def basic_example() -> None:
     """Basic example: Agent generates text with embedded blocks."""
+
+    if not pydantic_ai_available or Agent is None or GoogleModel is None:
+        print("⚠️  PydanticAI is not available")
+        return
 
     # Create syntax for file operations
     file_ops_syntax = DelimiterFrontmatterSyntax(
@@ -139,7 +144,7 @@ Make sure to include proper project structure with an app module and a simple Fa
         yield raw_text
 
     # Collect all extracted blocks
-    extracted_blocks = []
+    extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     # Process stream for file operations blocks
     print("📂 Processing for file operations blocks...")
@@ -151,10 +156,19 @@ Make sure to include proper project structure with an app module and a simple Fa
             # Only process blocks of the expected type
             if block.metadata.block_type == "files_operations":
                 extracted_blocks.append(block)
+
+                # Type narrowing for FileOperationsContent
+                from hother.streamblocks.blocks.files import FileOperationsContent
+
+                if not isinstance(block.content, FileOperationsContent):
+                    continue
+
+                content = block.content
+
                 print(f"\n📦 EXTRACTED BLOCK: {block.metadata.id}")
                 print(f"   Type: {block.metadata.block_type}")
                 print("   Operations:")
-                for op in block.content.operations:
+                for op in content.operations:
                     icon = {"create": "✅", "edit": "📝", "delete": "❌"}.get(op.action, "❓")
                     print(f"     {icon} {op.action}: {op.path}")
 
@@ -168,12 +182,24 @@ Make sure to include proper project structure with an app module and a simple Fa
             # Only process blocks of the expected type
             if block.metadata.block_type == "file_content":
                 extracted_blocks.append(block)
-                print(f"\n📄 EXTRACTED BLOCK: {block.metadata.id}")
-                print(f"   Type: {block.metadata.block_type}")
-                print(f"   File: {block.metadata.file}")
-                if block.metadata.description:
-                    print(f"   Description: {block.metadata.description}")
-                lines = block.content.raw_content.strip().split("\n")
+
+                # Type narrowing for FileContentMetadata and FileContentContent
+                from hother.streamblocks.blocks.files import FileContentContent, FileContentMetadata
+
+                if not isinstance(block.metadata, FileContentMetadata):
+                    continue
+                if not isinstance(block.content, FileContentContent):
+                    continue
+
+                metadata = block.metadata
+                content = block.content
+
+                print(f"\n📄 EXTRACTED BLOCK: {metadata.id}")
+                print(f"   Type: {metadata.block_type}")
+                print(f"   File: {metadata.file}")
+                if metadata.description:
+                    print(f"   Description: {metadata.description}")
+                lines = content.raw_content.strip().split("\n")
                 print(f"   Content preview ({len(lines)} lines):")
                 preview_lines = 5
                 for i, line in enumerate(lines[:preview_lines]):
@@ -195,6 +221,10 @@ Make sure to include proper project structure with an app module and a simple Fa
 
 async def advanced_example_with_standard_agent() -> None:
     """Advanced example: Using standard PydanticAI agent with StreamBlocks processor."""
+
+    if not pydantic_ai_available or Agent is None or GoogleModel is None or AgentStreamProcessor is None:
+        print("⚠️  PydanticAI is not available")
+        return
 
     # Create a standard PydanticAI agent
     model = GoogleModel("gemini-2.5-flash")
@@ -254,7 +284,7 @@ Mix explanatory text with structured blocks.
 async def main() -> None:
     """Run all examples."""
 
-    if not PYDANTIC_AI_AVAILABLE:
+    if not pydantic_ai_available:
         print("\n⚠️  pydantic-ai is required for this example.")
         print("Install with: pip install pydantic-ai")
         return

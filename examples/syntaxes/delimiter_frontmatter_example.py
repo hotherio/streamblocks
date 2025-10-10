@@ -7,15 +7,10 @@ single-syntax design. Each processor handles one syntax type.
 import asyncio
 from collections.abc import AsyncIterator
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from hother.streamblocks import (
-    DelimiterFrontmatterSyntax,
-    EventType,
-    Registry,
-    StreamBlockProcessor,
-)
-from hother.streamblocks.core.models import Block
+from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks.core.models import Block, ExtractedBlock
 from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
@@ -47,7 +42,7 @@ class TaskContent(BaseContent):
             return cls(raw_content=raw_text, description="")
 
         description = lines[0]
-        subtasks = []
+        subtasks: list[str] = []
 
         for line in lines[1:]:
             stripped = line.strip()
@@ -158,9 +153,9 @@ async def main() -> None:
     registry.register("task", TaskBlock)
 
     # Add validators
-    def validate_task_priority(metadata: TaskMetadata, content: TaskContent) -> bool:
+    def validate_task_priority(block: ExtractedBlock[TaskMetadata, TaskContent]) -> bool:
         """Ensure high priority tasks have assignees."""
-        return not (metadata.priority in ["high", "urgent"] and not metadata.assignee)
+        return not (block.metadata.priority in ["high", "urgent"] and not block.metadata.assignee)
 
     registry.add_validator("task", validate_task_priority)
 
@@ -170,7 +165,7 @@ async def main() -> None:
     # Process stream
     print("Processing task blocks...\n")
 
-    blocks_extracted = []
+    blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(example_stream()):
         if event.type == EventType.RAW_TEXT:
@@ -190,26 +185,28 @@ async def main() -> None:
             block = event.block
             blocks_extracted.append(block)
 
-            metadata: TaskMetadata = block.metadata
-            content: TaskContent = block.content
+            # Type narrow to TaskMetadata and TaskContent for specific access
+            if isinstance(block.metadata, TaskMetadata) and isinstance(block.content, TaskContent):
+                metadata = block.metadata
+                content = block.content
 
-            print(f"\n{'=' * 60}")
-            print(f"[TASK] {metadata.id} - {metadata.title}")
-            print(f"       Priority: {metadata.priority}")
-            print(f"       Status: {metadata.status}")
-            if metadata.assignee:
-                print(f"       Assignee: {metadata.assignee}")
-            if metadata.due_date:
-                print(f"       Due: {metadata.due_date}")
-            if metadata.tags:
-                print(f"       Tags: {', '.join(metadata.tags)}")
+                print(f"\n{'=' * 60}")
+                print(f"[TASK] {metadata.id} - {metadata.title}")
+                print(f"       Priority: {metadata.priority}")
+                print(f"       Status: {metadata.status}")
+                if metadata.assignee:
+                    print(f"       Assignee: {metadata.assignee}")
+                if metadata.due_date:
+                    print(f"       Due: {metadata.due_date}")
+                if metadata.tags:
+                    print(f"       Tags: {', '.join(metadata.tags)}")
 
-            print(f"\n       Description: {content.description}")
-            if content.subtasks:
-                print("       Subtasks:")
-                for subtask in content.subtasks:
-                    print(f"         - {subtask}")
-            print("=" * 60)
+                print(f"\n       Description: {content.description}")
+                if content.subtasks:
+                    print("       Subtasks:")
+                    for subtask in content.subtasks:
+                        print(f"         - {subtask}")
+                print("=" * 60)
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
@@ -219,12 +216,15 @@ async def main() -> None:
     print(f"Total blocks: {len(blocks_extracted)}")
     print("\nTasks:")
     for task in blocks_extracted:
-        print(f"  - [{task.metadata.priority.upper()}] {task.metadata.title}")
-        print(f"    Assignee: {task.metadata.assignee or 'Unassigned'}")
-        print(f"    Status: {task.metadata.status}")
+        # Type narrow to TaskMetadata for specific access
+        if isinstance(task.metadata, TaskMetadata):
+            print(f"  - [{task.metadata.priority.upper()}] {task.metadata.title}")
+            print(f"    Assignee: {task.metadata.assignee or 'Unassigned'}")
+            print(f"    Status: {task.metadata.status}")
 
     print("\n✓ DelimiterFrontmatterSyntax processing complete!")
 
 
 if __name__ == "__main__":
+    asyncio.run(main())
     asyncio.run(main())

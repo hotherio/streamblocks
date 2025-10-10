@@ -29,7 +29,7 @@ class ToolExecutor:
         self.tools: dict[str, Callable[..., Any]] = {}
         self.async_tools: dict[str, Callable[..., Coroutine[Any, Any, Any]]] = {}
 
-    def register_tool(self, name: str, func: Callable, is_async: bool = False) -> None:
+    def register_tool(self, name: str, func: Callable[..., Any], is_async: bool = False) -> None:
         """Register a tool function."""
         if is_async:
             self.async_tools[name] = func

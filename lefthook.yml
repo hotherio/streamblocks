@@ -6,7 +6,6 @@ skip_output:
 pre-commit:
   parallel: true
   commands:
-    # Fast checks first - Python formatting and linting
     ruff:
       run: uv run ruff check --fix --unsafe-fixes {staged_files}
       glob: "*.py"
@@ -17,9 +16,6 @@ pre-commit:
       glob: "*.py"
       stage_fixed: true
 
-    # Type checking (only for src/ files)
-    # Note: Run 'uv run basedpyright src/' manually for type checking
-    # Skipped in pre-commit because basedpyright doesn't respect pyproject.toml ignores when run via lefthook
     type-check:
       run: 'uv run basedpyright'
       skip:

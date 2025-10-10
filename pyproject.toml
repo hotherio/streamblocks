@@ -273,17 +273,11 @@ line-ending = "auto"
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
-# Type checking with basedpyright (updated for Python 3.13)
+# Type checking with basedpyright
 [tool.pyright]
-include = ["src"]
+include = ["src", "examples"]
 exclude = ["**/__pycache__", "**/migrations", ".venv", "tests"]
-ignore = [
-    "src/hother/streamblocks/content/interactive.py",
-    "src/hother/streamblocks/content/memory.py",
-    "src/hother/streamblocks/content/toolcall.py",
-    "src/hother/streamblocks/content/visualization.py",
-    "src/hother/streamblocks/integrations/pydantic_ai/agent.py",
-]
+ignore = ["examples/logging/structlog_example.py"]
 
 pythonVersion = "3.13"
 venvPath = ".venv"
