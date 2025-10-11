@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hother.streamblocks.adapters.providers import (
     AnthropicAdapter,
@@ -36,7 +36,7 @@ class AdapterDetector:
     """
 
     # Registry of known chunk types to adapters (module path → Adapter class)
-    _type_registry: dict[str, type[StreamAdapter]] = {
+    _type_registry: ClassVar[dict[str, type[StreamAdapter[Any]]]] = {
         "google.ai.generativelanguage": GeminiAdapter,
         "google.genai": GeminiAdapter,
         "openai.types.chat": OpenAIAdapter,
@@ -46,7 +46,7 @@ class AdapterDetector:
     }
 
     # Attribute-based detection patterns (required_attributes → adapter_class)
-    _pattern_registry: list[tuple[list[str], type[StreamAdapter]]] = [
+    _pattern_registry: ClassVar[list[tuple[list[str], type[StreamAdapter[Any]]]]] = [
         # Gemini-like structure: has text and candidates
         (["text", "candidates"], GeminiAdapter),
         # OpenAI structure: has choices, model, and object
@@ -56,7 +56,7 @@ class AdapterDetector:
     ]
 
     @classmethod
-    def detect(cls, chunk: Any) -> StreamAdapter | None:
+    def detect(cls, chunk: Any) -> StreamAdapter[Any] | None:
         """Auto-detect adapter from chunk type.
 
         Detection strategy:
@@ -107,7 +107,7 @@ class AdapterDetector:
         cls,
         module_prefix: str | None = None,
         attributes: list[str] | None = None,
-        adapter_class: type[StreamAdapter] | None = None,
+        adapter_class: type[StreamAdapter[Any]] | None = None,
     ) -> None:
         """Register a custom adapter for auto-detection.
 

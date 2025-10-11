@@ -45,7 +45,9 @@ class AgentStreamProcessor(StreamBlockProcessor):
         )
         self.enable_partial_blocks = enable_partial_blocks
 
-    async def process_agent_stream(self, agent_stream: AsyncIterator[str]) -> AsyncGenerator[StreamEvent[Any, Any]]:
+    async def process_agent_stream(
+        self, agent_stream: AsyncIterator[str]
+    ) -> AsyncGenerator[str | StreamEvent[Any, Any]]:
         """Process streaming output from a PydanticAI agent.
 
         This method is specifically designed to handle the streaming output
@@ -55,7 +57,9 @@ class AgentStreamProcessor(StreamBlockProcessor):
             agent_stream: Async iterator from agent streaming (e.g., stream_text())
 
         Yields:
-            StreamEvent objects as blocks are detected and extracted
+            Mixed stream of:
+            - Original text chunks (if emit_original_events=True)
+            - StreamEvent objects as blocks are detected and extracted
         """
         async for event in self.process_stream(agent_stream):
             yield event
@@ -63,8 +67,8 @@ class AgentStreamProcessor(StreamBlockProcessor):
     async def process_agent_with_events(
         self,
         agent_stream: AsyncIterator[str],
-        event_handler: Callable[[StreamEvent[Any, Any]], Any] | None = None,
-    ) -> AsyncGenerator[StreamEvent[Any, Any]]:
+        event_handler: Callable[[str | StreamEvent[Any, Any]], Any] | None = None,
+    ) -> AsyncGenerator[str | StreamEvent[Any, Any]]:
         """Process agent stream with optional event handler for agent-specific events.
 
         This allows handling both StreamBlocks events and PydanticAI events
@@ -72,10 +76,12 @@ class AgentStreamProcessor(StreamBlockProcessor):
 
         Args:
             agent_stream: Async iterator from agent streaming
-            event_handler: Optional callback for agent-specific events
+            event_handler: Optional callback for handling events (both text chunks and StreamEvents)
 
         Yields:
-            StreamEvent objects with enhanced metadata
+            Mixed stream of:
+            - Original text chunks (if emit_original_events=True)
+            - StreamEvent objects with enhanced metadata
         """
         async for event in self.process_agent_stream(agent_stream):
             # Call event handler if provided

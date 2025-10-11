@@ -155,7 +155,11 @@ class StreamBlockProcessor:
             events.append(chunk)
 
         # Extract text from chunk
-        text = self._adapter.extract_text(chunk) if self._adapter else chunk
+        # At this point, self._adapter is always set (either provided, detected, or IdentityAdapter)
+        if self._adapter is None:
+            msg = "Adapter should be set after first chunk processing"
+            raise RuntimeError(msg)
+        text = self._adapter.extract_text(chunk)  # type: ignore[arg-type]  # Contravariance handles any chunk type
 
         if not text:
             # Chunk had no text, return what we have
@@ -378,7 +382,11 @@ class StreamBlockProcessor:
                 yield chunk
 
             # Extract text from chunk
-            text = self._adapter.extract_text(chunk) if self._adapter else chunk
+            # At this point, self._adapter is always set (either provided, detected, or IdentityAdapter)
+            if self._adapter is None:
+                msg = "Adapter should be set after first chunk processing"
+                raise RuntimeError(msg)
+            text = self._adapter.extract_text(chunk)  # type: ignore[arg-type]  # Contravariance handles any chunk type
 
             if not text:
                 # Chunk had no text, continue
@@ -739,7 +747,7 @@ class StreamBlockProcessor:
         Returns:
             List of rejection events for remaining candidates
         """
-        events = []
+        events: list[StreamEvent[BaseMetadata, BaseContent]] = []
         for candidate in self._candidates:
             events.append(
                 self._create_rejection_event(

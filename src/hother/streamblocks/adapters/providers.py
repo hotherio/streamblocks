@@ -73,7 +73,7 @@ class AttributeAdapter:
 
     def get_metadata(self, chunk: Any) -> dict[str, Any] | None:
         """Extract common metadata fields if present."""
-        metadata = {}
+        metadata: dict[str, Any] = {}
 
         # Try to extract finish reason
         if hasattr(chunk, "finish_reason") and chunk.finish_reason:
@@ -123,7 +123,7 @@ class GeminiAdapter:
 
     def get_metadata(self, chunk: Any) -> dict[str, Any] | None:
         """Extract usage metadata and model information."""
-        metadata = {}
+        metadata: dict[str, Any] = {}
 
         # Extract usage metadata if available
         if hasattr(chunk, "usage_metadata"):
@@ -186,7 +186,7 @@ class OpenAIAdapter:
 
     def get_metadata(self, chunk: Any) -> dict[str, Any] | None:
         """Extract model and finish reason."""
-        metadata = {}
+        metadata: dict[str, Any] = {}
 
         # Extract model name
         if hasattr(chunk, "model"):
@@ -248,15 +248,14 @@ class AnthropicAdapter:
     def get_metadata(self, chunk: Any) -> dict[str, Any] | None:
         """Extract stop reason and usage information."""
         event_type = getattr(chunk, "type", None)
+        metadata: dict[str, Any] = {}
 
         if event_type == "message_stop":
-            metadata = {}
             if hasattr(chunk, "stop_reason"):
                 metadata["stop_reason"] = chunk.stop_reason
             return metadata if metadata else None
 
         if event_type == "message_delta":
-            metadata = {}
             if hasattr(chunk, "usage"):
                 metadata["usage"] = chunk.usage
             return metadata if metadata else None
@@ -311,7 +310,9 @@ class CallableAdapter:
                                  (e.g., "mycompany.ai.")
         """
         self._extract_fn = extract_fn
-        self._is_complete_fn = is_complete_fn or (lambda _: False)
+        self._is_complete_fn: Callable[[Any], bool] = (
+            is_complete_fn if is_complete_fn is not None else (lambda _chunk: False)
+        )
         self._metadata_fn = metadata_fn
         self.native_module_prefix = native_module_prefix
 

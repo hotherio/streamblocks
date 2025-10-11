@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
-TChunk = TypeVar("TChunk")
+TChunk = TypeVar("TChunk", contravariant=True)
 
 
 @runtime_checkable

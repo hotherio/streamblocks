@@ -60,7 +60,7 @@ class BlockAwareAgent:
         message_history: Any = None,
         deps: Any = None,
         **kwargs: Any,
-    ) -> AsyncGenerator[StreamEvent[Any, Any]]:
+    ) -> AsyncGenerator[str | StreamEvent[Any, Any]]:
         """Run the agent and stream blocks in real-time.
 
         Args:
@@ -70,7 +70,9 @@ class BlockAwareAgent:
             **kwargs: Additional arguments for agent.run_stream()
 
         Yields:
-            StreamEvent objects as blocks are detected and extracted
+            Mixed stream of:
+            - Original text chunks (if emit_original_events=True)
+            - StreamEvent objects as blocks are detected and extracted
         """
 
         # Start agent streaming

@@ -39,7 +39,7 @@ jobs:
             chore
             revert
           requireScope: false
-          subjectPattern: ^[A-Z].+[^.]$   # must start uppercase, no period
+          subjectPattern: ^[a-z].+[^.]$   # must start lowercase, no period
           validateSingleCommit: true       # also check lone commit if PR has only one
 
   validate:
@@ -58,6 +58,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         dependency-groups: all
+
+    - name: Install lefthook binary
+      run: npm install -g @evilmartians/lefthook
 
     - name: Install lefthook
       run: |
