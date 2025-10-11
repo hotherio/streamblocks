@@ -48,6 +48,8 @@ class EventType(StrEnum):
     """Event types emitted during stream processing."""
 
     RAW_TEXT = auto()
+    TEXT_DELTA = auto()
+    BLOCK_OPENED = auto()
     BLOCK_DELTA = auto()
     BLOCK_EXTRACTED = auto()
     BLOCK_REJECTED = auto()
@@ -76,6 +78,36 @@ class RawTextEvent[TMetadata: BaseMetadata, TContent: BaseContent](BaseStreamEve
 
     type: Literal[EventType.RAW_TEXT] = EventType.RAW_TEXT
     line_number: int
+
+
+class TextDeltaEvent[TMetadata: BaseMetadata, TContent: BaseContent](BaseStreamEvent[TMetadata, TContent]):
+    """Event for real-time text streaming (character/chunk level).
+
+    Emitted immediately when text is received, before line completion.
+    Enables live streaming UIs and real-time text display.
+
+    This event is emitted for each chunk received from the stream,
+    allowing UIs to display text as it arrives rather than waiting
+    for complete lines.
+    """
+
+    type: Literal[EventType.TEXT_DELTA] = EventType.TEXT_DELTA
+    delta: str  # The text chunk received
+    inside_block: bool = False  # True if delta is inside a candidate block
+    block_section: str | None = None  # "header", "metadata", "content", etc.
+
+
+class BlockOpenedEvent[TMetadata: BaseMetadata, TContent: BaseContent](BaseStreamEvent[TMetadata, TContent]):
+    """Event when block opening is detected.
+
+    Emitted immediately when opening marker is found, before content accumulation.
+    Useful for UIs to prepare display elements for incoming block content.
+    """
+
+    type: Literal[EventType.BLOCK_OPENED] = EventType.BLOCK_OPENED
+    syntax: str
+    start_line: int
+    inline_metadata: dict[str, object] | None = None  # For preamble-style syntax
 
 
 class BlockDeltaEvent[TMetadata: BaseMetadata, TContent: BaseContent](BaseStreamEvent[TMetadata, TContent]):
@@ -113,6 +145,8 @@ class BlockRejectedEvent[TMetadata: BaseMetadata, TContent: BaseContent](BaseStr
 # Discriminated union type for all stream events
 type StreamEvent[TMetadata: BaseMetadata, TContent: BaseContent] = Annotated[
     RawTextEvent[TMetadata, TContent]
+    | TextDeltaEvent[TMetadata, TContent]
+    | BlockOpenedEvent[TMetadata, TContent]
     | BlockDeltaEvent[TMetadata, TContent]
     | BlockExtractedEvent[TMetadata, TContent]
     | BlockRejectedEvent[TMetadata, TContent],

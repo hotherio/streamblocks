@@ -14,8 +14,39 @@ StreamBlocks is a Python 3.13+ library for detecting and extracting structured b
 
 ## Installation
 
+### Basic Installation
+
 ```bash
 pip install streamblocks
+```
+
+### With AI Provider Support
+
+StreamBlocks supports multiple AI providers through optional dependencies:
+
+```bash
+# For Google Gemini (gemini-2.5-flash)
+pip install streamblocks[gemini]
+
+# For OpenAI (gpt-5-nano-2025-08-07)
+pip install streamblocks[openai]
+
+# For Anthropic Claude (claude-3.5-haiku)
+pip install streamblocks[anthropic]
+
+# All providers at once
+pip install streamblocks[all-providers]
+
+# Multiple specific providers
+pip install streamblocks[gemini,openai]
+```
+
+### From Source
+
+```bash
+git clone https://github.com/streamblocks/streamblocks.git
+cd streamblocks
+pip install -e ".[all-providers]"
 ```
 
 ## Quick Start
@@ -65,6 +96,66 @@ src/utils.py:E
 
 asyncio.run(main())
 ```
+
+## Processing Modes
+
+StreamBlocks supports two processing modes to fit different use cases:
+
+### 1. Automatic Stream Processing (Recommended)
+
+Process entire streams automatically with `process_stream()`. This is the simplest and most common approach:
+
+```python
+from google import genai
+
+# Get a stream from any AI provider
+client = genai.Client(api_key=api_key)
+response = await client.aio.models.generate_content_stream(
+    model="gemini-2.5-flash",
+    contents="Create a Python hello world script",
+)
+
+# Pass the stream directly - no wrapper function needed!
+async for event in processor.process_stream(response):
+    if event.type == EventType.BLOCK_EXTRACTED:
+        print(f"Block: {event.block.metadata.id}")
+```
+
+**Benefits:**
+- Automatic adapter detection for Gemini, OpenAI, Anthropic
+- Original chunks preserved in event stream
+- Handles all line accumulation and buffering
+- Simplest API for most use cases
+
+### 2. Manual Chunk Processing
+
+For fine-grained control, process chunks one at a time with `process_chunk()`:
+
+```python
+processor = StreamBlockProcessor(registry)
+
+async for chunk in response:
+    # Process this chunk and get all resulting events
+    events = processor.process_chunk(chunk)
+
+    for event in events:
+        if isinstance(event, BlockExtractedEvent):
+            print(f"Block: {event.block.metadata.id}")
+
+# Don't forget to finalize!
+final_events = processor.finalize()
+```
+
+**When to use manual processing:**
+- Custom buffering or batching strategies
+- Selective processing based on chunk content
+- Integration with existing async pipelines
+- Processing chunks from multiple sources
+- Need synchronous processing API
+
+**Important:** Always call `finalize()` after processing all chunks to get rejection events for incomplete blocks.
+
+See `examples/adapters/13_manual_chunk_processing.py` for detailed examples of manual processing patterns.
 
 ## Built-in Syntaxes
 

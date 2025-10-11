@@ -5,6 +5,7 @@ from BlockRejectedEvent, including the original exception objects.
 """
 
 import asyncio
+import logging
 from typing import TYPE_CHECKING
 
 import yaml
@@ -20,6 +21,9 @@ if TYPE_CHECKING:
 
 async def main() -> None:
     """Demonstrate structured error handling."""
+    # Suppress library logging to stderr (we handle errors programmatically)
+    logging.getLogger("hother.streamblocks").setLevel(logging.CRITICAL)
+
     # Setup registry with basic syntax - no custom block types needed
     registry = Registry(
         syntax=Syntax.DELIMITER_FRONTMATTER,

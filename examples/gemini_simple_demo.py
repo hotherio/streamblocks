@@ -3,6 +3,10 @@
 Simple Gemini Demo - Shows StreamBlocks working with Gemini API.
 
 This simplified version uses a single syntax (delimiter with frontmatter) for all blocks.
+
+REQUIREMENTS:
+- pip install streamblocks[gemini]
+- Set GOOGLE_API_KEY or GEMINI_API_KEY environment variable
 """
 
 import asyncio
@@ -11,7 +15,14 @@ import sys
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
-from google import genai  # type: ignore[import-not-found]
+# Check for Gemini SDK
+try:
+    from google import genai  # type: ignore[import-not-found]
+except ImportError:
+    print("Error: google-genai package not installed.")
+    print("Install it with: pip install streamblocks[gemini]")
+    print("Or: pip install google-genai")
+    sys.exit(1)
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -97,8 +108,13 @@ Note: message_type can be: info, warning, error, success, status, explanation
 Always use this format for ALL content - whether it's file operations, code content, or communication."""
 
 
-async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
-    """Stream response from Gemini."""
+async def get_gemini_response(prompt: str):  # type: ignore[no-untyped-def]
+    """Get Gemini API response stream.
+
+    Note: Returns the stream directly - no need for wrapper function!
+    The StreamBlockProcessor will auto-detect Gemini chunks and use
+    GeminiAdapter to extract text while preserving original chunks.
+    """
     # Try GOOGLE_API_KEY first (official), then GEMINI_API_KEY
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -111,15 +127,11 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
     system_prompt = create_simple_prompt()
     full_prompt = f"{system_prompt}\n\nUser: {prompt}"
 
-    # Stream the response
-    response = await client.aio.models.generate_content_stream(  # type: ignore[attr-defined]
-        model="gemini-2.0-flash-exp",  # or "gemini-1.5-flash" for stable
+    # Return the stream directly - no need to yield!
+    return await client.aio.models.generate_content_stream(  # type: ignore[attr-defined]
+        model="gemini-2.5-flash",
         contents=full_prompt,
     )
-
-    async for chunk in response:  # type: ignore[attr-defined]
-        if chunk.text:  # type: ignore[attr-defined]
-            yield chunk.text  # type: ignore[attr-defined]
 
 
 async def main() -> None:
@@ -154,14 +166,28 @@ async def main() -> None:
     for i, prompt in enumerate(example_prompts, 1):
         print(f"{i}. {prompt}")
 
+    # Detect non-interactive mode
+    is_non_interactive = (
+        not sys.stdin.isatty()  # No TTY (piped/redirected)
+        or os.getenv("CI")  # CI environment
+        or os.getenv("NON_INTERACTIVE")  # Explicit flag
+    )
+
     # Get user input
     if len(sys.argv) > 1:
+        # Command-line argument provided
         arg = sys.argv[1]
         if arg.isdigit() and 1 <= int(arg) <= len(example_prompts):
             user_prompt = example_prompts[int(arg) - 1]
         else:
             user_prompt = " ".join(sys.argv[1:])
+        print(f"\nUsing prompt from command line: {user_prompt}")
+    elif is_non_interactive:
+        # Non-interactive mode: use first example
+        user_prompt = example_prompts[0]
+        print("\nNon-interactive mode: using default prompt")
     else:
+        # Interactive mode: ask user
         user_input = input("\nEnter your request (or 1-5 for examples, Enter for #1): ").strip()
         if user_input.isdigit() and 1 <= int(user_input) <= len(example_prompts):
             user_prompt = example_prompts[int(user_input) - 1]
@@ -179,7 +205,13 @@ async def main() -> None:
 
     # Process the stream
     try:
-        async for event in processor.process_stream(stream_from_gemini(user_prompt)):
+        # Get response and pass directly to processor
+        response = await get_gemini_response(user_prompt)
+        async for event in processor.process_stream(response):
+            # Skip native Gemini events (we only care about StreamBlocks events)
+            if processor.is_native_event(event):
+                continue
+
             if event.type == EventType.BLOCK_EXTRACTED:
                 block = event.block
                 extracted_blocks.append(block)

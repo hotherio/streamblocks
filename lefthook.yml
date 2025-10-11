@@ -17,7 +17,7 @@ pre-commit:
       stage_fixed: true
 
     type-check:
-      run: 'uv run basedpyright'
+      run: 'uv run basedpyright src'
       skip:
         - merge
         - rebase
@@ -86,7 +86,7 @@ pre-push:
 
     # Comprehensive type checking
     type-check-full:
-      run: uv run basedpyright
+      run: uv run basedpyright src
       glob: "*.py"
 
     # Verify dependency lock

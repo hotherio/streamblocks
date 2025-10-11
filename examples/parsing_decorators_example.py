@@ -13,6 +13,7 @@ Key features demonstrated:
 """
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -435,7 +436,7 @@ async def example_4_mixed_stream() -> None:
 ---
 id: db_001
 block_type: db_config
-timestamp: 2024-12-15T10:00:00Z
+timestamp: "2024-12-15T10:00:00Z"
 ---
 host: db.example.com
 port: 5432
@@ -449,7 +450,7 @@ Database configured. Now checking metrics:
 ---
 id: metrics_001
 block_type: metrics
-timestamp: 2024-12-15T10:01:00Z
+timestamp: "2024-12-15T10:01:00Z"
 ---
 {
   "cpu_usage": 45.2,
@@ -463,7 +464,7 @@ timestamp: 2024-12-15T10:01:00Z
 ---
 id: metrics_002
 block_type: metrics
-timestamp: 2024-12-15T10:02:00Z
+timestamp: "2024-12-15T10:02:00Z"
 ---
 {
   "cpu_usage": 52.8,
@@ -657,6 +658,9 @@ Done.
 
 async def main() -> None:
     """Run all examples."""
+    # Suppress library logging to stderr (Example 5 demonstrates error handling)
+    logging.getLogger("hother.streamblocks").setLevel(logging.CRITICAL)
+
     print("🎯 Parsing Decorators Examples")
     print("Demonstrating @parse_as_yaml() and @parse_as_json() decorators")
 

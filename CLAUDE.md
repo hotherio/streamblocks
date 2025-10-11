@@ -73,3 +73,5 @@ uv run pytest
 # Run specific test file
 uv run pytest tests/test_processor.py
 ```
+- Similarily to pytest for the tests, it is important to check that all examples pass without issue using: uv run python examples/run_examples.py
+See @examples/README.md for more information on the example runner.
