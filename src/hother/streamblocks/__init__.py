@@ -2,6 +2,16 @@
 
 __version__ = "0.1.0"
 
+from hother.streamblocks.adapters import (
+    AdapterDetector,
+    AnthropicAdapter,
+    AttributeAdapter,
+    CallableAdapter,
+    GeminiAdapter,
+    IdentityAdapter,
+    OpenAIAdapter,
+    StreamAdapter,
+)
 from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
 from hother.streamblocks.core.processor import StreamBlockProcessor
@@ -11,6 +21,7 @@ from hother.streamblocks.core.types import (
     BaseMetadata,
     BlockDeltaEvent,
     BlockExtractedEvent,
+    BlockOpenedEvent,
     BlockRejectedEvent,
     BlockState,
     DetectionResult,
@@ -18,6 +29,7 @@ from hother.streamblocks.core.types import (
     ParseResult,
     RawTextEvent,
     StreamEvent,
+    TextDeltaEvent,
 )
 from hother.streamblocks.syntaxes import (
     DelimiterFrontmatterSyntax,
@@ -27,11 +39,17 @@ from hother.streamblocks.syntaxes import (
 
 # Rebuild event models to resolve forward references to ExtractedBlock
 RawTextEvent.model_rebuild()
+TextDeltaEvent.model_rebuild()
+BlockOpenedEvent.model_rebuild()
 BlockDeltaEvent.model_rebuild()
 BlockExtractedEvent.model_rebuild()
 BlockRejectedEvent.model_rebuild()
 
 __all__ = [
+    # Adapters
+    "AdapterDetector",
+    "AnthropicAdapter",
+    "AttributeAdapter",
     # Core models
     "BaseContent",
     "BaseMetadata",
@@ -39,25 +57,32 @@ __all__ = [
     "BlockCandidate",
     "BlockDeltaEvent",
     "BlockExtractedEvent",
+    "BlockOpenedEvent",
     "BlockRejectedEvent",
     # Core types
     "BlockState",
+    "CallableAdapter",
     # Built-in syntaxes
     "DelimiterFrontmatterSyntax",
     "DelimiterPreambleSyntax",
     "DetectionResult",
     "EventType",
     "ExtractedBlock",
+    "GeminiAdapter",
+    "IdentityAdapter",
     "MarkdownFrontmatterSyntax",
+    "OpenAIAdapter",
     "ParseResult",
     # Parsing
     "ParseStrategy",
     "RawTextEvent",
     # Core components
     "Registry",
+    "StreamAdapter",
     "StreamBlockProcessor",
     # Events
     "StreamEvent",
+    "TextDeltaEvent",
     # Parsing utilities
     "parse_as_json",
     "parse_as_yaml",

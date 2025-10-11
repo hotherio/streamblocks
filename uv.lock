@@ -2043,6 +2043,15 @@ wheels = [
 ]
 
 [[package]]
+name = "shellingham"
+version = "1.5.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/15/8b3609fd3830ef7b27b655beb4b4e9c62313a4e8da8c676e142cc210d58e/shellingham-1.5.4.tar.gz", hash = "sha256:8dbca0739d487e5bd35ab3ca4b36e11c4078f3a234bfce294b0a0291363404de", size = 10310, upload-time = "2023-10-24T04:13:40.426Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686", size = 9755, upload-time = "2023-10-24T04:13:38.866Z" },
+]
+
+[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2098,7 +2107,6 @@ name = "streamblocks"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "google-genai" },
     { name = "pydantic" },
     { name = "pydantic-ai" },
     { name = "pyyaml" },
@@ -2106,8 +2114,22 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+all-providers = [
+    { name = "anthropic" },
+    { name = "google-genai" },
+    { name = "openai" },
+]
+anthropic = [
+    { name = "anthropic" },
+]
+gemini = [
+    { name = "google-genai" },
+]
 loguru = [
     { name = "loguru" },
+]
+openai = [
+    { name = "openai" },
 ]
 structlog = [
     { name = "structlog" },
@@ -2115,51 +2137,66 @@ structlog = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "basedpyright" },
     { name = "detect-secrets" },
+    { name = "google-genai" },
     { name = "hypothesis" },
     { name = "mike" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocs-material-extensions" },
     { name = "mkdocstrings", extra = ["python"] },
+    { name = "openai" },
     { name = "pre-commit" },
     { name = "pretty-errors" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "rich" },
     { name = "ruff" },
+    { name = "typer" },
     { name = "types-pyyaml" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "google-genai", specifier = ">=1.38.0" },
+    { name = "anthropic", marker = "extra == 'all-providers'", specifier = ">=0.18.0" },
+    { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.18.0" },
+    { name = "google-genai", marker = "extra == 'all-providers'", specifier = ">=1.38.0" },
+    { name = "google-genai", marker = "extra == 'gemini'", specifier = ">=1.38.0" },
     { name = "loguru", marker = "extra == 'loguru'", specifier = ">=0.7.0" },
+    { name = "openai", marker = "extra == 'all-providers'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pydantic-ai", specifier = ">=1.0.9" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "structlog", marker = "extra == 'structlog'", specifier = ">=24.1.0" },
     { name = "textual", specifier = ">=6.1.0" },
 ]
-provides-extras = ["structlog", "loguru"]
+provides-extras = ["gemini", "openai", "anthropic", "all-providers", "structlog", "loguru"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=0.18.0" },
     { name = "basedpyright", specifier = ">=1.31.4" },
     { name = "detect-secrets", specifier = ">=1.5" },
+    { name = "google-genai", specifier = ">=1.38.0" },
     { name = "hypothesis", specifier = ">=6.0" },
     { name = "mike", specifier = ">=2.1" },
     { name = "mkdocs", specifier = ">=1.6" },
     { name = "mkdocs-material", specifier = ">=9.5" },
     { name = "mkdocs-material-extensions", specifier = ">=1.3" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.27" },
+    { name = "openai", specifier = ">=1.0.0" },
     { name = "pre-commit", specifier = ">=4.0" },
     { name = "pretty-errors", specifier = ">=1.2" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=0.21" },
     { name = "pytest-cov", specifier = ">=6.0" },
+    { name = "rich", specifier = ">=13.0.0" },
     { name = "ruff", specifier = ">=0.8" },
+    { name = "typer", specifier = ">=0.12.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
 ]
 
@@ -2251,6 +2288,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/30/dc54f88dd4a2b5dc8a0279bdd7270e735851848b762aeb1c1184ed1f6b14/tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2", size = 78540, upload-time = "2024-11-24T20:12:19.698Z" },
+]
+
+[[package]]
+name = "typer"
+version = "0.19.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "rich" },
+    { name = "shellingham" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/21/ca/950278884e2ca20547ff3eb109478c6baf6b8cf219318e6bc4f666fad8e8/typer-0.19.2.tar.gz", hash = "sha256:9ad824308ded0ad06cc716434705f691d4ee0bfd0fb081839d2e426860e7fdca", size = 104755, upload-time = "2025-09-23T09:47:48.256Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/22/35617eee79080a5d071d0f14ad698d325ee6b3bf824fc0467c03b30e7fa8/typer-0.19.2-py3-none-any.whl", hash = "sha256:755e7e19670ffad8283db353267cb81ef252f595aa6834a0d1ca9312d9326cb9", size = 46748, upload-time = "2025-09-23T09:47:46.777Z" },
 ]
 
 [[package]]

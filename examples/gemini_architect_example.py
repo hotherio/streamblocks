@@ -9,6 +9,10 @@ multiple block types for software architecture tasks:
 - Tool calls for analysis
 - Memory blocks for context
 - Visualization blocks for diagrams
+
+REQUIREMENTS:
+- pip install streamblocks[gemini]
+- Set GOOGLE_API_KEY or GEMINI_API_KEY environment variable
 """
 
 from __future__ import annotations
@@ -19,7 +23,14 @@ import sys
 import traceback
 from typing import TYPE_CHECKING
 
-from google import genai  # type: ignore[import-not-found]
+# Check for Gemini SDK
+try:
+    from google import genai  # type: ignore[import-not-found]
+except ImportError:
+    print("Error: google-genai package not installed.")
+    print("Install it with: pip install streamblocks[gemini]")
+    print("Or: pip install google-genai")
+    sys.exit(1)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -450,8 +461,13 @@ async def process_message(block: ExtractedBlock[BaseMetadata, BaseContent]) -> N
     print("-" * 60)
 
 
-async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
-    """Stream response from Gemini."""
+async def get_gemini_response(prompt: str):  # type: ignore[no-untyped-def]
+    """Get Gemini API response stream.
+
+    Note: Returns the stream directly - no need for wrapper function!
+    The StreamBlockProcessor will auto-detect Gemini chunks and use
+    GeminiAdapter to extract text while preserving original chunks.
+    """
     # Try GOOGLE_API_KEY first (official), then GEMINI_API_KEY
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -465,11 +481,8 @@ async def stream_from_gemini(prompt: str) -> AsyncIterator[str]:
     system_prompt = create_system_prompt()
     full_prompt = f"{system_prompt}\n\nUser request: {prompt}"
 
-    # Stream the response
-    response = await client.aio.models.generate_content_stream(model=model_id, contents=full_prompt)  # type: ignore[attr-defined]
-    async for chunk in response:  # type: ignore[var-annotated]
-        if chunk.text:  # type: ignore[attr-defined]
-            yield chunk.text  # type: ignore[attr-defined]
+    # Return the stream directly - no need to yield!
+    return await client.aio.models.generate_content_stream(model=model_id, contents=full_prompt)  # type: ignore[attr-defined]
 
 
 async def main() -> None:
@@ -493,18 +506,44 @@ async def main() -> None:
     for i, prompt in enumerate(example_prompts, 1):
         print(f"{i}. {prompt}")
 
-    # Get user input
-    user_prompt = input("\nEnter your request (or 1-5 for examples): ").strip()
+    # Detect non-interactive mode
+    is_non_interactive = (
+        not sys.stdin.isatty()  # No TTY (piped/redirected)
+        or os.getenv("CI")  # CI environment
+        or os.getenv("NON_INTERACTIVE")  # Explicit flag
+    )
 
-    # Handle example selection
-    if user_prompt.isdigit():
-        example_num = int(user_prompt)
-        if 1 <= example_num <= len(example_prompts):
-            user_prompt = example_prompts[example_num - 1]
+    # Get user input
+    if len(sys.argv) > 1:
+        # Command-line argument provided
+        arg = sys.argv[1]
+        if arg.isdigit():
+            example_num = int(arg)
+            if 1 <= example_num <= len(example_prompts):
+                user_prompt = example_prompts[example_num - 1]
+            else:
+                user_prompt = example_prompts[0]
         else:
-            user_prompt = example_prompts[0]
-    elif not user_prompt:
+            # Use full argument as prompt
+            user_prompt = " ".join(sys.argv[1:])
+        print(f"\nUsing prompt from command line: {user_prompt}")
+    elif is_non_interactive:
+        # Non-interactive mode: use first example
         user_prompt = example_prompts[0]
+        print("\nNon-interactive mode: using default prompt")
+    else:
+        # Interactive mode: ask user
+        user_input = input("\nEnter your request (or 1-5 for examples, Enter for #1): ").strip()
+        if user_input.isdigit():
+            example_num = int(user_input)
+            if 1 <= example_num <= len(example_prompts):
+                user_prompt = example_prompts[example_num - 1]
+            else:
+                user_prompt = example_prompts[0]
+        elif not user_input:
+            user_prompt = example_prompts[0]
+        else:
+            user_prompt = user_input
 
     print(f"\n🚀 Processing: {user_prompt}")
     print("=" * 60)
@@ -521,10 +560,14 @@ async def main() -> None:
     }
 
     try:
-        # Process the Gemini stream
-        gemini_stream = stream_from_gemini(user_prompt)
+        # Get response and pass directly to processor
+        response = await get_gemini_response(user_prompt)
 
-        async for event in processor.process_stream(gemini_stream):
+        async for event in processor.process_stream(response):
+            # Skip native Gemini events (we only care about StreamBlocks events)
+            if processor.is_native_event(event):
+                continue
+
             if event.type == EventType.BLOCK_EXTRACTED:
                 block = event.block
                 block_type = block.metadata.block_type

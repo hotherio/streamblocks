@@ -15,7 +15,6 @@ classifiers = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "google-genai>=1.38.0",
     "pydantic-ai>=1.0.9",
     "pydantic>=2.0",
     "pyyaml>=6.0",
@@ -28,8 +27,18 @@ dependencies = [
 "Source" = "https://github.com/streamblocks/streamblocks"
 "Documentation" = "https://streamblocks.github.io/streamblocks/latest/"
 
-# Optional dependencies for enhanced logging
+# Optional dependencies
 [project.optional-dependencies]
+# AI Provider SDKs
+gemini = ["google-genai>=1.38.0"]
+openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.18.0"]
+all-providers = [
+    "google-genai>=1.38.0",
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
+]
+# Enhanced logging
 structlog = ["structlog>=24.1.0"]
 loguru = ["loguru>=0.7.0"]
 
@@ -80,6 +89,13 @@ dev = [
     "detect-secrets>=1.5",
     "pretty_errors>=1.2",
     "types-pyyaml>=6.0.12.20250915",
+    # CLI tools for example runner
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    # AI Provider SDKs for testing
+    "google-genai>=1.38.0",
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
     # Documentation dependencies
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",

@@ -1,0 +1,47 @@
+# Configuration for examples runner
+# This file allows fine-grained control over example execution
+
+# Examples to always skip
+skip:
+  - "examples/ui/interactive_ui_demo.py"  # TUI - requires user interaction
+
+# Custom timeouts for specific examples (in seconds)
+timeouts:
+  default: 30
+  "examples/gemini_architect_example.py": 60  # Makes multiple API calls
+  "examples/integrations/pydantic_ai_integration.py": 60  # Complex integration
+
+# API key requirements
+# Auto-detected by scanning files, but can be overridden here
+requires_api:
+  GEMINI_API_KEY:
+    - "examples/adapters/02_gemini_auto_detect.py"
+    - "examples/adapters/13_manual_chunk_processing.py"
+    - "examples/gemini_simple_demo.py"
+    - "examples/gemini_architect_example.py"
+
+  OPENAI_API_KEY:
+    - "examples/adapters/03_openai_explicit_adapter.py"
+    - "examples/integrations/pydantic_ai_integration.py"
+
+  ANTHROPIC_API_KEY:
+    - "examples/adapters/04_anthropic_adapter.py"
+
+# Examples that are expected to be slow (for CI optimization)
+slow_examples:
+  - "examples/gemini_architect_example.py"
+  - "examples/integrations/pydantic_ai_integration.py"
+
+# Categories
+# Auto-detected from folder structure, but can be customized
+categories:
+  adapters:
+    - "examples/adapters/*.py"
+  logging:
+    - "examples/logging/*.py"
+  ui:
+    - "examples/ui/*.py"
+  integrations:
+    - "examples/integrations/*.py"
+  syntaxes:
+    - "examples/syntaxes/*.py"

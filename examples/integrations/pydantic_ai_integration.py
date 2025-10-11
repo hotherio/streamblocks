@@ -139,18 +139,20 @@ Make sure to include proper project structure with an app module and a simple Fa
 
     print("[COMPLETE] AI response received\n")
 
+    # Collect all extracted blocks
+    extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
+
     # Helper to create a stream from text
     async def text_stream():
         yield raw_text
-
-    # Collect all extracted blocks
-    extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     # Process stream for file operations blocks
     print("📂 Processing for file operations blocks...")
     file_ops_processor = StreamBlockProcessor(file_ops_registry)
 
-    async for event in file_ops_processor.process_stream(text_stream()):
+    # Direct stream passing
+    stream1 = text_stream()
+    async for event in file_ops_processor.process_stream(stream1):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
             # Only process blocks of the expected type
@@ -176,7 +178,9 @@ Make sure to include proper project structure with an app module and a simple Fa
     print("\n📄 Processing for file content blocks...")
     file_content_processor = StreamBlockProcessor(file_content_registry)
 
-    async for event in file_content_processor.process_stream(text_stream()):
+    # Direct stream passing (create new stream instance)
+    stream2 = text_stream()
+    async for event in file_content_processor.process_stream(stream2):
         if event.type == EventType.BLOCK_EXTRACTED:
             block = event.block
             # Only process blocks of the expected type
@@ -263,13 +267,14 @@ Mix explanatory text with structured blocks.
     print("=" * 60)
 
     # Stream from agent
-    async def agent_stream() -> AsyncIterator[str]:
+    async def get_agent_stream() -> AsyncIterator[str]:
         async with agent.run_stream(prompt) as result:
             async for text in result.stream_text():
                 yield text
 
-    # Process the stream through StreamBlocks
-    async for event in processor.process_agent_stream(agent_stream()):
+    # Process the stream through StreamBlocks - direct stream passing
+    stream = get_agent_stream()
+    async for event in processor.process_agent_stream(stream):
         if event.type == EventType.RAW_TEXT:
             if event.data.strip():
                 print(f"[TEXT] {event.data.strip()}")
