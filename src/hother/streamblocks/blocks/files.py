@@ -63,7 +63,7 @@ class FileOperationsMetadata(BaseMetadata):
 
     # Override block_type with specific literal and default
     block_type: Literal["files_operations"] = "files_operations"  # type: ignore[assignment]
-    description: str | None = None
+    description: str | None = Field(default=None, description="Why are you performing these operations?")
 
 
 class FileContentMetadata(BaseMetadata):
@@ -71,7 +71,7 @@ class FileContentMetadata(BaseMetadata):
 
     block_type: Literal["file_content"] = "file_content"  # type: ignore[assignment]
     file: str  # Path to the file
-    description: str | None = None
+    description: str | None = Field(default=None, description="Why do you need the content of this file?")
 
 
 class FileContentContent(BaseContent):
@@ -89,7 +89,53 @@ class FileContentContent(BaseContent):
 
 
 class FileOperations(Block[FileOperationsMetadata, FileOperationsContent]):
-    """File operations block."""
+    """Manage file creation, editing, and deletion operations.
+
+    Use this block when you need to create, edit, or delete multiple files
+    in a single operation.
+    """
+
+    __examples__ = [
+        {
+            "metadata": {
+                "id": "f1",
+                "block_type": "files_operations",
+                "description": "Create Python application structure",
+            },
+            "content": {
+                "operations": [
+                    {"action": "create", "path": "src/main.py"},
+                    {"action": "create", "path": "src/utils.py"},
+                    {"action": "create", "path": "tests/test_main.py"},
+                ],
+            },
+        },
+        {
+            "metadata": {
+                "id": "f2",
+                "block_type": "files_operations",
+                "description": "Remove deprecated files",
+            },
+            "content": {
+                "operations": [
+                    {"action": "delete", "path": "legacy/old_module.py"},
+                    {"action": "delete", "path": "deprecated.py"},
+                ],
+            },
+        },
+        {
+            "metadata": {
+                "id": "f3",
+                "block_type": "files_operations",
+            },
+            "content": {
+                "operations": [
+                    {"action": "create", "path": "config.yaml"},
+                    {"action": "edit", "path": "settings.py"},
+                ],
+            },
+        },
+    ]
 
 
 class FileContent(Block[FileContentMetadata, FileContentContent]):
