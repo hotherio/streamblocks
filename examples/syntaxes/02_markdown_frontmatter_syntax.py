@@ -1,73 +1,131 @@
-"""Example demonstrating MarkdownFrontmatterSyntax with YAML frontmatter."""
+"""Example demonstrating MarkdownFrontmatterSyntax with YAML frontmatter.
+
+This example shows how to use markdown code blocks with simple content
+that DON'T require custom parsing. Perfect for beginners learning the syntax format.
+"""
 
 import asyncio
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING
+from typing import Literal
+
+from pydantic import Field
 
 from hother.streamblocks import EventType, MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.patch import Patch
+from hother.streamblocks.core.models import Block, ExtractedBlock
+from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
-if TYPE_CHECKING:
-    from hother.streamblocks.core.models import ExtractedBlock
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata
+
+# Simple content models - NO custom parse() needed!
+class CodeSnippetMetadata(BaseMetadata):
+    """Metadata for code snippet blocks."""
+
+    id: str
+    block_type: Literal["code_snippet"] = "code_snippet"  # type: ignore[assignment]
+    language: str = "text"
+    filename: str | None = None
+    description: str | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
+class CodeSnippetContent(BaseContent):
+    """Content for code snippet blocks.
+
+    Uses the default parse() method - just stores raw_content.
+    No custom parsing needed!
+    """
+
+    # Inherits raw_content field from BaseContent
+    # No custom parse() method - uses default implementation
+
+
+# Create the block type
+CodeSnippetBlock = Block[CodeSnippetMetadata, CodeSnippetContent]
 
 
 async def example_stream() -> AsyncIterator[str]:
     """Example stream with markdown frontmatter blocks."""
     text = """
-Here's a document with some patches using markdown-style blocks with YAML frontmatter.
+Here's a document with code snippets using markdown-style blocks with YAML frontmatter.
 
-```patch
+```python
 ---
-id: security-fix
-block_type: patch
-file: auth.py
-start_line: 45
+id: snippet-001
+block_type: code_snippet
+language: python
+filename: hello.py
+description: Simple hello world function
+tags:
+  - tutorial
+  - basics
 ---
- def authenticate(user, password):
--    if password == "admin": # pragma: allowlist secret
-+    if check_password_hash(user.password_hash, password):
-         return True
-     return False
+def hello_world():
+    \"\"\"Print a friendly greeting.\"\"\"
+    print("Hello, World!")
+    return True
 ```
 
-Now let's add another patch for the config file:
+Now let's add a JavaScript snippet:
 
-```patch
+```javascript
 ---
-id: config-update
-block_type: patch
-file: config.yaml
-start_line: 10
+id: snippet-002
+block_type: code_snippet
+language: javascript
+filename: utils.js
+description: Utility functions
 ---
- database:
-   host: localhost
--  port: 3306
-+  port: 5432
--  driver: mysql
-+  driver: postgresql
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function sum(a, b) {
+    return a + b;
+}
 ```
 
-And here's a final patch with more metadata:
+Here's a configuration file snippet:
 
-```patch
+```yaml
 ---
-id: feature-add
-block_type: patch
-file: features.py
-start_line: 100
-author: dev-team
-priority: high
+id: snippet-003
+block_type: code_snippet
+language: yaml
+filename: config.yaml
+tags:
+  - configuration
+  - deployment
 ---
-+def new_feature():
-+    \"\"\"Implement awesome new feature.\"\"\"
-+    return \"awesome\"
-+
- class ExistingClass:
-     pass
+app:
+  name: myapp
+  version: 1.0.0
+  environment: production
+
+database:
+  host: localhost
+  port: 5432
+  name: mydb
 ```
 
-That's all for the patches!
+And finally, some SQL:
+
+```sql
+---
+id: snippet-004
+block_type: code_snippet
+language: sql
+description: User queries
+tags:
+  - database
+  - query
+---
+SELECT id, username, email
+FROM users
+WHERE active = true
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+That's all for the code snippets!
 """
 
     # Chunk-based streaming (simulating real network transfer)
@@ -80,25 +138,27 @@ That's all for the patches!
 
 async def main() -> None:
     """Main example function."""
-    # Create markdown frontmatter syntax for patch blocks
+    print("=== MarkdownFrontmatterSyntax Example ===\n")
+    print("This example uses SIMPLE blocks with NO custom parsing.")
+    print("Content is stored directly in the raw_content field.\n")
+
+    # Create markdown frontmatter syntax for code snippets
     # Note: In the new API, each Registry holds exactly one syntax.
-    # To handle multiple info strings (patch/yaml/diff), you would need separate processors
-    # or a custom syntax that handles multiple patterns internally.
+    # To handle multiple info strings, you would need separate processors
     syntax = MarkdownFrontmatterSyntax(
         fence="```",
-        info_string="patch",  # Will match ```patch blocks
+        info_string="",  # Empty = match any code block
     )
 
     # Create type-specific registry and register block
     registry = Registry(syntax=syntax)
-    registry.register("patch", Patch)
+    registry.register("code_snippet", CodeSnippetBlock)
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)
 
     # Process stream
-    print("Processing markdown frontmatter blocks...")
-    print("-" * 70)
+    print("Processing code snippet blocks...\n")
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
     current_partial = None
@@ -107,15 +167,18 @@ async def main() -> None:
         if event.type == EventType.RAW_TEXT:
             # Raw text passed through
             if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+                text = event.data.strip()
+                if len(text) > 60:
+                    text = text[:57] + "..."
+                print(f"[TEXT] {text}")
 
         elif event.type == EventType.BLOCK_DELTA:
             # Track partial block updates
-            syntax = event.syntax
+            syntax_name = event.syntax
             section = event.section
-            if current_partial != syntax:
-                print(f"\n[DELTA] Started {syntax} block (section: {section})")
-                current_partial = syntax
+            if current_partial != syntax_name:
+                print(f"\n[DELTA] Started {syntax_name} block (section: {section})")
+                current_partial = syntax_name
 
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
@@ -123,53 +186,59 @@ async def main() -> None:
             blocks_extracted.append(block)
             current_partial = None
 
-            # Type narrowing for patch blocks
-            from hother.streamblocks.blocks.patch import PatchContent, PatchMetadata
+            # Type narrowing for code snippet blocks
+            if isinstance(block.metadata, CodeSnippetMetadata) and isinstance(
+                block.content, CodeSnippetContent
+            ):
+                metadata = block.metadata
+                content = block.content
 
-            if not isinstance(block.metadata, PatchMetadata):
-                continue
-            if not isinstance(block.content, PatchContent):
-                continue
+                print(f"\n{'=' * 60}")
+                print(f"[CODE SNIPPET] {metadata.id}")
+                print(f"               Language: {metadata.language}")
+                if metadata.filename:
+                    print(f"               File: {metadata.filename}")
+                if metadata.description:
+                    print(f"               Description: {metadata.description}")
+                if metadata.tags:
+                    print(f"               Tags: {', '.join(metadata.tags)}")
 
-            metadata = block.metadata
-            content = block.content
-
-            print(f"\n[BLOCK] Extracted: {metadata.id} (syntax: {block.syntax_name})")
-            print(f"        File: {metadata.file}")
-            print(f"        Start line: {metadata.start_line}")
-
-            # Show extra metadata if present
-            if hasattr(metadata, "author"):
-                print(f"        Author: {metadata.author}")
-            if hasattr(metadata, "priority"):
-                print(f"        Priority: {metadata.priority}")
-
-            # Show patch preview
-            print("        Patch preview:")
-            lines: list[str] = content.diff.strip().split("\\n")
-            for line in lines[:3]:  # Show first 3 lines
-                print(f"          {line}")
-            if len(lines) > 3:
-                print(f"          ... ({len(lines) - 3} more lines)")
+                # Access raw_content directly - no parsing needed!
+                print(f"\n               Code ({len(content.raw_content)} chars):")
+                lines = content.raw_content.strip().split("\n")
+                for line in lines[:5]:  # Show first 5 lines
+                    print(f"               {line}")
+                if len(lines) > 5:
+                    print(f"               ... ({len(lines) - 5} more lines)")
+                print("=" * 60)
 
         elif event.type == EventType.BLOCK_REJECTED:
             # Block rejected
             reason = event.reason
-            syntax = event.syntax
-            print(f"\n[REJECT] {syntax} block rejected: {reason}")
+            syntax_name = event.syntax
+            print(f"\n[REJECT] {syntax_name} block rejected: {reason}")
 
-    print("-" * 70)
-    print(f"\nTotal blocks extracted: {len(blocks_extracted)}")
+    print("\n\nEXTRACTED BLOCKS SUMMARY:")
+    print(f"Total blocks: {len(blocks_extracted)}")
 
     # Summary
-    print("\nBlock summary:")
+    print("\nCode snippets:")
     for i, block in enumerate(blocks_extracted, 1):
         # Type narrowing for summary
-        from hother.streamblocks.blocks.patch import PatchMetadata
+        if isinstance(block.metadata, CodeSnippetMetadata):
+            filename = f" ({block.metadata.filename})" if block.metadata.filename else ""
+            print(f"  {i}. {block.metadata.language}{filename} - {block.metadata.id}")
 
-        if isinstance(block.metadata, PatchMetadata):
-            syntax_display = block.syntax_name.replace("markdown_frontmatter_", "")
-            print(f"  {i}. {block.metadata.id} - {block.metadata.file} ({syntax_display} syntax)")
+    print("\n" + "=" * 60)
+    print("KEY POINTS:")
+    print("=" * 60)
+    print("✓ No custom parse() method needed")
+    print("✓ Content stored directly in raw_content field")
+    print("✓ Perfect for code snippets (use as-is)")
+    print("✓ Markdown-compatible (renders in editors)")
+    print("✓ Metadata in YAML frontmatter (rich structure)")
+    print("✓ Syntax highlighting in most editors")
+    print("\n✓ MarkdownFrontmatterSyntax processing complete!")
 
 
 if __name__ == "__main__":
