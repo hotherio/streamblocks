@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
-from hother.streamblocks.prompts.builder import _extract_content_class, _extract_schema
+from hother.streamblocks.prompts.builder import extract_content_class, extract_schema
 from hother.streamblocks.prompts.inspector import inspect_content_format, parse_block_docstring
 from hother.streamblocks.prompts.manager import TemplateManager
 from hother.streamblocks.syntaxes.models import get_syntax_instance
@@ -240,7 +240,7 @@ class Registry:
         Returns:
             Context dictionary for Jinja2 templates
         """
-        context = {
+        context: dict[str, Any] = {
             "syntax_name": self._syntax.__class__.__name__,
             "syntax_format": self._syntax.describe_format(),
             "blocks": [],
@@ -251,16 +251,16 @@ class Registry:
             block_desc, block_usage = parse_block_docstring(block_class)
 
             # Extract content class and inspect format
-            content_class = _extract_content_class(block_class)
+            content_class = extract_content_class(block_class)
             content_format = inspect_content_format(content_class) if content_class else None
 
-            block_info = {
+            block_info: dict[str, Any] = {
                 "name": block_type,
                 "description": block_desc or self._descriptions.get(block_type, ""),
                 "usage": block_usage,
                 "content_format": content_format,
-                "metadata_schema": _extract_schema(block_class, "metadata"),
-                "content_schema": _extract_schema(block_class, "content"),
+                "metadata_schema": extract_schema(block_class, "metadata"),
+                "content_schema": extract_schema(block_class, "content"),
                 "examples": [],
                 "validator_count": len(self._validators.get(block_type, [])),
             }

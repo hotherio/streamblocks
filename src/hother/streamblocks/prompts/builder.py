@@ -9,11 +9,12 @@ from hother.streamblocks.prompts.manager import TemplateManager
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import Block
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
     from hother.streamblocks.syntaxes.base import BaseSyntax
 
 
 def generate_block_prompt(
-    block_class: type[Block],
+    block_class: type[Block[Any, Any]],
     syntax: BaseSyntax,
     include_examples: bool = True,
     template_version: str = "default",
@@ -42,22 +43,22 @@ def generate_block_prompt(
     block_desc, block_usage = parse_block_docstring(block_class)
 
     # Extract content class for format inspection
-    content_class = _extract_content_class(block_class)
+    content_class = extract_content_class(block_class)
 
     # Inspect content format
     content_format = inspect_content_format(content_class) if content_class else None
 
     # Build context for template
-    context = {
+    context: dict[str, Any] = {
         "syntax_name": syntax.__class__.__name__,
         "syntax_format": syntax.describe_format(),
         "block": {
-            "name": _infer_block_type_name(block_class),
+            "name": infer_block_type_name(block_class),
             "description": description or block_desc,
             "usage": block_usage,
             "content_format": content_format,
-            "metadata_schema": _extract_schema(block_class, "metadata"),
-            "content_schema": _extract_schema(block_class, "content"),
+            "metadata_schema": extract_schema(block_class, "metadata"),
+            "content_schema": extract_schema(block_class, "content"),
             "examples": [],
         },
     }
@@ -74,7 +75,7 @@ def generate_block_prompt(
     return manager.render(context, template_version, mode="single")
 
 
-def _extract_content_class(block_class: type) -> type | None:
+def extract_content_class(block_class: type[Block[Any, Any]]) -> type[BaseContent] | None:
     """Extract content class from block class.
 
     Args:
@@ -86,11 +87,11 @@ def _extract_content_class(block_class: type) -> type | None:
     if hasattr(block_class, "model_fields"):
         content_field = block_class.model_fields.get("content")
         if content_field and content_field.annotation:
-            return content_field.annotation
+            return content_field.annotation  # type: ignore[return-value]  # Pydantic annotation is runtime type
     return None
 
 
-def _infer_block_type_name(block_class: type) -> str:
+def infer_block_type_name(block_class: type[Block[Any, Any]]) -> str:
     """Infer block type name from class.
 
     Tries to extract from a sample metadata instance, falls back to snake_case conversion.
@@ -116,7 +117,7 @@ def _infer_block_type_name(block_class: type) -> str:
     # Fallback to snake_case of class name
     name = block_class.__name__
     # Simple camelCase to snake_case conversion
-    result = []
+    result: list[str] = []
     for i, char in enumerate(name):
         if char.isupper() and i > 0:
             result.append("_")
@@ -124,8 +125,8 @@ def _infer_block_type_name(block_class: type) -> str:
     return "".join(result)
 
 
-def _extract_schema(
-    block_class: type,
+def extract_schema(
+    block_class: type[Block[Any, Any]],
     field_name: str,
 ) -> dict[str, Any]:
     """Extract JSON schema from Pydantic field with field filtering.
@@ -153,10 +154,10 @@ def _extract_schema(
         return {}
 
     # Apply field filtering
-    return _filter_schema_fields(full_schema, field_name)
+    return filter_schema_fields(full_schema, field_name)
 
 
-def _filter_schema_fields(
+def filter_schema_fields(
     schema: dict[str, Any],
     field_type: str,
 ) -> dict[str, Any]:
@@ -174,6 +175,7 @@ def _filter_schema_fields(
         Filtered schema
     """
     # Default exclusions based on field type
+    exclude_fields: set[str]
     if field_type == "metadata":
         exclude_fields = {"id", "block_type"}
     elif field_type == "content":

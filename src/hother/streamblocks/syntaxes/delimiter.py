@@ -153,7 +153,7 @@ class DelimiterPreambleSyntax(BaseSyntax):
         opening = f"{self.delimiter}{block_id}:{block_type}"
 
         # Add any extra params if present (param_0, param_1, etc.)
-        params = []
+        params: list[str] = []
         i = 0
         while hasattr(metadata, f"param_{i}"):
             params.append(str(getattr(metadata, f"param_{i}")))

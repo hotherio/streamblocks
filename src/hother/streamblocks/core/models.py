@@ -208,8 +208,8 @@ class Block(BaseModel, Generic[TMetadata, TContent]):
 
         result = syntax_instance.parse_block(candidate, block_class=cls)
 
-        if not result.success:
-            msg = f"Failed to parse block: {result.error}"
+        if not result.success or result.metadata is None or result.content is None:
+            msg = f"Failed to parse block: {result.error or 'Missing metadata or content'}"
             raise ValueError(msg)
 
         return cls(metadata=result.metadata, content=result.content)
@@ -251,20 +251,22 @@ class Block(BaseModel, Generic[TMetadata, TContent]):
 
                 # Special case: FileOperations with operations list
                 if "operations" in content_data:
-                    action_map = {"create": "C", "edit": "E", "delete": "D"}
-                    lines = []
+                    action_map: dict[str, str] = {"create": "C", "edit": "E", "delete": "D"}
+                    lines: list[str] = []
                     for op in content_data["operations"]:
                         action_code = action_map.get(op["action"], "C")
                         lines.append(f"{op['path']}:{action_code}")
-                    raw_content = "\n".join(lines)
+                    raw_content: str = "\n".join(lines)
                 else:
                     # Detect format from metadata if available
-                    format_type = "json"  # Default to JSON
+                    format_type: str = "json"  # Default to JSON
                     if "metadata" in example and "format" in example["metadata"]:
-                        format_type = example["metadata"]["format"]
+                        format_type = str(example["metadata"]["format"])
 
                     # Generate raw_content by serializing content fields
-                    serializable_content = {k: v for k, v in content_data.items() if k not in ("raw_content",)}
+                    serializable_content: dict[str, Any] = {
+                        k: v for k, v in content_data.items() if k not in ("raw_content",)
+                    }
 
                     if format_type == "yaml":
                         import yaml as yaml_lib
@@ -394,20 +396,22 @@ class Block(BaseModel, Generic[TMetadata, TContent]):
 
                     # Special case: FileOperations with operations list
                     if "operations" in content_data:
-                        action_map = {"create": "C", "edit": "E", "delete": "D"}
-                        lines = []
+                        action_map: dict[str, str] = {"create": "C", "edit": "E", "delete": "D"}
+                        lines: list[str] = []
                         for op in content_data["operations"]:
                             action_code = action_map.get(op["action"], "C")
                             lines.append(f"{op['path']}:{action_code}")
-                        raw_content = "\n".join(lines)
+                        raw_content: str = "\n".join(lines)
                     else:
                         # Detect format from metadata if available
-                        format_type = "json"  # Default to JSON
+                        format_type: str = "json"  # Default to JSON
                         if "metadata" in example_data and "format" in example_data["metadata"]:
-                            format_type = example_data["metadata"]["format"]
+                            format_type = str(example_data["metadata"]["format"])
 
                         # Generate raw_content by serializing content fields (excluding raw_content itself)
-                        serializable_content = {k: v for k, v in content_data.items() if k not in ("raw_content",)}
+                        serializable_content: dict[str, Any] = {
+                            k: v for k, v in content_data.items() if k not in ("raw_content",)
+                        }
 
                         if format_type == "yaml":
                             import yaml as yaml_lib

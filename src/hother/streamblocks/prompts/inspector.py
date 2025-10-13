@@ -35,8 +35,8 @@ def parse_block_docstring(block_class: type) -> tuple[str, str | None]:
         return "", None
 
     # Split into paragraphs (separated by blank lines)
-    paragraphs = []
-    current_para = []
+    paragraphs: list[str] = []
+    current_para: list[str] = []
 
     for line in docstring.split("\n"):
         stripped = line.strip()
@@ -62,8 +62,9 @@ def parse_block_docstring(block_class: type) -> tuple[str, str | None]:
 
     for para in paragraphs[1:]:
         # Check if this paragraph starts with "Usage:"
-        if para.lower().startswith("usage:") or para.lower().startswith("use this"):
-            usage_info = para
+        para_str: str = str(para)
+        if para_str.lower().startswith("usage:") or para_str.lower().startswith("use this"):
+            usage_info = para_str
             # Remove "Usage:" prefix if present
             if usage_info.lower().startswith("usage:"):
                 usage_info = usage_info[6:].strip()
@@ -72,7 +73,7 @@ def parse_block_docstring(block_class: type) -> tuple[str, str | None]:
     # If no explicit usage found, use second paragraph if it exists
     if usage_info is None and len(paragraphs) > 1:
         # Check if second paragraph looks like usage info
-        second = paragraphs[1]
+        second: str = str(paragraphs[1])
         if any(keyword in second.lower() for keyword in ["use this", "use when", "for"]):
             usage_info = second
 
@@ -114,6 +115,7 @@ def inspect_content_format(content_class: type[BaseContent]) -> str | None:
     if hasattr(content_class, "parse"):
         parse_method = getattr(content_class, "parse")
         # Check if it's a classmethod or regular method
+        func: Any
         if isinstance(parse_method, classmethod):
             # Get the underlying function
             func = parse_method.__func__
@@ -129,14 +131,14 @@ def inspect_content_format(content_class: type[BaseContent]) -> str | None:
 
             # Extract just the description part (before Args/Returns sections)
             lines = docstring.split("\n")
-            description_lines = []
+            description_lines: list[str] = []
             for line in lines:
                 # Stop at common docstring sections
                 if line.strip().lower().startswith(("args:", "returns:", "raises:", "example:")):
                     break
                 description_lines.append(line)
 
-            description = "\n".join(description_lines).strip()
+            description: str = "\n".join(description_lines).strip()
             if description:
                 return description
 
@@ -175,6 +177,7 @@ def _detect_decorator_type(content_class: type[BaseContent]) -> str | None:
     parse_method = getattr(content_class, "parse")
 
     # Unwrap classmethod if needed
+    func: Any
     if isinstance(parse_method, classmethod):
         func = parse_method.__func__
     else:
