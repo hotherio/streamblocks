@@ -117,8 +117,8 @@ def inspect_content_format(content_class: type[BaseContent]) -> str | None:
         # Check if it's a classmethod or regular method
         func: Any
         if isinstance(parse_method, classmethod):
-            # Get the underlying function
-            func = parse_method.__func__
+            # Get the underlying function - introspection, type checker can't infer
+            func = parse_method.__func__  # type: ignore[attr-defined]
         else:
             # It might already be unwrapped
             func = parse_method
@@ -179,7 +179,8 @@ def _detect_decorator_type(content_class: type[BaseContent]) -> str | None:
     # Unwrap classmethod if needed
     func: Any
     if isinstance(parse_method, classmethod):
-        func = parse_method.__func__
+        # Introspection - type checker can't infer __func__ attribute
+        func = parse_method.__func__  # type: ignore[attr-defined]
     else:
         func = parse_method
 

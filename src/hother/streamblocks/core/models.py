@@ -212,7 +212,8 @@ class Block(BaseModel, Generic[TMetadata, TContent]):
             msg = f"Failed to parse block: {result.error or 'Missing metadata or content'}"
             raise ValueError(msg)
 
-        return cls(metadata=result.metadata, content=result.content)
+        # Type narrowing: result has correct types but basedpyright can't infer from parse_block
+        return cls(metadata=result.metadata, content=result.content)  # type: ignore[arg-type]
 
     @classmethod
     def add_example(cls, example: Self | dict[str, Any]) -> None:
@@ -478,10 +479,9 @@ class Block(BaseModel, Generic[TMetadata, TContent]):
             >>> prompt = MyBlock.to_prompt()
         """
         # Check for custom prompt first
-        if hasattr(cls, "__prompt__"):
-            custom_prompt = cls.__prompt__
-            if isinstance(custom_prompt, str):
-                return custom_prompt.strip()
+        custom_prompt = getattr(cls, "__prompt__", None)
+        if custom_prompt is not None and isinstance(custom_prompt, str):
+            return custom_prompt.strip()
 
         # Use template generation
         from hother.streamblocks.prompts import generate_block_prompt

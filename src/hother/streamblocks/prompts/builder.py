@@ -9,7 +9,7 @@ from hother.streamblocks.prompts.manager import TemplateManager
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import Block
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata
+    from hother.streamblocks.core.types import BaseContent
     from hother.streamblocks.syntaxes.base import BaseSyntax
 
 
@@ -87,7 +87,8 @@ def extract_content_class(block_class: type[Block[Any, Any]]) -> type[BaseConten
     if hasattr(block_class, "model_fields"):
         content_field = block_class.model_fields.get("content")
         if content_field and content_field.annotation:
-            return content_field.annotation  # type: ignore[return-value]  # Pydantic annotation is runtime type
+            # Pydantic's field.annotation is the actual runtime type class
+            return content_field.annotation
     return None
 
 
