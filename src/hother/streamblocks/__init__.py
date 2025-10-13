@@ -32,9 +32,14 @@ from hother.streamblocks.core.types import (
     TextDeltaEvent,
 )
 from hother.streamblocks.syntaxes import (
+    DEFAULT_SYNTAX,
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
     MarkdownFrontmatterSyntax,
+    Syntax,
+    get_default_syntax,
+    reset_default_syntax,
+    set_default_syntax,
 )
 
 # Rebuild event models to resolve forward references to ExtractedBlock
@@ -62,6 +67,8 @@ __all__ = [
     # Core types
     "BlockState",
     "CallableAdapter",
+    # Configuration
+    "DEFAULT_SYNTAX",
     # Built-in syntaxes
     "DelimiterFrontmatterSyntax",
     "DelimiterPreambleSyntax",
@@ -82,8 +89,13 @@ __all__ = [
     "StreamBlockProcessor",
     # Events
     "StreamEvent",
+    "Syntax",
     "TextDeltaEvent",
+    # Configuration functions
+    "get_default_syntax",
     # Parsing utilities
     "parse_as_json",
     "parse_as_yaml",
+    "reset_default_syntax",
+    "set_default_syntax",
 ]
