@@ -130,6 +130,59 @@ class DelimiterPreambleSyntax(BaseSyntax):
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
+    def serialize_block(self, block: Any) -> str:
+        """Serialize block to delimiter preamble format.
+
+        Args:
+            block: Block instance with metadata and content
+
+        Returns:
+            String in !!id:type format with content
+
+        Example:
+            !!file01:files_operations
+            src/main.py:C
+            !!end
+        """
+        # Extract metadata fields
+        metadata = block.metadata
+        block_id = metadata.id
+        block_type = metadata.block_type
+
+        # Build opening line: !!id:type
+        opening = f"{self.delimiter}{block_id}:{block_type}"
+
+        # Add any extra params if present (param_0, param_1, etc.)
+        params = []
+        i = 0
+        while hasattr(metadata, f"param_{i}"):
+            params.append(str(getattr(metadata, f"param_{i}")))
+            i += 1
+        if params:
+            opening += ":" + ":".join(params)
+
+        # Get content as string
+        content = block.content.raw_content
+
+        # Build full block
+        closing = f"{self.delimiter}end"
+        return f"{opening}\n{content}\n{closing}"
+
+    def describe_format(self) -> str:
+        """Describe delimiter preamble format."""
+        return f"""Delimiter Preamble Syntax
+
+Format:
+{self.delimiter}<id>:<type>[:<param1>:<param2>...]
+content lines
+{self.delimiter}end
+
+Components:
+- Opening line: {self.delimiter}<id>:<type> where id is unique and type identifies the block
+- Optional parameters: Additional colon-separated values after type
+- Content: Any text content between opening and closing
+- Closing line: {self.delimiter}end"""
+
     def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing."""
         return True
@@ -257,7 +310,52 @@ class DelimiterFrontmatterSyntax(BaseSyntax):
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
+    def serialize_block(self, block: Any) -> str:
+        """Serialize block to delimiter frontmatter format.
+
+        Args:
+            block: Block instance with metadata and content
+
+        Returns:
+            String in !!start format with YAML frontmatter
+
+        Example:
+            !!start
+            ---
+            id: file01
+            block_type: files_operations
+            ---
+            src/main.py:C
+            !!end
+        """
+        # Convert metadata to dict and then to YAML
+        metadata_dict = block.metadata.model_dump()
+        metadata_yaml = yaml.dump(metadata_dict, default_flow_style=False, sort_keys=False)
+
+        # Get content
+        content = block.content.raw_content
+
+        # Build full block
+        return f"{self.start_delimiter}\n---\n{metadata_yaml}---\n{content}\n{self.end_delimiter}"
+
+    def describe_format(self) -> str:
+        """Describe delimiter frontmatter format."""
+        return f"""Delimiter Frontmatter Syntax
+
+Format:
+{self.start_delimiter}
+---
+key: value
+---
+content lines
+{self.end_delimiter}
+
+Components:
+- Opening line: {self.start_delimiter}
+- Metadata section: YAML frontmatter between --- delimiters
+- Content: Any text content after metadata
+- Closing line: {self.end_delimiter}"""
+
     def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing."""
-        return True
         return True

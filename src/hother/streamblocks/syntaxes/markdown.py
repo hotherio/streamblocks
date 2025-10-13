@@ -157,6 +157,59 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
+    def serialize_block(self, block: Any) -> str:
+        """Serialize block to markdown frontmatter format.
+
+        Args:
+            block: Block instance with metadata and content
+
+        Returns:
+            String in ```info format with YAML frontmatter
+
+        Example:
+            ```files_operations
+            ---
+            id: file01
+            block_type: files_operations
+            ---
+            src/main.py:C
+            ```
+        """
+        # Convert metadata to dict and then to YAML
+        metadata_dict = block.metadata.model_dump()
+        metadata_yaml = yaml.dump(metadata_dict, default_flow_style=False, sort_keys=False)
+
+        # Get content
+        content = block.content.raw_content
+
+        # Build opening fence with optional info string
+        opening = self.fence
+        if self.info_string:
+            opening += self.info_string
+
+        # Build full block
+        return f"{opening}\n---\n{metadata_yaml}---\n{content}\n{self.fence}"
+
+    def describe_format(self) -> str:
+        """Describe markdown frontmatter format."""
+        info_str_desc = f"[{self.info_string}]" if self.info_string else "[info_string]"
+
+        return f"""Markdown Frontmatter Syntax
+
+Format:
+{self.fence}{info_str_desc}
+---
+key: value
+---
+content lines
+{self.fence}
+
+Components:
+- Opening fence: {self.fence} with optional info string
+- Metadata section: YAML frontmatter between --- delimiters
+- Content: Any text content after metadata
+- Closing fence: {self.fence}"""
+
     def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing."""
         return True

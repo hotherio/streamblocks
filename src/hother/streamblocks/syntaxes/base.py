@@ -105,7 +105,53 @@ class BaseSyntax(ABC):
         """
         ...
 
+    @abstractmethod
+    def serialize_block(self, block: Any) -> str:
+        """Convert a block back to its text representation.
+
+        This is the inverse of parse_block() - it takes a Block instance
+        and produces the text representation in this syntax's format.
+
+        Args:
+            block: Block instance with metadata and content
+
+        Returns:
+            String representation in this syntax's format
+
+        Example:
+            >>> block = FileOperations(
+            ...     metadata=FileOperationsMetadata(id="ex1", block_type="files_operations"),
+            ...     content=FileOperationsContent.parse("src/main.py:C")
+            ... )
+            >>> syntax = DelimiterPreambleSyntax()
+            >>> print(syntax.serialize_block(block))
+            !!ex1:files_operations
+            src/main.py:C
+            !!end
+        """
+        ...
+
     # Default implementations
+
+    def describe_format(self) -> str:
+        """Generate human-readable format description with examples.
+
+        Override this method to provide a clear explanation of your syntax format.
+        This is used when generating LLM prompts to explain the block format.
+
+        Returns:
+            Multi-line string explaining the syntax format with examples
+
+        Example:
+            >>> syntax = DelimiterPreambleSyntax()
+            >>> print(syntax.describe_format())
+            Delimiter Preamble Syntax:
+            Format: !!<id>:<type>
+                    content
+                    !!end
+            ...
+        """
+        return f"{self.__class__.__name__}: No format description available."
 
     def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing.
