@@ -1,11 +1,12 @@
 """Example demonstrating DelimiterFrontmatterSyntax with YAML frontmatter.
 
-This example shows how to use the delimiter+frontmatter syntax with the new
-single-syntax design. Each processor handles one syntax type.
+This example shows how to use the delimiter+frontmatter syntax with simple blocks
+that DON'T require custom content parsing. Perfect for beginners learning the syntax format.
 """
 
 import asyncio
 from collections.abc import AsyncIterator
+from typing import Literal
 
 from pydantic import Field
 
@@ -14,117 +15,100 @@ from hother.streamblocks.core.models import Block, ExtractedBlock
 from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
-# Custom content models for this example
-class TaskMetadata(BaseMetadata):
-    """Metadata for task blocks."""
+# Simple content models - NO custom parse() needed!
+class NoteMetadata(BaseMetadata):
+    """Metadata for note blocks."""
 
     id: str
-    block_type: str
-    title: str = "Untitled Task"
-    priority: str = "medium"
-    assignee: str | None = None
-    due_date: str | None = None
+    block_type: Literal["note"] = "note"  # type: ignore[assignment]
+    title: str = "Untitled Note"
+    category: str | None = None
+    author: str | None = None
     tags: list[str] = Field(default_factory=list)
-    status: str = "todo"
 
 
-class TaskContent(BaseContent):
-    """Content for task blocks."""
+class NoteContent(BaseContent):
+    """Content for note blocks.
 
-    description: str = ""
-    subtasks: list[str] = Field(default_factory=list)
+    Uses the default parse() method - just stores raw_content.
+    No custom parsing needed!
+    """
 
-    @classmethod
-    def parse(cls, raw_text: str) -> "TaskContent":
-        """Parse task content from raw text."""
-        lines = raw_text.strip().split("\n")
-        if not lines:
-            return cls(raw_content=raw_text, description="")
-
-        description = lines[0]
-        subtasks: list[str] = []
-
-        for line in lines[1:]:
-            stripped = line.strip()
-            if stripped.startswith(("- ", "* ")):
-                subtasks.append(stripped[2:])
-
-        return cls(raw_content=raw_text, description=description, subtasks=subtasks)
+    # Inherits raw_content field from BaseContent
+    # No custom parse() method - uses default implementation
 
 
 # Create the block type
-TaskBlock = Block[TaskMetadata, TaskContent]
+NoteBlock = Block[NoteMetadata, NoteContent]
 
 
 async def example_stream() -> AsyncIterator[str]:
     """Example stream with delimiter frontmatter blocks."""
     text = """
-Let's manage some tasks using delimiter+frontmatter syntax.
+Let's create some notes using delimiter+frontmatter syntax.
 
 !!start
 ---
-id: task-001
-block_type: task
-title: Implement authentication
-priority: high
-assignee: alice
-due_date: "2024-01-15"
+id: note-001
+block_type: note
+title: Meeting Notes
+category: work
+author: alice
 tags:
-  - backend
-  - api
-  - urgent
-status: in_progress
+  - planning
+  - team
 ---
-Implement user authentication API
-- Create JWT token generation
-- Add refresh token support
-- Implement password reset flow
-- Add 2FA support
+Discussed project timeline and deliverables.
+Team agreed on MVP scope for Q1.
+Next meeting scheduled for next Monday.
 !!end
 
-Here's another task with simpler metadata:
+Here's another note with simpler metadata:
 
 !!start
 ---
-id: task-002
-block_type: task
-title: Update documentation
-assignee: bob
+id: note-002
+block_type: note
+title: Quick Reminder
+category: personal
 ---
-Update documentation
-- API reference docs
-- Installation guide
-- Contributing guidelines
+Remember to review the pull requests.
+Update documentation before EOD.
 !!end
 
-And a minimal task:
+A technical note with rich metadata:
 
 !!start
 ---
-id: task-003
-block_type: task
-title: Fix payment bug
-priority: urgent
+id: note-003
+block_type: note
+title: Architecture Decision
+category: technical
+author: bob
+tags:
+  - architecture
+  - database
+  - performance
 ---
-Fix critical bug in payment processing
+Decided to use PostgreSQL for the main database.
+Redis will handle caching layer.
+Estimated migration time: 2 weeks.
 !!end
 
 Some text between blocks.
 
 !!start
 ---
-id: task-004
-block_type: task
-title: Performance optimization
-assignee: charlie
+id: note-004
+block_type: note
+title: Code Review Feedback
+author: charlie
 tags:
-  - performance
-  - backend
+  - code-review
 ---
-Optimize database queries
-- Add proper indexes
-- Implement query caching
-- Review N+1 queries
+Great implementation overall!
+Consider adding unit tests for edge cases.
+Documentation could be more detailed.
 !!end
 
 That's all for now!
@@ -140,30 +124,32 @@ That's all for now!
 async def main() -> None:
     """Main example function."""
     print("=== DelimiterFrontmatterSyntax Example ===\n")
+    print("This example uses SIMPLE blocks with NO custom parsing.")
+    print("Content is stored directly in the raw_content field.\n")
 
-    # Create delimiter frontmatter syntax for tasks
+    # Create delimiter frontmatter syntax for notes
     # Using standard !!start/!!end delimiters
-    task_syntax = DelimiterFrontmatterSyntax(
+    note_syntax = DelimiterFrontmatterSyntax(
         start_delimiter="!!start",
         end_delimiter="!!end",
     )
 
     # Create type-specific registry and register block
-    registry = Registry(syntax=task_syntax)
-    registry.register("task", TaskBlock)
+    registry = Registry(syntax=note_syntax)
+    registry.register("note", NoteBlock)
 
-    # Add validators
-    def validate_task_priority(block: ExtractedBlock[TaskMetadata, TaskContent]) -> bool:
-        """Ensure high priority tasks have assignees."""
-        return not (block.metadata.priority in ["high", "urgent"] and not block.metadata.assignee)
+    # Add a simple validator
+    def validate_work_notes(block: ExtractedBlock[NoteMetadata, NoteContent]) -> bool:
+        """Work notes should have an author."""
+        return not (block.metadata.category == "work" and not block.metadata.author)
 
-    registry.add_validator("task", validate_task_priority)
+    registry.add_validator("note", validate_work_notes)
 
     # Create processor
     processor = StreamBlockProcessor(registry, lines_buffer=10)
 
     # Process stream
-    print("Processing task blocks...\n")
+    print("Processing note blocks...\n")
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
@@ -176,36 +162,32 @@ async def main() -> None:
                     text = text[:57] + "..."
                 print(f"[TEXT] {text}")
 
-        elif event.type == EventType.BLOCK_DELTA:
-            # Skip deltas for cleaner output
-            pass
-
         elif event.type == EventType.BLOCK_EXTRACTED:
             # Complete block extracted
             block = event.block
             blocks_extracted.append(block)
 
-            # Type narrow to TaskMetadata and TaskContent for specific access
-            if isinstance(block.metadata, TaskMetadata) and isinstance(block.content, TaskContent):
+            # Type narrow to NoteMetadata and NoteContent for specific access
+            if isinstance(block.metadata, NoteMetadata) and isinstance(block.content, NoteContent):
                 metadata = block.metadata
                 content = block.content
 
                 print(f"\n{'=' * 60}")
-                print(f"[TASK] {metadata.id} - {metadata.title}")
-                print(f"       Priority: {metadata.priority}")
-                print(f"       Status: {metadata.status}")
-                if metadata.assignee:
-                    print(f"       Assignee: {metadata.assignee}")
-                if metadata.due_date:
-                    print(f"       Due: {metadata.due_date}")
+                print(f"[NOTE] {metadata.id} - {metadata.title}")
+                if metadata.category:
+                    print(f"       Category: {metadata.category}")
+                if metadata.author:
+                    print(f"       Author: {metadata.author}")
                 if metadata.tags:
                     print(f"       Tags: {', '.join(metadata.tags)}")
 
-                print(f"\n       Description: {content.description}")
-                if content.subtasks:
-                    print("       Subtasks:")
-                    for subtask in content.subtasks:
-                        print(f"         - {subtask}")
+                # Access raw_content directly - no parsing needed!
+                print(f"\n       Content ({len(content.raw_content)} chars):")
+                preview = content.raw_content.strip()
+                if len(preview) > 100:
+                    preview = preview[:97] + "..."
+                for line in preview.split("\n"):
+                    print(f"       {line}")
                 print("=" * 60)
 
         elif event.type == EventType.BLOCK_REJECTED:
@@ -214,17 +196,24 @@ async def main() -> None:
 
     print("\n\nEXTRACTED BLOCKS SUMMARY:")
     print(f"Total blocks: {len(blocks_extracted)}")
-    print("\nTasks:")
-    for task in blocks_extracted:
-        # Type narrow to TaskMetadata for specific access
-        if isinstance(task.metadata, TaskMetadata):
-            print(f"  - [{task.metadata.priority.upper()}] {task.metadata.title}")
-            print(f"    Assignee: {task.metadata.assignee or 'Unassigned'}")
-            print(f"    Status: {task.metadata.status}")
+    print("\nNotes:")
+    for note in blocks_extracted:
+        # Type narrow to NoteMetadata for specific access
+        if isinstance(note.metadata, NoteMetadata):
+            category = f" [{note.metadata.category}]" if note.metadata.category else ""
+            author = f" by {note.metadata.author}" if note.metadata.author else ""
+            print(f"  - {note.metadata.title}{category}{author}")
 
+    print("\n" + "=" * 60)
+    print("KEY POINTS:")
+    print("=" * 60)
+    print("✓ No custom parse() method needed")
+    print("✓ Content stored directly in raw_content field")
+    print("✓ Perfect for simple text blocks")
+    print("✓ Metadata in YAML frontmatter (rich structure)")
+    print("✓ Clean separation: metadata vs. content")
     print("\n✓ DelimiterFrontmatterSyntax processing complete!")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
     asyncio.run(main())
