@@ -1,0 +1,43 @@
+# {{ block.name }} Block
+
+{% if block.description %}
+{{ block.description }}
+
+{% if block.usage %}
+{{ block.usage }}
+{% endif %}
+{% endif %}
+
+## Syntax Format
+
+{{ syntax_format }}
+
+## Block Type: {{ block.name }}
+
+{% if block.content_format %}
+**Content Format:**
+
+{{ block.content_format }}
+{% endif %}
+
+{% if block.metadata_schema.properties %}
+**Metadata Fields:**
+{% for field_name, field_info in block.metadata_schema.properties.items() %}
+{% if field_info.description %}
+- `{{ field_name }}` - {{ field_info.description }}
+{% else %}
+- `{{ field_name }}`
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if block.examples %}
+## Examples
+
+{% for example in block.examples %}
+```
+{{ example }}
+```
+
+{% endfor %}
+{% endif %}

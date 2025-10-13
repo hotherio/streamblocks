@@ -1,0 +1,62 @@
+# Structured Block Output Format
+
+You can output structured blocks using the {{ syntax_name }}.
+
+## Syntax Format
+
+{{ syntax_format }}
+
+## Available Block Types
+
+You can output the following types of blocks:
+
+{% for block in blocks %}
+### {{ block.name }}
+
+{% if block.description %}
+{{ block.description }}
+
+{% if block.usage %}
+{{ block.usage }}
+{% endif %}
+{% endif %}
+
+{% if block.content_format %}
+**Content Format:**
+
+{{ block.content_format }}
+{% endif %}
+
+{% if block.metadata_schema.properties %}
+**Metadata Fields:**
+{% for field_name, field_info in block.metadata_schema.properties.items() %}
+{% if field_info.description %}
+- `{{ field_name }}` - {{ field_info.description }}
+{% else %}
+- `{{ field_name }}`
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if block.examples %}
+**Examples:**
+
+{% for example in block.examples %}
+```
+{{ example }}
+```
+
+{% endfor %}
+{% endif %}
+
+---
+
+{% endfor %}
+
+## Usage Guidelines
+
+1. Always use the exact syntax format shown above
+2. Ensure all required metadata fields are included
+3. Content should be formatted according to the content format specification
+4. Block IDs should be unique within the conversation
+5. Use the appropriate block type for your intent
