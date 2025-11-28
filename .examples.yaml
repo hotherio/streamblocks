@@ -4,6 +4,15 @@
 # Examples to always skip
 skip:
   - "examples/ui/interactive_ui_demo.py"  # TUI - requires user interaction
+  - "examples/live_feedback/01_simple_keyboard_pause.py"  # Requires keyboard interaction (Space)
+  - "examples/live_feedback/02_two_phase_interactive.py"  # Requires user interaction for Q&A
+  - "examples/live_feedback/03_smooth_typewriter_rendering.py"  # Requires keyboard interaction (Space, +/-, e, q)
+  - "examples/live_feedback/04_feedback_patterns_with_cancellation.py"  # Requires keyboard interaction (Space, f, c, +/-, e, q)
+  - "examples/live_feedback/05_textual_chat_interface.py"  # TUI - requires user interaction (Enter, q)
+  - "examples/live_feedback/06_multi_threaded_conversation.py"  # TUI - requires user interaction (Enter, Tab, q)
+  - "examples/live_feedback/07_minimal_chat.py"  # TUI - requires user interaction (Enter, q)
+  - "examples/live_feedback/08_language_switching.py"  # TUI - requires user interaction (button clicks, q)
+  - "examples/live_feedback/09_language_switching_local_llm.py"  # TUI - requires local LLM Studio + user interaction
 
 # Custom timeouts for specific examples (in seconds)
 timeouts:
@@ -19,6 +28,14 @@ requires_api:
     - "examples/adapters/13_manual_chunk_processing.py"
     - "examples/gemini_simple_demo.py"
     - "examples/gemini_architect_example.py"
+    - "examples/live_feedback/01_simple_keyboard_pause.py"
+    - "examples/live_feedback/02_two_phase_interactive.py"
+    - "examples/live_feedback/03_smooth_typewriter_rendering.py"
+    - "examples/live_feedback/04_feedback_patterns_with_cancellation.py"
+    - "examples/live_feedback/05_textual_chat_interface.py"
+    - "examples/live_feedback/06_multi_threaded_conversation.py"
+    - "examples/live_feedback/07_minimal_chat.py"
+    - "examples/live_feedback/08_language_switching.py"
 
   OPENAI_API_KEY:
     - "examples/adapters/03_openai_explicit_adapter.py"
@@ -39,6 +56,8 @@ categories:
     - "examples/adapters/*.py"
   logging:
     - "examples/logging/*.py"
+  live_feedback:
+    - "examples/live_feedback/*.py"
   ui:
     - "examples/ui/*.py"
   integrations:

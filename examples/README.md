@@ -148,6 +148,30 @@ Examples demonstrating different logging approaches:
 - `stdlib_logging_example.py` - Python stdlib logging
 - `structlog_example.py` - Structured logging with structlog
 
+### Live Feedback (`live_feedback/`)
+
+Examples showing interactive LLM streaming patterns:
+
+- `01_simple_keyboard_pause.py` - **Requires GEMINI_API_KEY** - Simple Enter-key pause with optional feedback
+- `02_two_phase_interactive.py` - **Requires GEMINI_API_KEY + User Interaction** - Advanced two-phase workflow with structured blocks
+- `03_smooth_typewriter_rendering.py` - **Requires GEMINI_API_KEY + User Interaction** - Character-by-character rendering with speed control
+- `04_feedback_patterns_with_cancellation.py` - **Requires GEMINI_API_KEY + User Interaction** - Multiple feedback patterns with timeout cancellation
+- `05_textual_chat_interface.py` - **Requires GEMINI_API_KEY + TUI** - Seamless stream transitions with invisible cancellation
+- `06_multi_threaded_conversation.py` - **Requires GEMINI_API_KEY + TUI** - Single LLM managing multiple conversation threads
+
+**See [live_feedback/README.md](live_feedback/README.md) for detailed documentation.**
+
+**Key Features:**
+- Pause/resume LLM streams mid-generation
+- Inject user feedback into conversation
+- Seamless stream transitions (ChatGPT/Claude-like)
+- Multi-threaded conversations with semantic routing
+- Smooth typewriter rendering with speed control
+- Timeout-based cancellation
+- Rich UI with panels, tables, and syntax highlighting
+- Textual TUI chat interfaces
+- Questionary integration for beautiful CLI interactions
+
 ### Syntaxes (`syntaxes/`)
 
 Examples showing different syntax formats:

@@ -18,7 +18,9 @@ dependencies = [
     "pydantic-ai>=1.0.9",
     "pydantic>=2.0",
     "pyyaml>=6.0",
+    "questionary>=2.1.1",
     "textual>=6.1.0",
+    "hother-cancelable>=0.1.0",
 ]
 
 [project.urls]
@@ -96,6 +98,8 @@ dev = [
     "google-genai>=1.38.0",
     "openai>=1.0.0",
     "anthropic>=0.18.0",
+    # Keyboard control for live feedback examples
+    "pynput>=1.7.0",
 ]
 
 # Documentation dependencies
@@ -250,6 +254,11 @@ line-ending = "auto"
     "SIM102",  # Nested if (acceptable in examples)
     "FBT001",  # Boolean positional argument (acceptable in examples)
     "FBT002",  # Boolean default argument (acceptable in examples)
+    "N999",    # Invalid module name (numbered example files acceptable)
+    "ASYNC110", # Polling threading.Event from async code (needed for thread-async coordination)
+    "TRY301",  # Abstract raise to inner function (acceptable in examples)
+    "RSE102",  # Unnecessary parentheses on raised exception (acceptable in examples)
+    "SIM105",  # contextlib.suppress (try/except/pass more readable in examples)
 ]
 "sandbox/**/*" = [
     "C901",    # Too complex
@@ -301,7 +310,13 @@ max-complexity = 10
 [tool.pyright]
 include = ["src", "examples"]
 exclude = ["**/__pycache__", "**/migrations", ".venv", "tests"]
-ignore = ["examples/logging/structlog_example.py"]
+ignore = [
+    "examples/logging/structlog_example.py",
+    "examples/live_feedback/03_smooth_typewriter_rendering.py",
+    "examples/live_feedback/04_feedback_patterns_with_cancellation.py",
+    "examples/live_feedback/05_textual_chat_interface.py",
+    "examples/live_feedback/06_multi_threaded_conversation.py",
+]
 
 pythonVersion = "3.13"
 venvPath = ".venv"
