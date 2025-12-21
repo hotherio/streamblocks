@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, get_args, get_origin
 
 from pydantic import BaseModel, Field
 
@@ -16,9 +16,10 @@ if TYPE_CHECKING:
 def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], type[BaseContent]]:
     """Extract metadata and content type parameters from a Block class.
 
-    For classes inheriting from Block[M, C], Pydantic resolves the concrete
-    types and stores them in the field annotations. We simply extract them
-    from the model_fields.
+    Handles multiple patterns:
+    1. Concrete classes with Pydantic model_fields
+    2. Generic type aliases like Block[MetadataClass, ContentClass]
+    3. Classes inheriting from Block[M, C]
 
     Args:
         block_class: The block class to extract types from
@@ -26,13 +27,42 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
     Returns:
         Tuple of (metadata_class, content_class)
     """
-    # Extract from Pydantic field annotations
+    # Method 1: Try Pydantic model_fields (for concrete classes)
     if hasattr(block_class, "model_fields"):
         metadata_field = block_class.model_fields.get("metadata")
         content_field = block_class.model_fields.get("content")
 
         if metadata_field and content_field:
-            return (metadata_field.annotation, content_field.annotation)
+            metadata_type = metadata_field.annotation
+            content_type = content_field.annotation
+            # Verify we got actual types, not just the generic TypeVar
+            if (
+                metadata_type is not None
+                and content_type is not None
+                and not isinstance(metadata_type, TypeVar)
+                and not isinstance(content_type, TypeVar)
+            ):
+                return (metadata_type, content_type)
+
+    # Method 2: Try get_args() for generic type aliases like Block[M, C]
+    args = get_args(block_class)
+    if len(args) >= 2:
+        metadata_type, content_type = args[0], args[1]
+        try:
+            if issubclass(metadata_type, BaseMetadata) and issubclass(content_type, BaseContent):
+                return (metadata_type, content_type)
+        except TypeError:
+            # issubclass can raise TypeError for non-class types
+            pass
+
+    # Method 3: Check __orig_bases__ for inherited generics
+    if hasattr(block_class, "__orig_bases__"):
+        for base in block_class.__orig_bases__:
+            origin = get_origin(base)
+            if origin is Block or origin is ExtractedBlock:
+                args = get_args(base)
+                if len(args) >= 2:
+                    return (args[0], args[1])
 
     # Fallback to base classes
     return (BaseMetadata, BaseContent)
