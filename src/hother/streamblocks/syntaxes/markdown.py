@@ -5,17 +5,17 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-import yaml
+from pydantic import ValidationError
 
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
-from hother.streamblocks.syntaxes.base import BaseSyntax
+from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
 
 
-class MarkdownFrontmatterSyntax(BaseSyntax):
+class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     """Syntax: Markdown-style with YAML frontmatter.
 
     Format:
@@ -93,16 +93,11 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
             return self.info_string
 
         # Parse YAML to extract block_type
-        yaml_content = "\n".join(candidate.metadata_lines)
-        try:
-            metadata_dict: dict[str, Any] = yaml.safe_load(yaml_content) or {}
-            if "block_type" in metadata_dict:
-                return str(metadata_dict["block_type"])
-            # No block_type found in metadata, return info_string
-            return self.info_string
-        except Exception:
-            # YAML parsing failed, return info_string as fallback
-            return self.info_string
+        metadata_dict = self._parse_yaml_metadata(candidate.metadata_lines)
+        if metadata_dict and "block_type" in metadata_dict:
+            return str(metadata_dict["block_type"])
+        # No block_type found in metadata or parse failed, return info_string
+        return self.info_string
 
     def parse_block(
         self, candidate: BlockCandidate, block_class: type[Any] | None = None
@@ -119,13 +114,9 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
             metadata_class, content_class = extract_block_types(block_class)
 
         # Parse metadata from accumulated metadata lines
-        metadata_dict: dict[str, Any] = {}
-        if candidate.metadata_lines:
-            yaml_content = "\n".join(candidate.metadata_lines)
-            try:
-                metadata_dict = yaml.safe_load(yaml_content) or {}
-            except Exception as e:
-                return ParseResult(success=False, error=f"Invalid YAML: {e}", exception=e)
+        metadata_dict, yaml_error = self._parse_yaml_metadata_strict(candidate.metadata_lines)
+        if yaml_error:
+            return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
         # Ensure id and block_type have defaults
         # Only fill in defaults if using BaseMetadata (no custom class provided)
@@ -143,7 +134,9 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
         try:
             # Pass metadata dict directly to Pydantic for validation
             metadata = metadata_class(**metadata_dict)
-        except Exception as e:
+        except ValidationError as e:
+            return ParseResult(success=False, error=f"Metadata validation error: {e}", exception=e)
+        except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
 
         # Parse content
@@ -152,7 +145,9 @@ class MarkdownFrontmatterSyntax(BaseSyntax):
         try:
             # All content classes must have parse method
             content = content_class.parse(content_text)
-        except Exception as e:
+        except ValidationError as e:
+            return ParseResult(success=False, error=f"Content validation error: {e}", exception=e)
+        except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
 
         return ParseResult(success=True, metadata=metadata, content=content)

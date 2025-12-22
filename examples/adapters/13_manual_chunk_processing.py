@@ -20,6 +20,8 @@ REQUIREMENTS:
 import asyncio
 import os
 import sys
+from collections.abc import AsyncIterator
+from typing import Any
 
 # Check for Gemini SDK
 try:
@@ -31,7 +33,7 @@ except ImportError:
     sys.exit(1)
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
@@ -40,7 +42,7 @@ from hother.streamblocks import (
 from hother.streamblocks.blocks import FileOperations
 
 
-async def get_gemini_response(prompt: str | None = None):
+async def get_gemini_response(prompt: str | None = None) -> AsyncIterator[Any]:
     """Get Gemini API response stream."""
     # Get API key
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
@@ -125,11 +127,14 @@ async def example_basic_manual_processing() -> None:
                 print(f"📝 Chunk #{chunk_count}: Text delta ({status})")
 
             # Extracted blocks
-            elif isinstance(event, BlockExtractedEvent):
+            elif isinstance(event, BlockEndEvent):
+                block = event.get_block()
+                if block is None:
+                    continue
                 print(f"\n✅ Chunk #{chunk_count}: Block extracted!")
-                print(f"   ID: {event.block.metadata.id}")
+                print(f"   ID: {block.metadata.id}")
                 print("   Operations:")
-                for op in event.block.content.operations:
+                for op in block.content.operations:
                     print(f"     - {op.action}: {op.path}")
                 print()
 
@@ -138,11 +143,14 @@ async def example_basic_manual_processing() -> None:
     for event in final_events:
         event_count += 1
 
-        if isinstance(event, BlockExtractedEvent):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             print("\n✅ Finalize: Block extracted!")
-            print(f"   ID: {event.block.metadata.id}")
+            print(f"   ID: {block.metadata.id}")
             print("   Operations:")
-            for op in event.block.content.operations:
+            for op in block.content.operations:
                 print(f"     - {op.action}: {op.path}")
             print()
         elif isinstance(event, TextDeltaEvent):
@@ -187,8 +195,11 @@ async def example_selective_processing() -> None:
             processed_chunks += 1
 
             for event in events:
-                if isinstance(event, BlockExtractedEvent):
-                    print(f"✅ Block: {event.block.metadata.id}")
+                if isinstance(event, BlockEndEvent):
+                    block = event.get_block()
+                    if block is None:
+                        continue
+                    print(f"✅ Block: {block.metadata.id}")
                     print(f"   Found in chunk with text: {text[:50]}...")
         else:
             # Skip this chunk
@@ -197,9 +208,12 @@ async def example_selective_processing() -> None:
     # Finalize to process remaining text and get any extracted blocks
     final_events = processor.finalize()
     for event in final_events:
-        if isinstance(event, BlockExtractedEvent):
-            print(f"✅ Block from finalize: {event.block.metadata.id}")
-            for op in event.block.content.operations:
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"✅ Block from finalize: {block.metadata.id}")
+            for op in block.content.operations:
                 print(f"   - {op.action}: {op.path}")
 
     print()
@@ -243,8 +257,11 @@ async def example_batch_processing() -> None:
                 events = processor.process_chunk(buffered_chunk)
 
                 for event in events:
-                    if isinstance(event, BlockExtractedEvent):
-                        print(f"  ✅ Block: {event.block.metadata.id}")
+                    if isinstance(event, BlockEndEvent):
+                        block = event.get_block()
+                        if block is None:
+                            continue
+                        print(f"  ✅ Block: {block.metadata.id}")
 
             chunk_buffer.clear()
 
@@ -257,15 +274,21 @@ async def example_batch_processing() -> None:
             events = processor.process_chunk(buffered_chunk)
 
             for event in events:
-                if isinstance(event, BlockExtractedEvent):
-                    print(f"  ✅ Block: {event.block.metadata.id}")
+                if isinstance(event, BlockEndEvent):
+                    block = event.get_block()
+                    if block is None:
+                        continue
+                    print(f"  ✅ Block: {block.metadata.id}")
 
     # Finalize to process remaining text and get any extracted blocks
     final_events = processor.finalize()
     for event in final_events:
-        if isinstance(event, BlockExtractedEvent):
-            print(f"\n  ✅ Block from finalize: {event.block.metadata.id}")
-            for op in event.block.content.operations:
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"\n  ✅ Block from finalize: {block.metadata.id}")
+            for op in block.content.operations:
                 print(f"     - {op.action}: {op.path}")
 
     print()

@@ -4,9 +4,15 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
-from hother.streamblocks import DelimiterPreambleSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.blocks.files import FileOperations, FileOperationsContent, FileOperationsMetadata
 from hother.streamblocks.core.models import ExtractedBlock
+from hother.streamblocks.core.types import (
+    BlockDeltaEvent,
+    BlockEndEvent,
+    BlockErrorEvent,
+    TextContentEvent,
+)
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
@@ -67,33 +73,36 @@ async def main() -> None:
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(example_stream()):
-        if event.type == EventType.RAW_TEXT:
+        if isinstance(event, TextContentEvent):
             # Raw text passed through
-            if event.data.strip():  # Skip empty lines for cleaner output
-                print(f"[TEXT] {event.data.strip()}")
+            if event.content.strip():  # Skip empty lines for cleaner output
+                print(f"[TEXT] {event.content.strip()}")
 
-        elif event.type == EventType.BLOCK_DELTA:
+        elif isinstance(event, BlockDeltaEvent):
             # Partial block update
-            print(f"[DELTA] {event.syntax} - {event.data.strip()}")
+            print(f"[DELTA] {event.section} - {event.delta.strip()}")
 
-        elif event.type == EventType.BLOCK_EXTRACTED:
+        elif isinstance(event, BlockEndEvent):
             # Complete block extracted
-            block = event.block
-            blocks_extracted.append(block)
-            print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
+            block = event.get_block()
+            if block is not None:
+                blocks_extracted.append(block)
+                print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
 
-            # Type narrow to FileOperationsContent for specific access
-            if isinstance(block.content, FileOperationsContent):
-                print("        Operations:")
-                for op in block.content.operations:
-                    print(f"          - {op.action}: {op.path}")
+                # Type narrow to FileOperationsContent for specific access
+                if isinstance(block.content, FileOperationsContent):
+                    print("        Operations:")
+                    for op in block.content.operations:
+                        print(f"          - {op.action}: {op.path}")
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             # Block rejected
             print(f"[REJECT] {event.reason} - {event.syntax}")
 
     print("-" * 60)
     print(f"\nTotal blocks extracted: {len(blocks_extracted)}")
+    for block in blocks_extracted:
+        print(block)
 
     # Show metadata from blocks
     print("\nBlock metadata:")
@@ -106,6 +115,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
-    asyncio.run(main())
     asyncio.run(main())

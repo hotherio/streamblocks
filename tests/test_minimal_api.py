@@ -7,6 +7,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from hother.streamblocks import (
+    BlockEndEvent,
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
     EventType,
@@ -40,8 +41,11 @@ No custom models needed.
 
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.block)
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
@@ -86,8 +90,11 @@ assignee: john
 
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.block)
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
@@ -123,8 +130,11 @@ def hello():
 
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.block)
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
@@ -163,8 +173,11 @@ Task content here.
 
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.block)
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]
@@ -230,8 +243,11 @@ async def test_custom_content_inherits_base() -> None:
 
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.block)
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
 
     assert len(extracted_blocks) == 1
     block = extracted_blocks[0]

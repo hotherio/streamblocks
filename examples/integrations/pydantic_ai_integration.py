@@ -10,8 +10,9 @@ import os
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
-from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.blocks.files import FileContent, FileOperations
+from hother.streamblocks.core.types import BlockEndEvent, TextContentEvent
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -153,8 +154,10 @@ Make sure to include proper project structure with an app module and a simple Fa
     # Direct stream passing
     stream1 = text_stream()
     async for event in file_ops_processor.process_stream(stream1):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             # Only process blocks of the expected type
             if block.metadata.block_type == "files_operations":
                 extracted_blocks.append(block)
@@ -181,8 +184,10 @@ Make sure to include proper project structure with an app module and a simple Fa
     # Direct stream passing (create new stream instance)
     stream2 = text_stream()
     async for event in file_content_processor.process_stream(stream2):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             # Only process blocks of the expected type
             if block.metadata.block_type == "file_content":
                 extracted_blocks.append(block)
@@ -275,12 +280,14 @@ Mix explanatory text with structured blocks.
     # Process the stream through StreamBlocks - direct stream passing
     stream = get_agent_stream()
     async for event in processor.process_agent_stream(stream):
-        if event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        if isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
-        elif event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             print(f"\n📦 BLOCK: {block.metadata.id}")
             for op in block.content.operations:
                 print(f"   - {op.action}: {op.path}")

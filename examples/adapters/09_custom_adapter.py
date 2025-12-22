@@ -6,10 +6,11 @@ streaming format and register it for auto-detection.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
     AdapterDetector,
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamAdapter,
@@ -24,7 +25,7 @@ class ProprietaryChunk:
 
     __module__ = "mycompany.streaming.api"
 
-    def __init__(self, payload, meta=None) -> None:
+    def __init__(self, payload: str, meta: dict[str, str | bool] | None = None) -> None:
         self.payload = payload  # Text is in 'payload'
         self.meta = meta or {}  # Metadata in 'meta'
 
@@ -51,7 +52,7 @@ class ProprietaryAdapter(StreamAdapter):
         return None
 
 
-async def proprietary_stream():
+async def proprietary_stream() -> AsyncGenerator[ProprietaryChunk]:
     """Simulate proprietary API stream."""
     chunks = [
         ProprietaryChunk("!!proj:files_operations\n", {"request_id": "req-123"}),
@@ -98,9 +99,12 @@ async def main() -> None:
             print(f"   Meta: {event.meta}")
 
         # Extracted blocks
-        elif isinstance(event, BlockExtractedEvent):
-            print(f"\n✅ Block Extracted: {event.block.metadata.id}")
-            for op in event.block.content.operations:
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"\n✅ Block Extracted: {block.metadata.id}")
+            for op in block.content.operations:
                 print(f"   - {op.path}")
             print()
 

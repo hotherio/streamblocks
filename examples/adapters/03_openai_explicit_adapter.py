@@ -23,7 +23,7 @@ except ImportError:
     sys.exit(1)
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     OpenAIAdapter,
     Registry,
@@ -103,9 +103,12 @@ IMPORTANT:
                 print(f"📝 Delta: {repr(event.delta)[:40]}", flush=True)
 
             # Extracted blocks
-            elif isinstance(event, BlockExtractedEvent):
-                print(f"\n✅ Block: {event.block.metadata.id}")
-                for op in event.block.content.operations:
+            elif isinstance(event, BlockEndEvent):
+                block = event.get_block()
+                if block is None:
+                    continue
+                print(f"\n✅ Block: {block.metadata.id}")
+                for op in block.content.operations:
                     print(f"   - {op.path}")
                 print()
 

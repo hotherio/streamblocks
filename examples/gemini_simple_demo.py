@@ -13,7 +13,7 @@ import asyncio
 import os
 import sys
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 # Check for Gemini SDK
 try:
@@ -29,7 +29,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
-    EventType,
     Registry,
     StreamBlockProcessor,
 )
@@ -42,6 +41,12 @@ from hother.streamblocks.blocks.files import (
     FileOperationsMetadata,
 )
 from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
+from hother.streamblocks.core.types import (
+    BlockDeltaEvent,
+    BlockEndEvent,
+    BlockErrorEvent,
+    TextContentEvent,
+)
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -108,7 +113,7 @@ Note: message_type can be: info, warning, error, success, status, explanation
 Always use this format for ALL content - whether it's file operations, code content, or communication."""
 
 
-async def get_gemini_response(prompt: str):  # type: ignore[no-untyped-def]
+async def get_gemini_response(prompt: str) -> AsyncIterator[Any]:
     """Get Gemini API response stream.
 
     Note: Returns the stream directly - no need for wrapper function!
@@ -212,8 +217,10 @@ async def main() -> None:
             if processor.is_native_event(event):
                 continue
 
-            if event.type == EventType.BLOCK_EXTRACTED:
-                block = event.block
+            if isinstance(event, BlockEndEvent):
+                block = event.get_block()
+                if block is None:
+                    continue
                 extracted_blocks.append(block)
 
                 # Handle different block types with proper type narrowing
@@ -298,17 +305,17 @@ async def main() -> None:
                     if len(lines) > 5:
                         print(f"      ... ({len(lines) - 5} more lines)")
 
-            elif event.type == EventType.BLOCK_DELTA:
+            elif isinstance(event, BlockDeltaEvent):
                 # Show progress
                 print("\r⏳ Processing block...", end="", flush=True)
 
-            elif event.type == EventType.RAW_TEXT:
+            elif isinstance(event, TextContentEvent):
                 # Collect any text outside blocks
-                text = event.data.strip()
+                text = event.content.strip()
                 if text:
                     raw_text.append(text)
 
-            elif event.type == EventType.BLOCK_REJECTED:
+            elif isinstance(event, BlockErrorEvent):
                 print(f"\n⚠️  Block rejected: {event.reason}")
 
     except Exception as e:

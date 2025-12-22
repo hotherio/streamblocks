@@ -9,9 +9,10 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 
-from hother.streamblocks import DelimiterPreambleSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
+from hother.streamblocks.core.types import BlockEndEvent
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -57,8 +58,10 @@ async def main() -> None:
     processor = StreamBlockProcessor(registry, logger=logger, lines_buffer=5)
 
     async for event in processor.process_stream(example_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            print(f"✓ Extracted block: {event.block.metadata.id}")
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is not None:
+                print(f"✓ Extracted block: {block.metadata.id}")
 
 
 if __name__ == "__main__":

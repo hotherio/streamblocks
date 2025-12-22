@@ -6,14 +6,15 @@ original chunks and StreamBlocks events. Shows type checking patterns.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
-    BlockOpenedEvent,
+    BlockEndEvent,
+    BlockStartEvent,
     DelimiterPreambleSyntax,
-    RawTextEvent,
     Registry,
     StreamBlockProcessor,
+    TextContentEvent,
     TextDeltaEvent,
 )
 from hother.streamblocks.blocks import FileOperations
@@ -23,12 +24,12 @@ from hother.streamblocks.blocks import FileOperations
 class MyCustomChunk:
     """Custom chunk with metadata."""
 
-    def __init__(self, text, metadata=None) -> None:
+    def __init__(self, text: str, metadata: dict[str, str | int] | None = None) -> None:
         self.text = text
-        self.metadata = metadata or {}
+        self.metadata: dict[str, str | int] = metadata or {}
 
 
-async def custom_stream():
+async def custom_stream() -> AsyncGenerator[MyCustomChunk]:
     """Stream with custom chunks."""
     chunks = [
         MyCustomChunk("!!files:files_operations\n", {"source": "api"}),
@@ -75,19 +76,22 @@ async def main() -> None:
             streamblocks_count += 1
             print(f"🔵 TextDelta: {repr(event.delta)[:40]}")
 
-        elif isinstance(event, BlockOpenedEvent):
+        elif isinstance(event, BlockStartEvent):
             streamblocks_count += 1
             print(f"🟢 BlockOpened: {event.syntax}")
 
-        elif isinstance(event, BlockExtractedEvent):
+        elif isinstance(event, BlockEndEvent):
             streamblocks_count += 1
-            print(f"✅ BlockExtracted: {event.block.metadata.id}")
-            for op in event.block.content.operations:
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"✅ BlockExtracted: {block.metadata.id}")
+            for op in block.content.operations:
                 print(f"   - {op.path}")
 
-        elif isinstance(event, RawTextEvent):
+        elif isinstance(event, TextContentEvent):
             streamblocks_count += 1
-            print(f"💬 RawText: {event.data}")
+            print(f"💬 RawText: {event.content}")
 
     print()
     print("Summary:")

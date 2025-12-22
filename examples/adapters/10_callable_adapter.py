@@ -6,9 +6,11 @@ extraction without creating a full adapter class.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
+    BlockEndEvent,
     CallableAdapter,
     DelimiterPreambleSyntax,
     Registry,
@@ -18,7 +20,7 @@ from hother.streamblocks.blocks import FileOperations
 
 
 # Simple dict-based chunks
-async def dict_stream():
+async def dict_stream() -> AsyncGenerator[dict[str, Any]]:
     """Stream of dictionaries."""
     chunks = [
         {"content": "!!files:files_operations\n", "id": 1},
@@ -66,9 +68,12 @@ async def main() -> None:
                 print("   🏁 Final chunk!")
 
         # Blocks
-        elif isinstance(event, BlockExtractedEvent):
-            print(f"\n✅ Block: {event.block.metadata.id}")
-            for op in event.block.content.operations:
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"\n✅ Block: {block.metadata.id}")
+            for op in block.content.operations:
                 print(f"   - {op.path}")
             print()
 

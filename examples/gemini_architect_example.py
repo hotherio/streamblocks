@@ -21,7 +21,8 @@ import asyncio
 import os
 import sys
 import traceback
-from typing import TYPE_CHECKING
+from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING, Any
 
 # Check for Gemini SDK
 try:
@@ -36,7 +37,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
-    EventType,
     Registry,
     StreamBlockProcessor,
 )
@@ -53,6 +53,7 @@ from hother.streamblocks.blocks.message import Message, MessageContent, MessageM
 from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
 from hother.streamblocks.blocks.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
 from hother.streamblocks.blocks.visualization import Visualization, VisualizationContent, VisualizationMetadata
+from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -461,7 +462,7 @@ async def process_message(block: ExtractedBlock[BaseMetadata, BaseContent]) -> N
     print("-" * 60)
 
 
-async def get_gemini_response(prompt: str):  # type: ignore[no-untyped-def]
+async def get_gemini_response(prompt: str) -> AsyncIterator[Any]:
     """Get Gemini API response stream.
 
     Note: Returns the stream directly - no need for wrapper function!
@@ -568,8 +569,10 @@ async def main() -> None:
             if processor.is_native_event(event):
                 continue
 
-            if event.type == EventType.BLOCK_EXTRACTED:
-                block = event.block
+            if isinstance(event, BlockEndEvent):
+                block = event.get_block()
+                if block is None:
+                    continue
                 block_type = block.metadata.block_type
                 blocks_by_type[block_type] += 1
 
@@ -593,12 +596,12 @@ async def main() -> None:
                 elif block_type == "message":
                     await process_message(block)
 
-            elif event.type == EventType.RAW_TEXT:
-                text = event.data.strip()
+            elif isinstance(event, TextContentEvent):
+                text = event.content.strip()
                 if text:
                     print(f"\n💬 {text}")
 
-            elif event.type == EventType.BLOCK_REJECTED:
+            elif isinstance(event, BlockErrorEvent):
                 reason = event.reason
                 print(f"\n⚠️  Block rejected: {reason}")
                 # Show the raw data that was rejected

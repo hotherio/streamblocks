@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from hother.streamblocks import (
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     EventType,
     Registry,
@@ -49,19 +50,21 @@ async def test_basic_delimiter_preamble_syntax() -> None:
         events.append(event)
 
     # Check events
-    raw_text_events = [e for e in events if e.type == EventType.RAW_TEXT]
+    text_content_events = [e for e in events if e.type == EventType.TEXT_CONTENT]
     [e for e in events if e.type == EventType.BLOCK_DELTA]
-    block_extracted_events = [e for e in events if e.type == EventType.BLOCK_EXTRACTED]
+    block_end_events = [e for e in events if e.type == EventType.BLOCK_END]
 
     # We get more events because of how line splitting works - that's OK
-    assert len(block_extracted_events) == 1  # One block extracted
-    assert any(e.data == "Some text before block." for e in raw_text_events)
-    assert any(e.data == "More text after block." for e in raw_text_events)
+    assert len(block_end_events) == 1  # One block extracted
+    assert any(e.content == "Some text before block." for e in text_content_events)
+    assert any(e.content == "More text after block." for e in text_content_events)
 
     # Check extracted block
-    extracted_event = block_extracted_events[0]
-    block = extracted_event.block
+    extracted_event = block_end_events[0]
+    assert isinstance(extracted_event, BlockEndEvent)
+    block = extracted_event.get_block()
 
+    assert block is not None
     assert block.syntax_name == "DelimiterPreambleSyntax"
     assert block.metadata.id == "file01"
     assert block.metadata.block_type == "files_operations"
@@ -98,8 +101,11 @@ file3.py:D
 
     extracted_blocks = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            extracted_blocks.append(event.block)
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
 
     assert len(extracted_blocks) == 2
     assert extracted_blocks[0].metadata.id == "block1"
@@ -129,9 +135,9 @@ file2.py:E"""
     async for event in processor.process_stream(mock_stream()):
         events.append(event)
 
-    rejected_events = [e for e in events if e.type == EventType.BLOCK_REJECTED]
-    assert len(rejected_events) == 1
-    assert "Stream ended without closing marker" in rejected_events[0].reason
+    error_events = [e for e in events if e.type == EventType.BLOCK_ERROR]
+    assert len(error_events) == 1
+    assert "Stream ended without closing marker" in error_events[0].reason
 
 
 if __name__ == "__main__":

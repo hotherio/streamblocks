@@ -8,12 +8,14 @@ This example demonstrates all processor configuration options:
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     GeminiAdapter,
     Registry,
+    StreamAdapter,
     StreamBlockProcessor,
     TextDeltaEvent,
 )
@@ -24,18 +26,18 @@ from hother.streamblocks.blocks import FileOperations
 class GeminiChunk:
     __module__ = "google.genai.types"
 
-    def __init__(self, text) -> None:
+    def __init__(self, text: str) -> None:
         self.text = text
 
 
-async def gemini_stream():
+async def gemini_stream() -> AsyncGenerator[GeminiChunk]:
     """Simple Gemini stream."""
     for chunk in ["!!f:files_operations\n", "app.py:C\n", "!!end\n"]:
         yield GeminiChunk(chunk)
         await asyncio.sleep(0.05)
 
 
-async def demo_config(name, adapter=None, **config) -> None:
+async def demo_config(name: str, adapter: StreamAdapter[GeminiChunk] | None = None, **config: bool) -> None:
     """Demo a specific configuration."""
     print(f"\n{'=' * 60}")
     print(f"Configuration: {name}")
@@ -56,7 +58,7 @@ async def demo_config(name, adapter=None, **config) -> None:
         elif isinstance(event, TextDeltaEvent):
             events_seen["text_delta"] += 1
             print("  📝 Text delta")
-        elif isinstance(event, BlockExtractedEvent):
+        elif isinstance(event, BlockEndEvent):
             events_seen["block"] += 1
             print("  ✅ Block extracted")
 
