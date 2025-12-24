@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator, Callable
 
     from hother.streamblocks.core.registry import Registry
-    from hother.streamblocks.core.types import Event
+    from hother.streamblocks.core.types import BaseEvent
 
 
 class AgentStreamProcessor(StreamBlockProcessor):
@@ -45,7 +45,7 @@ class AgentStreamProcessor(StreamBlockProcessor):
         )
         self.enable_partial_blocks = enable_partial_blocks
 
-    async def process_agent_stream(self, agent_stream: AsyncIterator[str]) -> AsyncGenerator[str | Event]:
+    async def process_agent_stream(self, agent_stream: AsyncIterator[str]) -> AsyncGenerator[str | BaseEvent]:
         """Process streaming output from a PydanticAI agent.
 
         This method is specifically designed to handle the streaming output
@@ -65,8 +65,8 @@ class AgentStreamProcessor(StreamBlockProcessor):
     async def process_agent_with_events(
         self,
         agent_stream: AsyncIterator[str],
-        event_handler: Callable[[str | Event], Any] | None = None,
-    ) -> AsyncGenerator[str | Event]:
+        event_handler: Callable[[str | BaseEvent], Any] | None = None,
+    ) -> AsyncGenerator[str | BaseEvent]:
         """Process agent stream with optional event handler for agent-specific events.
 
         This allows handling both StreamBlocks events and PydanticAI events

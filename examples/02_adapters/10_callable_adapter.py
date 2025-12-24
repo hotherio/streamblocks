@@ -9,7 +9,7 @@ import asyncio
 from typing import Any
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     EventCategory,
     Registry,
@@ -83,9 +83,12 @@ async def main() -> None:
                 print("   Final chunk!")
 
         # Blocks
-        elif isinstance(event, BlockExtractedEvent):
-            print(f"\nBlock: {event.block.metadata.id}")
-            for op in event.block.content.operations:
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"\nBlock: {block.metadata.id}")
+            for op in block.content.operations:
                 print(f"   - {op.path}")
             print()
 

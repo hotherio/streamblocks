@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
 from hother.streamblocks.adapters.categories import EventCategory  # noqa: TC001 - needed at runtime for Protocol
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.types import StreamEvent
+    from hother.streamblocks.core.types import BaseEvent
 
 TInput = TypeVar("TInput", contravariant=True)
 TOutput = TypeVar("TOutput", covariant=True)
@@ -94,9 +94,9 @@ class OutputProtocolAdapter(Protocol[TOutput]):
 
     Example:
         >>> class MyOutputAdapter:
-        ...     def to_protocol_event(self, event: StreamEvent) -> MyEvent | None:
-        ...         if isinstance(event, BlockExtractedEvent):
-        ...             return MyEvent(type="block", data=event.block)
+        ...     def to_protocol_event(self, event: BaseEvent) -> MyEvent | None:
+        ...         if isinstance(event, BlockEndEvent):
+        ...             return MyEvent(type="block", data=event.get_block())
         ...         return None
         ...
         ...     def passthrough(self, original_event: Any) -> MyEvent | None:
@@ -105,7 +105,7 @@ class OutputProtocolAdapter(Protocol[TOutput]):
 
     def to_protocol_event(
         self,
-        event: StreamEvent[Any, Any],
+        event: BaseEvent,
     ) -> TOutput | list[TOutput] | None:
         """Convert a StreamBlocks event to output protocol event(s).
 

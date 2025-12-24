@@ -44,12 +44,12 @@ from hother.streamblocks.extensions.agui.output_adapter import AGUIOutputAdapter
 if TYPE_CHECKING:
     from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
     from hother.streamblocks.core.registry import Registry
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata, StreamEvent
+    from hother.streamblocks.core.types import BaseEvent
 
 
 def create_agui_processor(
     registry: Registry,
-) -> ProtocolStreamProcessor[Any, StreamEvent[BaseMetadata, BaseContent]]:
+) -> ProtocolStreamProcessor[Any, BaseEvent]:
     """Create processor for AG-UI → StreamBlocks (unidirectional).
 
     This processor takes AG-UI events as input and emits native

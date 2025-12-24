@@ -28,7 +28,7 @@ from hother.streamblocks.adapters.detection import InputAdapterRegistry
 if TYPE_CHECKING:
     from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
     from hother.streamblocks.core.registry import Registry
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata, StreamEvent
+    from hother.streamblocks.core.types import BaseEvent
 
 # Event type constants to avoid magic strings
 _TEXT_CONTENT_EVENT = "content_block_delta"
@@ -135,7 +135,7 @@ InputAdapterRegistry.register_module("anthropic.lib", AnthropicInputAdapter)
 
 def create_anthropic_processor(
     registry: Registry,
-) -> ProtocolStreamProcessor[Any, StreamEvent[BaseMetadata, BaseContent]]:
+) -> ProtocolStreamProcessor[Any, BaseEvent]:
     """Create processor pre-configured for Anthropic streams.
 
     This is a convenience factory that creates a ProtocolStreamProcessor

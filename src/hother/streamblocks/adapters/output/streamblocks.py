@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata, StreamEvent
+    from hother.streamblocks.core.types import BaseEvent
 
 
 class StreamBlocksOutputAdapter:
@@ -17,15 +17,15 @@ class StreamBlocksOutputAdapter:
 
     Example:
         >>> adapter = StreamBlocksOutputAdapter()
-        >>> event = BlockExtractedEvent(...)
+        >>> event = BlockEndEvent(...)
         >>> adapter.to_protocol_event(event)
-        BlockExtractedEvent(...)  # Same event passed through
+        BlockEndEvent(...)  # Same event passed through
     """
 
     def to_protocol_event(
         self,
-        event: StreamEvent[BaseMetadata, BaseContent],
-    ) -> StreamEvent[BaseMetadata, BaseContent]:
+        event: BaseEvent,
+    ) -> BaseEvent:
         """Pass through StreamBlocks event unchanged.
 
         Args:

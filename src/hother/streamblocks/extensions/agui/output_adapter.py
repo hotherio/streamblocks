@@ -8,11 +8,7 @@ from typing import TYPE_CHECKING, Any
 from hother.streamblocks.extensions.agui.filters import AGUIEventFilter
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.types import (
-        BaseContent,
-        BaseMetadata,
-        StreamEvent,
-    )
+    from hother.streamblocks.core.types import BaseEvent
 
 
 class AGUIOutputAdapter:
@@ -21,11 +17,11 @@ class AGUIOutputAdapter:
     Transforms StreamBlocks events into AG-UI CustomEvent format.
 
     StreamBlocks events are mapped to AG-UI as follows:
-    - TextDeltaEvent, RawTextEvent → TextMessageContentEvent
-    - BlockOpenedEvent → CustomEvent(name="streamblocks.block_opened")
+    - TextDeltaEvent, TextContentEvent → TextMessageContentEvent
+    - BlockStartEvent → CustomEvent(name="streamblocks.block_start")
     - BlockDeltaEvent → CustomEvent(name="streamblocks.block_delta")
-    - BlockExtractedEvent → CustomEvent(name="streamblocks.block_extracted")
-    - BlockRejectedEvent → CustomEvent(name="streamblocks.block_rejected")
+    - BlockEndEvent → CustomEvent(name="streamblocks.block_end")
+    - BlockErrorEvent → CustomEvent(name="streamblocks.block_error")
 
     Passthrough events (AG-UI events from input) are passed through unchanged.
 
@@ -53,7 +49,7 @@ class AGUIOutputAdapter:
 
     def to_protocol_event(
         self,
-        event: StreamEvent[BaseMetadata, BaseContent],
+        event: BaseEvent,
     ) -> dict[str, Any] | None:
         """Convert StreamBlocks event to AG-UI event format.
 
@@ -72,10 +68,10 @@ class AGUIOutputAdapter:
         """
         from hother.streamblocks.core.types import (
             BlockDeltaEvent,
-            BlockExtractedEvent,
-            BlockOpenedEvent,
-            BlockRejectedEvent,
-            RawTextEvent,
+            BlockEndEvent,
+            BlockErrorEvent,
+            BlockStartEvent,
+            TextContentEvent,
             TextDeltaEvent,
         )
 
@@ -90,18 +86,19 @@ class AGUIOutputAdapter:
                 "delta": event.delta,
             }
 
-        if isinstance(event, RawTextEvent):
+        if isinstance(event, TextContentEvent):
             return {
                 "type": "TEXT_MESSAGE_CONTENT",
                 "message_id": self._ensure_message_id(),
-                "delta": event.data,
+                "delta": event.content,
             }
 
-        if isinstance(event, BlockOpenedEvent):
+        if isinstance(event, BlockStartEvent):
             return {
                 "type": "CUSTOM",
-                "name": "streamblocks.block_opened",
+                "name": "streamblocks.block_start",
                 "value": {
+                    "block_id": event.block_id,
                     "syntax": event.syntax,
                     "start_line": event.start_line,
                     "inline_metadata": event.inline_metadata,
@@ -113,35 +110,38 @@ class AGUIOutputAdapter:
                 "type": "CUSTOM",
                 "name": "streamblocks.block_delta",
                 "value": {
+                    "block_id": event.block_id,
                     "syntax": event.syntax,
                     "section": event.section,
                     "delta": event.delta,
-                    "start_line": event.start_line,
                     "current_line": event.current_line,
                 },
             }
 
-        if isinstance(event, BlockExtractedEvent):
+        if isinstance(event, BlockEndEvent):
             return {
                 "type": "CUSTOM",
-                "name": "streamblocks.block_extracted",
+                "name": "streamblocks.block_end",
                 "value": {
-                    "block_id": event.block.hash_id,
-                    "block_type": event.block.metadata.block_type,
-                    "syntax": event.block.syntax_name,
-                    "metadata": event.block.metadata.model_dump(),
-                    "content": event.block.content.model_dump(),
-                    "line_start": event.block.line_start,
-                    "line_end": event.block.line_end,
+                    "block_id": event.block_id,
+                    "block_type": event.block_type,
+                    "syntax": event.syntax,
+                    "metadata": event.metadata,
+                    "content": event.content,
+                    "start_line": event.start_line,
+                    "end_line": event.end_line,
+                    "hash_id": event.hash_id,
                 },
             }
 
-        if isinstance(event, BlockRejectedEvent):
+        if isinstance(event, BlockErrorEvent):
             return {
                 "type": "CUSTOM",
-                "name": "streamblocks.block_rejected",
+                "name": "streamblocks.block_error",
                 "value": {
+                    "block_id": event.block_id,
                     "reason": event.reason,
+                    "error_code": event.error_code,
                     "syntax": event.syntax,
                     "start_line": event.start_line,
                     "end_line": event.end_line,
@@ -176,7 +176,7 @@ class AGUIOutputAdapter:
 
     def _should_emit(
         self,
-        event: StreamEvent[BaseMetadata, BaseContent],
+        event: BaseEvent,
     ) -> bool:
         """Check if event passes the filter.
 
@@ -188,29 +188,29 @@ class AGUIOutputAdapter:
         """
         from hother.streamblocks.core.types import (
             BlockDeltaEvent,
-            BlockExtractedEvent,
-            BlockOpenedEvent,
-            BlockRejectedEvent,
-            RawTextEvent,
+            BlockEndEvent,
+            BlockErrorEvent,
+            BlockStartEvent,
+            TextContentEvent,
             TextDeltaEvent,
         )
 
-        if isinstance(event, RawTextEvent):
+        if isinstance(event, TextContentEvent):
             return AGUIEventFilter.RAW_TEXT in self.event_filter
 
         if isinstance(event, TextDeltaEvent):
             return AGUIEventFilter.TEXT_DELTA in self.event_filter
 
-        if isinstance(event, BlockOpenedEvent):
+        if isinstance(event, BlockStartEvent):
             return AGUIEventFilter.BLOCK_OPENED in self.event_filter
 
         if isinstance(event, BlockDeltaEvent):
             return AGUIEventFilter.BLOCK_DELTA in self.event_filter
 
-        if isinstance(event, BlockExtractedEvent):
+        if isinstance(event, BlockEndEvent):
             return AGUIEventFilter.BLOCK_EXTRACTED in self.event_filter
 
-        if isinstance(event, BlockRejectedEvent):
+        if isinstance(event, BlockErrorEvent):
             return AGUIEventFilter.BLOCK_REJECTED in self.event_filter
 
         return True

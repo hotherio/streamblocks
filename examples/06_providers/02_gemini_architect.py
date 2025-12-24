@@ -448,7 +448,14 @@ async def process_message(block: ExtractedBlock[BaseMetadata, BaseContent]) -> N
     content = block.content
 
     # Choose indicator based on message type
-    indicator_map = {"info": "[i]", "warning": "[!]", "error": "[x]", "success": "[ok]", "status": "[s]", "explanation": "[?]"}
+    indicator_map = {
+        "info": "[i]",
+        "warning": "[!]",
+        "error": "[x]",
+        "success": "[ok]",
+        "status": "[s]",
+        "explanation": "[?]",
+    }
     indicator = indicator_map.get(metadata.message_type, "[-]")
 
     print(f"\n{indicator} Message: {metadata.id}")

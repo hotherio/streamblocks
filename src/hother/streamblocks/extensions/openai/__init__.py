@@ -28,7 +28,7 @@ from hother.streamblocks.adapters.detection import InputAdapterRegistry
 if TYPE_CHECKING:
     from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
     from hother.streamblocks.core.registry import Registry
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata, StreamEvent
+    from hother.streamblocks.core.types import BaseEvent
 
 
 @InputAdapterRegistry.register(module_prefix="openai.types")
@@ -136,7 +136,7 @@ InputAdapterRegistry.register_module("openai.resources", OpenAIInputAdapter)
 
 def create_openai_processor(
     registry: Registry,
-) -> ProtocolStreamProcessor[Any, StreamEvent[BaseMetadata, BaseContent]]:
+) -> ProtocolStreamProcessor[Any, BaseEvent]:
     """Create processor pre-configured for OpenAI streams.
 
     This is a convenience factory that creates a ProtocolStreamProcessor

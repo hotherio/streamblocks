@@ -29,9 +29,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hother.streamblocks import (
     BlockDeltaEvent,
+    BlockEndEvent,
+    BlockErrorEvent,
     DelimiterFrontmatterSyntax,
     Registry,
     StreamBlockProcessor,
+    TextContentEvent,
 )
 from hother.streamblocks.blocks.files import (
     FileContent,
@@ -42,12 +45,6 @@ from hother.streamblocks.blocks.files import (
     FileOperationsMetadata,
 )
 from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
-from hother.streamblocks.core.types import (
-    BlockDeltaEvent,
-    BlockEndEvent,
-    BlockErrorEvent,
-    TextContentEvent,
-)
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
