@@ -4,159 +4,197 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from hother.streamblocks.adapters.providers import (
-    AnthropicAdapter,
-    AttributeAdapter,
-    GeminiAdapter,
-    IdentityAdapter,
-    OpenAIAdapter,
-)
-
 if TYPE_CHECKING:
-    from hother.streamblocks.adapters.base import StreamAdapter
+    from collections.abc import Callable
+
+    from hother.streamblocks.adapters.protocols import InputProtocolAdapter
 
 
-class AdapterDetector:
-    """Automatically detect the appropriate adapter for a stream chunk.
+class InputAdapterRegistry:
+    """Registry for input adapter auto-detection.
 
-    Uses a combination of module-based detection and attribute pattern matching
-    to identify the stream format and select the correct adapter.
+    Uses module prefix matching and attribute-based fallback detection.
+    Extensions register themselves when imported.
 
     Example:
-        >>> # Auto-detect from first chunk
-        >>> adapter = AdapterDetector.detect(gemini_chunk)
-        >>> isinstance(adapter, GeminiAdapter)
-        True
+        >>> # Register via decorator
+        >>> @InputAdapterRegistry.register(module_prefix="openai.")
+        ... class OpenAIInputAdapter:
+        ...     def categorize(self, event) -> EventCategory:
+        ...         return EventCategory.TEXT_CONTENT
+        ...     def extract_text(self, event) -> str | None:
+        ...         return event.choices[0].delta.content
         >>>
-        >>> # Register custom adapter
-        >>> AdapterDetector.register_adapter(
-        ...     module_prefix="mycompany.ai",
-        ...     adapter_class=MyCustomAdapter
-        ... )
+        >>> # Register via method
+        >>> InputAdapterRegistry.register_module("mycompany.api", MyCustomAdapter)
+        >>>
+        >>> # Detect adapter from sample
+        >>> adapter = InputAdapterRegistry.detect(sample_chunk)
     """
 
-    # Registry of known chunk types to adapters (module path → Adapter class)
-    _type_registry: ClassVar[dict[str, type[StreamAdapter[Any]]]] = {
-        "google.ai.generativelanguage": GeminiAdapter,
-        "google.genai": GeminiAdapter,
-        "openai.types.chat": OpenAIAdapter,
-        "openai.resources": OpenAIAdapter,
-        "anthropic.types": AnthropicAdapter,
-        "anthropic.lib": AnthropicAdapter,
-    }
+    # Module prefix → Adapter class (e.g., "openai." → OpenAIInputAdapter)
+    _type_registry: ClassVar[dict[str, type[InputProtocolAdapter[Any]]]] = {}
 
-    # Attribute-based detection patterns (required_attributes → adapter_class)
-    _pattern_registry: ClassVar[list[tuple[list[str], type[StreamAdapter[Any]]]]] = [
-        # Gemini-like structure: has text and candidates
-        (["text", "candidates"], GeminiAdapter),
-        # OpenAI structure: has choices, model, and object
-        (["choices", "model", "object"], OpenAIAdapter),
-        # Anthropic events: has type and delta
-        (["type", "delta"], AnthropicAdapter),
-    ]
+    # Attribute patterns → Adapter class (for duck-typing detection)
+    _pattern_registry: ClassVar[list[tuple[list[str], type[InputProtocolAdapter[Any]]]]] = []
 
     @classmethod
-    def detect(cls, chunk: Any) -> StreamAdapter[Any] | None:
-        """Auto-detect adapter from chunk type.
-
-        Detection strategy:
-        1. If chunk is a string, use IdentityAdapter
-        2. Try module-based detection (match chunk's module path)
-        3. Try attribute-based detection (match required attributes)
-        4. Fallback to AttributeAdapter if chunk has 'text' or 'content'
-        5. Return None if format is completely unknown
+    def register(
+        cls,
+        *,
+        module_prefix: str | None = None,
+        attributes: list[str] | None = None,
+    ) -> Callable[[type[InputProtocolAdapter[Any]]], type[InputProtocolAdapter[Any]]]:
+        """Decorator to register an adapter for auto-detection.
 
         Args:
-            chunk: First chunk from stream
+            module_prefix: Module path prefix to match (e.g., "openai.types")
+            attributes: Required attributes for attribute-based detection
 
         Returns:
-            Appropriate adapter instance, or None if unknown format
+            Decorator function
 
         Example:
-            >>> detector = AdapterDetector()
-            >>> adapter = detector.detect(gemini_chunk)
-            >>> isinstance(adapter, GeminiAdapter)
-            True
+            >>> @InputAdapterRegistry.register(module_prefix="openai.")
+            ... class OpenAIInputAdapter:
+            ...     ...
+            >>>
+            >>> @InputAdapterRegistry.register(attributes=["text", "candidates"])
+            ... class GeminiInputAdapter:
+            ...     ...
         """
-        # Check if it's plain text
-        if isinstance(chunk, str):
-            return IdentityAdapter()
 
-        # Try module-based detection
+        def decorator(
+            adapter_class: type[InputProtocolAdapter[Any]],
+        ) -> type[InputProtocolAdapter[Any]]:
+            if module_prefix:
+                cls._type_registry[module_prefix] = adapter_class
+            if attributes:
+                cls._pattern_registry.insert(0, (attributes, adapter_class))
+            return adapter_class
+
+        return decorator
+
+    @classmethod
+    def register_module(
+        cls,
+        prefix: str,
+        adapter_class: type[InputProtocolAdapter[Any]],
+    ) -> None:
+        """Register adapter by module prefix (non-decorator form).
+
+        Args:
+            prefix: Module path prefix to match
+            adapter_class: Adapter class to instantiate when matched
+        """
+        cls._type_registry[prefix] = adapter_class
+
+    @classmethod
+    def register_pattern(
+        cls,
+        attrs: list[str],
+        adapter_class: type[InputProtocolAdapter[Any]],
+    ) -> None:
+        """Register adapter by attribute pattern (non-decorator form).
+
+        Args:
+            attrs: Required attributes for detection
+            adapter_class: Adapter class to instantiate when matched
+        """
+        cls._pattern_registry.insert(0, (attrs, adapter_class))
+
+    @classmethod
+    def detect(cls, chunk: Any) -> InputProtocolAdapter[Any] | None:
+        """Detect and instantiate appropriate adapter from chunk.
+
+        Detection order:
+        1. String → IdentityInputAdapter
+        2. Module prefix match
+        3. Attribute pattern match
+        4. Fallback to text/content attribute
+        5. None if no match
+
+        Args:
+            chunk: Sample chunk from stream
+
+        Returns:
+            Adapter instance if detected, None otherwise
+        """
+        from hother.streamblocks.adapters.input import (
+            AttributeInputAdapter,
+            IdentityInputAdapter,
+        )
+
+        # Plain text
+        if isinstance(chunk, str):
+            return IdentityInputAdapter()
+
+        # Module-based detection
         chunk_module = type(chunk).__module__
-        for module_prefix, adapter_class in cls._type_registry.items():
-            if chunk_module.startswith(module_prefix):
+        for prefix, adapter_class in cls._type_registry.items():
+            if chunk_module.startswith(prefix):
                 return adapter_class()
 
-        # Try attribute-based detection
+        # Attribute-based detection
         for required_attrs, adapter_class in cls._pattern_registry:
             if all(hasattr(chunk, attr) for attr in required_attrs):
                 return adapter_class()
 
-        # Fallback: try to find a 'text' or 'content' attribute
+        # Fallback: generic attribute adapter
         if hasattr(chunk, "text"):
-            return AttributeAdapter("text")
+            return AttributeInputAdapter("text")
         if hasattr(chunk, "content"):
-            return AttributeAdapter("content")
+            return AttributeInputAdapter("content")
 
-        # Unknown format
         return None
 
     @classmethod
-    def register_adapter(
-        cls,
-        module_prefix: str | None = None,
-        attributes: list[str] | None = None,
-        adapter_class: type[StreamAdapter[Any]] | None = None,
-    ) -> None:
-        """Register a custom adapter for auto-detection.
+    def get_registered_modules(cls) -> dict[str, type[InputProtocolAdapter[Any]]]:
+        """Get all registered module prefixes.
 
-        You can register either by module prefix or by attribute pattern.
-        Module-based detection is checked before attribute-based detection.
-
-        Args:
-            module_prefix: Python module path to match (e.g., "mycompany.ai")
-            attributes: Required attributes to match
-            adapter_class: Adapter class to use when matched
-
-        Example:
-            >>> # Register by module
-            >>> AdapterDetector.register_adapter(
-            ...     module_prefix="mycompany.ai",
-            ...     adapter_class=MyCustomAdapter
-            ... )
-            >>>
-            >>> # Register by attributes
-            >>> AdapterDetector.register_adapter(
-            ...     attributes=["custom_field", "data"],
-            ...     adapter_class=MyCustomAdapter
-            ... )
+        Returns:
+            Copy of module prefix registry
         """
-        if module_prefix and adapter_class:
-            cls._type_registry[module_prefix] = adapter_class
-
-        if attributes and adapter_class:
-            # Insert at beginning for higher priority
-            cls._pattern_registry.insert(0, (attributes, adapter_class))
+        return cls._type_registry.copy()
 
     @classmethod
-    def clear_custom_adapters(cls) -> None:
-        """Clear all custom registered adapters (useful for testing).
+    def get_registered_patterns(
+        cls,
+    ) -> list[tuple[list[str], type[InputProtocolAdapter[Any]]]]:
+        """Get all registered attribute patterns.
 
-        This resets the detector to its default state with only built-in adapters.
+        Returns:
+            Copy of attribute pattern registry
         """
-        # Reset to default built-in adapters only
-        cls._type_registry = {
-            "google.ai.generativelanguage": GeminiAdapter,
-            "google.genai": GeminiAdapter,
-            "openai.types.chat": OpenAIAdapter,
-            "openai.resources": OpenAIAdapter,
-            "anthropic.types": AnthropicAdapter,
-            "anthropic.lib": AnthropicAdapter,
-        }
+        return cls._pattern_registry.copy()
 
-        cls._pattern_registry = [
-            (["text", "candidates"], GeminiAdapter),
-            (["choices", "model", "object"], OpenAIAdapter),
-            (["type", "delta"], AnthropicAdapter),
-        ]
+    @classmethod
+    def clear(cls) -> None:
+        """Clear all registered adapters (useful for testing)."""
+        cls._type_registry.clear()
+        cls._pattern_registry.clear()
+
+
+def detect_input_adapter(sample: Any) -> InputProtocolAdapter[Any]:
+    """Detect input adapter from sample event.
+
+    Args:
+        sample: A sample event from the stream
+
+    Returns:
+        Detected adapter instance
+
+    Raises:
+        ValueError: If no adapter matches the sample
+    """
+    adapter = InputAdapterRegistry.detect(sample)
+    if adapter is None:
+        chunk_type = type(sample)
+        registered_modules = list(InputAdapterRegistry.get_registered_modules().keys())
+        msg = (
+            f"No input adapter found for {chunk_type.__module__}.{chunk_type.__name__}. "
+            f"Registered module prefixes: {registered_modules}. "
+            f"Consider importing the appropriate extension or registering a custom adapter."
+        )
+        raise ValueError(msg)
+    return adapter
