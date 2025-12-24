@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """Example 09: Custom Adapter with Registration.
 
-This example shows how to create a custom adapter for a proprietary
+This example shows how to create a custom input adapter for a proprietary
 streaming format and register it for auto-detection.
 """
 
 import asyncio
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from hother.streamblocks import (
-    AdapterDetector,
     BlockEndEvent,
     DelimiterPreambleSyntax,
+    EventCategory,
+    InputAdapterRegistry,
     Registry,
-    StreamAdapter,
     StreamBlockProcessor,
 )
 from hother.streamblocks.blocks import FileOperations
@@ -30,9 +31,13 @@ class ProprietaryChunk:
         self.meta = meta or {}  # Metadata in 'meta'
 
 
-# Custom adapter
-class ProprietaryAdapter(StreamAdapter):
-    """Adapter for proprietary streaming format."""
+# Custom adapter implementing the InputProtocolAdapter protocol
+class ProprietaryInputAdapter:
+    """Input adapter for proprietary streaming format."""
+
+    def categorize(self, event: ProprietaryChunk) -> EventCategory:
+        """All events contain text content."""
+        return EventCategory.TEXT_CONTENT
 
     def extract_text(self, chunk: ProprietaryChunk) -> str | None:
         """Extract text from payload field."""
@@ -42,7 +47,7 @@ class ProprietaryAdapter(StreamAdapter):
         """Check if stream is complete."""
         return chunk.meta.get("final", False)
 
-    def get_metadata(self, chunk: ProprietaryChunk) -> dict | None:
+    def get_metadata(self, chunk: ProprietaryChunk) -> dict[str, Any] | None:
         """Extract metadata."""
         if chunk.meta:
             return {
@@ -75,11 +80,11 @@ async def main() -> None:
 
     # Register custom adapter for auto-detection
     print("Registering custom adapter...")
-    AdapterDetector.register_adapter(
-        module_prefix="mycompany.streaming",
-        adapter_class=ProprietaryAdapter,
+    InputAdapterRegistry.register_module(
+        "mycompany.streaming",
+        ProprietaryInputAdapter,
     )
-    print("✓ Registered for module: mycompany.streaming.*")
+    print("Registered for module: mycompany.streaming.*")
     print()
 
     # Setup
@@ -94,7 +99,7 @@ async def main() -> None:
     async for event in processor.process_stream(proprietary_stream()):
         # Original chunks
         if isinstance(event, ProprietaryChunk):
-            print("📦 Proprietary Chunk:")
+            print("Proprietary Chunk:")
             print(f"   Payload: {repr(event.payload)[:40]}")
             print(f"   Meta: {event.meta}")
 
@@ -103,18 +108,18 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\n✅ Block Extracted: {block.metadata.id}")
+            print(f"\nBlock Extracted: {block.metadata.id}")
             for op in block.content.operations:
                 print(f"   - {op.path}")
             print()
 
-    # Cleanup
-    AdapterDetector.clear_custom_adapters()
+    # Cleanup - remove from registry
+    del InputAdapterRegistry._type_registry["mycompany.streaming"]
 
     print()
-    print("✓ Custom adapter created")
-    print("✓ Registered for auto-detection")
-    print("✓ Works with proprietary formats")
+    print("Custom adapter created")
+    print("Registered for auto-detection")
+    print("Works with proprietary formats")
 
 
 if __name__ == "__main__":

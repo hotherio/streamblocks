@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Example 11: AttributeAdapter for Generic Formats.
+"""Example 11: AttributeInputAdapter for Generic Formats.
 
-This example shows how to use AttributeAdapter to handle any object
+This example shows how to use AttributeInputAdapter to handle any object
 with a text-like attribute, without writing custom adapter code.
 """
 
@@ -9,12 +9,12 @@ import asyncio
 from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
-    AttributeAdapter,
     BlockEndEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks.adapters.input import AttributeInputAdapter
 from hother.streamblocks.blocks import FileOperations
 
 
@@ -54,12 +54,12 @@ async def generic_stream() -> AsyncGenerator[ResponseChunk]:
 async def main() -> None:
     """Run the example."""
     print("=" * 60)
-    print("Example 11: AttributeAdapter (Generic Objects)")
+    print("Example 11: AttributeInputAdapter (Generic Objects)")
     print("=" * 60)
     print()
 
     # Create adapter for 'message' attribute
-    adapter = AttributeAdapter(text_attr="message")
+    adapter = AttributeInputAdapter(text_attr="message")
 
     # Setup
     syntax = DelimiterPreambleSyntax()
@@ -67,30 +67,30 @@ async def main() -> None:
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
-    print("Processing stream with AttributeAdapter (text_attr='message')...")
+    print("Processing stream with AttributeInputAdapter (text_attr='message')...")
     print()
 
     async for event in processor.process_stream(generic_stream(), adapter=adapter):
         # Original chunks
         if isinstance(event, (ResponseChunk, FinalChunk)):
-            print(f"📦 Chunk: message={repr(event.message)[:30]}, status={event.status}")
+            print(f"Chunk: message={repr(event.message)[:30]}, status={event.status}")
             if event.finish_reason:
-                print(f"   🏁 Finish reason: {event.finish_reason}")
+                print(f"   Finish reason: {event.finish_reason}")
 
         # Blocks
         elif isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\n✅ Block: {block.metadata.id}")
+            print(f"\nBlock: {block.metadata.id}")
             for op in block.content.operations:
                 print(f"   - {op.path}")
             print()
 
     print()
-    print("✓ Works with any object")
-    print("✓ Just specify attribute name")
-    print("✓ Handles finish_reason automatically")
+    print("Works with any object")
+    print("Just specify attribute name")
+    print("Handles finish_reason automatically")
     print()
     print("Other common attributes:")
     print("  - text_attr='text' (default)")

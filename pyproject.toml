@@ -248,6 +248,7 @@ line-ending = "auto"
     "SIM102",  # Nested if (acceptable in examples)
     "TRY300",  # return in try block (acceptable in examples)
     "ASYNC109", # async function with timeout param (acceptable in examples)
+    "SLF001",  # Private member access (acceptable in examples for cleanup)
 ]
 "sandbox/**/*" = [
     "C901",    # Too complex

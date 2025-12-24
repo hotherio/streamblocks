@@ -13,13 +13,12 @@ from collections.abc import AsyncGenerator
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
-    GeminiAdapter,
     Registry,
-    StreamAdapter,
     StreamBlockProcessor,
     TextDeltaEvent,
 )
 from hother.streamblocks.blocks import FileOperations
+from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
 
 # Mock Gemini chunk
@@ -37,7 +36,7 @@ async def gemini_stream() -> AsyncGenerator[GeminiChunk]:
         await asyncio.sleep(0.05)
 
 
-async def demo_config(name: str, adapter: StreamAdapter[GeminiChunk] | None = None, **config: bool) -> None:
+async def demo_config(name: str, adapter: GeminiInputAdapter | None = None, **config: bool) -> None:
     """Demo a specific configuration."""
     print(f"\n{'=' * 60}")
     print(f"Configuration: {name}")
@@ -54,13 +53,13 @@ async def demo_config(name: str, adapter: StreamAdapter[GeminiChunk] | None = No
     async for event in processor.process_stream(gemini_stream(), adapter=adapter):
         if isinstance(event, GeminiChunk):
             events_seen["original"] += 1
-            print("  📦 Original chunk")
+            print("  Original chunk")
         elif isinstance(event, TextDeltaEvent):
             events_seen["text_delta"] += 1
-            print("  📝 Text delta")
+            print("  Text delta")
         elif isinstance(event, BlockEndEvent):
             events_seen["block"] += 1
-            print("  ✅ Block extracted")
+            print("  Block extracted")
 
     print(
         f"\nEvents: Original={events_seen['original']}, "
@@ -102,7 +101,7 @@ async def main() -> None:
     # Manual adapter (no auto-detect)
     await demo_config(
         "Manual Adapter (Explicit)",
-        adapter=GeminiAdapter(),
+        adapter=GeminiInputAdapter(),
         emit_original_events=True,
         emit_text_deltas=True,
         auto_detect_adapter=False,
