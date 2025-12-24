@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState, TContent, TMetadata
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState
 
 if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
@@ -41,6 +41,22 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
 class BlockCandidate:
     """Tracks a potential block being accumulated."""
 
+    __slots__ = (
+        "content_lines",
+        "content_validation_error",
+        "content_validation_passed",
+        "current_section",
+        "lines",
+        "metadata_lines",
+        "metadata_validation_error",
+        "metadata_validation_passed",
+        "parsed_content",
+        "parsed_metadata",
+        "start_line",
+        "state",
+        "syntax",
+    )
+
     def __init__(self, syntax: BaseSyntax, start_line: int) -> None:
         """Initialize a new block candidate.
 
@@ -56,6 +72,16 @@ class BlockCandidate:
         self.content_lines: list[str] = []
         self.current_section: str = "header"  # "header", "metadata", "content"
 
+        # Cache fields for early parsing results
+        self.parsed_metadata: dict[str, Any] | None = None
+        self.parsed_content: dict[str, Any] | None = None
+
+        # Validation state for section end events
+        self.metadata_validation_passed: bool = True
+        self.metadata_validation_error: str | None = None
+        self.content_validation_passed: bool = True
+        self.content_validation_error: str | None = None
+
     def add_line(self, line: str) -> None:
         """Add a line to the candidate."""
         self.lines.append(line)
@@ -70,8 +96,16 @@ class BlockCandidate:
         text_slice = self.raw_text[:64]
         return hashlib.sha256(text_slice.encode()).hexdigest()[:8]
 
+    def __repr__(self) -> str:
+        """Return a developer-friendly string representation."""
+        return (
+            f"BlockCandidate(syntax={type(self.syntax).__name__}, "
+            f"start_line={self.start_line}, state={self.state.value}, "
+            f"lines={len(self.lines)}, section={self.current_section!r})"
+        )
 
-class Block(BaseModel, Generic[TMetadata, TContent]):
+
+class Block[TMetadata: BaseMetadata, TContent: BaseContent](BaseModel):
     """User-facing base class for defining block types.
 
     This minimal class contains only the essential fields (metadata and content).

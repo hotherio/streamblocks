@@ -22,14 +22,19 @@ from pydantic import Field
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
-    EventType,
     MarkdownFrontmatterSyntax,
     Registry,
     StreamBlockProcessor,
 )
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
-from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import (
+    BaseContent,
+    BaseMetadata,
+    BlockEndEvent,
+    BlockErrorEvent,
+    TextContentEvent,
+)
 
 # ============================================================================
 # EXAMPLE 1: Basic YAML Parsing (Permissive Mode)
@@ -107,33 +112,34 @@ Processing complete.
     # Process the stream
     print("\nProcessing stream with YAML configs...")
     async for event in processor.process_stream(config_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
-            print(f"\n✅ Extracted Config Block: {block.metadata.id}")
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is not None:
+                print(f"\n✅ Extracted Config Block: {block.metadata.id}")
 
-            # Type narrowing for ConfigContent
-            if isinstance(block.content, ConfigContent):
-                content = block.content
+                # Type narrowing for ConfigContent
+                if isinstance(block.content, ConfigContent):
+                    content = block.content
 
-                # Type-safe access to parsed YAML data
-                if content.app_name:
-                    print(f"   App: {content.app_name} v{content.version}")
-                    print(f"   Debug: {content.debug}")
-                    print(f"   Port: {content.port}")
+                    # Type-safe access to parsed YAML data
+                    if content.app_name:
+                        print(f"   App: {content.app_name} v{content.version}")
+                        print(f"   Debug: {content.debug}")
+                        print(f"   Port: {content.port}")
 
-                    if content.features:
-                        print("   Features:")
-                        for feature, enabled in content.features.items():
-                            status = "✓" if enabled else "✗"
-                            print(f"      {status} {feature}")
-                else:
-                    # Malformed YAML - fell back to raw_content
-                    print("   ⚠️  YAML parsing failed (PERMISSIVE mode)")
-                    print(f"   Raw content preserved: {content.raw_content[:50]}...")
+                        if content.features:
+                            print("   Features:")
+                            for feature, enabled in content.features.items():
+                                status = "✓" if enabled else "✗"
+                                print(f"      {status} {feature}")
+                    else:
+                        # Malformed YAML - fell back to raw_content
+                        print("   ⚠️  YAML parsing failed (PERMISSIVE mode)")
+                        print(f"   Raw content preserved: {content.raw_content[:50]}...")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
 
 # ============================================================================
@@ -226,8 +232,10 @@ All responses processed.
     # Process the stream
     print("\nProcessing API responses...")
     async for event in processor.process_stream(api_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
 
             # Type narrowing for API blocks
             if isinstance(block.metadata, APIMetadata) and isinstance(block.content, APIResponseContent):
@@ -251,12 +259,12 @@ All responses processed.
                     for error in content.errors:
                         print(f"      ❗ {error}")
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             print(f"\n❌ Block Rejected: {event.reason}")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
 
 # ============================================================================
@@ -328,14 +336,14 @@ Done.
             await asyncio.sleep(0.001)
 
     async for event in processor.process_stream(scalar_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
-            if isinstance(block.content, ScalarWrapperContent):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is not None and isinstance(block.content, ScalarWrapperContent):
                 print(f"   Block {block.metadata.id}: value = {block.content.value!r}")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
     # Example 3b: With handle_non_dict=False (scalars fail)
     print("\n3b) With handle_non_dict=False (scalars cause fallback):")
@@ -364,17 +372,17 @@ Done.
             await asyncio.sleep(0.001)
 
     async for event in processor2.process_stream(scalar_stream2()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
-            if isinstance(block.content, ScalarNoWrapContent):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is not None and isinstance(block.content, ScalarNoWrapContent):
                 if block.content.message:
                     print(f"   ✅ Block {block.metadata.id}: message = {block.content.message!r}")
                 else:
                     print(f"   ⚠️  Block {block.metadata.id}: fell back to raw_content")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
 
 # ============================================================================
@@ -487,8 +495,10 @@ Report complete.
     metrics_samples: list[Any] = []
 
     async for event in processor.process_stream(mixed_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
 
             if block.metadata.block_type == "db_config":
                 db_configs.append(block)
@@ -513,9 +523,9 @@ Report complete.
                     print(f"   RPS: {content.requests_per_sec}")
                     print(f"   Error rate: {content.error_rate}%")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
     # Summary
     print("\n📈 Summary:")
@@ -605,9 +615,9 @@ Done.
             await asyncio.sleep(0.001)
 
     async for event in processor_permissive.process_stream(permissive_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
-            if isinstance(block.content, PermissiveJSONContent):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is not None and isinstance(block.content, PermissiveJSONContent):
                 content = block.content
                 if content.status:
                     print(f"   ✅ {block.metadata.id}: Parsed successfully")
@@ -616,9 +626,9 @@ Done.
                     print(f"   ⚠️  {block.metadata.id}: Parsing failed, using raw_content")
                     print(f"       Raw: {content.raw_content.strip()[:50]}...")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
     # 5b: STRICT strategy
     print("\n5b) STRICT Strategy (raises errors):")
@@ -635,20 +645,20 @@ Done.
             await asyncio.sleep(0.001)
 
     async for event in processor_strict.process_stream(strict_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
-            if isinstance(block.content, StrictJSONContent):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is not None and isinstance(block.content, StrictJSONContent):
                 content = block.content
                 print(f"   ✅ {block.metadata.id}: Parsed successfully")
                 print(f"       status={content.status!r}, count={content.count}")
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             # STRICT mode causes parsing failures to reject the block
             print(f"   ❌ Block rejected: {event.reason}")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
 
 # ============================================================================

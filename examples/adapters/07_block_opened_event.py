@@ -6,10 +6,11 @@ or resources BEFORE block content arrives.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
-    BlockOpenedEvent,
+    BlockEndEvent,
+    BlockStartEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
@@ -18,7 +19,7 @@ from hother.streamblocks import (
 from hother.streamblocks.blocks import FileOperations
 
 
-async def delayed_stream():
+async def delayed_stream() -> AsyncGenerator[str]:
     """Stream with delays to show timing."""
     chunks = [
         "Some text...\n",
@@ -58,7 +59,7 @@ async def main() -> None:
     active_blocks = {}
 
     async for event in processor.process_stream(delayed_stream()):
-        if isinstance(event, BlockOpenedEvent):
+        if isinstance(event, BlockStartEvent):
             print("🟢 BlockOpened!")
             print(f"   Syntax: {event.syntax}")
             print(f"   Line: {event.start_line}")
@@ -83,10 +84,13 @@ async def main() -> None:
                 active_blocks[line]["content"].append(event.delta)
                 print(f"   📝 Accumulating: {repr(event.delta)[:30]}")
 
-        elif isinstance(event, BlockExtractedEvent):
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             print("\n✅ BlockExtracted!")
-            print(f"   {len(event.block.content.operations)} operations:")
-            for op in event.block.content.operations:
+            print(f"   {len(block.content.operations)} operations:")
+            for op in block.content.operations:
                 print(f"   - {op.path}")
 
             # Clean up

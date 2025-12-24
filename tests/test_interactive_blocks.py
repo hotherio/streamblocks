@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from hother.streamblocks import (
+    BlockEndEvent,
     DelimiterFrontmatterSyntax,
     EventType,
     Registry,
@@ -83,10 +84,13 @@ prompt: "Do you accept the terms?"
     blocks = []
     rejected = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.block)
-        elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.content["reason"], event.content.get("error")))
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                blocks.append(block)
+        elif event.type == EventType.BLOCK_ERROR:
+            rejected.append((event.reason, getattr(event, "error_code", None)))
     if rejected:
         print(f"Rejected: {rejected}")
     assert len(blocks) == 1
@@ -130,10 +134,13 @@ options:
     blocks = []
     rejected = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.block)
-        elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.content["reason"], event.content.get("error")))
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                blocks.append(block)
+        elif event.type == EventType.BLOCK_ERROR:
+            rejected.append((event.reason, getattr(event, "error_code", None)))
 
     if rejected:
         print(f"Rejected: {rejected}")
@@ -178,10 +185,13 @@ options:
     blocks = []
     rejected = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.block)
-        elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.content["reason"], event.content.get("error")))
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                blocks.append(block)
+        elif event.type == EventType.BLOCK_ERROR:
+            rejected.append((event.reason, getattr(event, "error_code", None)))
 
     if rejected:
         print(f"Rejected: {rejected}")
@@ -226,10 +236,13 @@ labels:
     blocks = []
     rejected = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.block)
-        elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.content["reason"], event.content.get("error")))
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                blocks.append(block)
+        elif event.type == EventType.BLOCK_ERROR:
+            rejected.append((event.reason, getattr(event, "error_code", None)))
 
     if rejected:
         print(f"Rejected: {rejected}")
@@ -287,10 +300,13 @@ fields:
     blocks = []
     rejected = []
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            blocks.append(event.block)
-        elif event.type == EventType.BLOCK_REJECTED:
-            rejected.append((event.content["reason"], event.content.get("error")))
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                blocks.append(block)
+        elif event.type == EventType.BLOCK_ERROR:
+            rejected.append((event.reason, getattr(event, "error_code", None)))
 
     if rejected:
         print(f"Rejected: {rejected}")

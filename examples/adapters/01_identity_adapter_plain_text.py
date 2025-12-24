@@ -6,19 +6,20 @@ No adapter needed - it just works!
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
-    RawTextEvent,
     Registry,
     StreamBlockProcessor,
+    TextContentEvent,
     TextDeltaEvent,
 )
 from hother.streamblocks.blocks import FileOperations
 
 
-async def plain_text_stream():
+async def plain_text_stream() -> AsyncGenerator[str]:
     """Simulate a plain text stream."""
     chunks = [
         "Some text before the block\n",
@@ -57,14 +58,17 @@ async def main() -> None:
             print(f"📝 Text Delta: {repr(event.delta)[:50]}", flush=True)
 
         # Raw text outside blocks
-        elif isinstance(event, RawTextEvent):
-            print(f"💬 Raw Text: {event.data}")
+        elif isinstance(event, TextContentEvent):
+            print(f"💬 Raw Text: {event.content}")
 
         # Extracted blocks
-        elif isinstance(event, BlockExtractedEvent):
-            print(f"\n✅ Block Extracted: {event.block.metadata.id}")
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"\n✅ Block Extracted: {block.metadata.id}")
             print("   Files:")
-            for op in event.block.content.operations:
+            for op in block.content.operations:
                 print(f"   - {op.action}: {op.path}")
             print()
 

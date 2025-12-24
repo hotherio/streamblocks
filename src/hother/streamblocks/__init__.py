@@ -14,21 +14,32 @@ from hother.streamblocks.adapters import (
 )
 from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
-from hother.streamblocks.core.processor import StreamBlockProcessor
-from hother.streamblocks.core.registry import Registry
+from hother.streamblocks.core.processor import StreamBlockProcessor, StreamState
+from hother.streamblocks.core.registry import MetadataValidationFailureMode, Registry, ValidationResult
 from hother.streamblocks.core.types import (
     BaseContent,
+    BaseEvent,
     BaseMetadata,
+    BlockContentDeltaEvent,
+    BlockContentEndEvent,
     BlockDeltaEvent,
-    BlockExtractedEvent,
-    BlockOpenedEvent,
-    BlockRejectedEvent,
+    BlockEndEvent,
+    BlockErrorCode,
+    BlockErrorEvent,
+    BlockHeaderDeltaEvent,
+    BlockMetadataDeltaEvent,
+    BlockMetadataEndEvent,
+    BlockStartEvent,
     BlockState,
+    CustomEvent,
     DetectionResult,
+    Event,
     EventType,
     ParseResult,
-    RawTextEvent,
-    StreamEvent,
+    StreamErrorEvent,
+    StreamFinishedEvent,
+    StreamStartedEvent,
+    TextContentEvent,
     TextDeltaEvent,
 )
 from hother.streamblocks.syntaxes import (
@@ -38,12 +49,7 @@ from hother.streamblocks.syntaxes import (
 )
 
 # Rebuild event models to resolve forward references to ExtractedBlock
-RawTextEvent.model_rebuild()
-TextDeltaEvent.model_rebuild()
-BlockOpenedEvent.model_rebuild()
-BlockDeltaEvent.model_rebuild()
-BlockExtractedEvent.model_rebuild()
-BlockRejectedEvent.model_rebuild()
+BlockEndEvent.model_rebuild()
 
 __all__ = [
     # Adapters
@@ -52,38 +58,52 @@ __all__ = [
     "AttributeAdapter",
     # Core models
     "BaseContent",
+    "BaseEvent",
     "BaseMetadata",
     "Block",
     "BlockCandidate",
+    # Events
+    "BlockContentDeltaEvent",
+    "BlockContentEndEvent",
     "BlockDeltaEvent",
-    "BlockExtractedEvent",
-    "BlockOpenedEvent",
-    "BlockRejectedEvent",
-    # Core types
+    "BlockEndEvent",
+    "BlockErrorCode",
+    "BlockErrorEvent",
+    "BlockHeaderDeltaEvent",
+    "BlockMetadataDeltaEvent",
+    "BlockMetadataEndEvent",
+    "BlockStartEvent",
     "BlockState",
     "CallableAdapter",
+    "CustomEvent",
     # Built-in syntaxes
     "DelimiterFrontmatterSyntax",
     "DelimiterPreambleSyntax",
+    # Core types
     "DetectionResult",
+    "Event",
     "EventType",
     "ExtractedBlock",
     "GeminiAdapter",
     "IdentityAdapter",
     "MarkdownFrontmatterSyntax",
+    # Validation
+    "MetadataValidationFailureMode",
     "OpenAIAdapter",
     "ParseResult",
     # Parsing
     "ParseStrategy",
-    "RawTextEvent",
     # Core components
     "Registry",
     "StreamAdapter",
     "StreamBlockProcessor",
-    # Events
-    "StreamEvent",
+    "StreamErrorEvent",
+    "StreamFinishedEvent",
+    "StreamStartedEvent",
+    "StreamState",
+    "TextContentEvent",
     "TextDeltaEvent",
-    # Parsing utilities
+    "ValidationResult",
     "parse_as_json",
     "parse_as_yaml",
 ]

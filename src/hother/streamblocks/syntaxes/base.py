@@ -5,9 +5,63 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+import yaml
+
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+
+
+class YAMLFrontmatterMixin:
+    """Mixin providing YAML frontmatter parsing utilities.
+
+    This mixin reduces code duplication in syntaxes that use YAML for metadata.
+    It provides two parsing methods:
+    - _parse_yaml_metadata: Silent failure, returns None on error
+    - _parse_yaml_metadata_strict: Returns exception for error handling
+
+    Example:
+        >>> class MySyntax(BaseSyntax, YAMLFrontmatterMixin):
+        ...     def extract_block_type(self, candidate):
+        ...         metadata = self._parse_yaml_metadata(candidate.metadata_lines)
+        ...         return metadata.get("block_type") if metadata else None
+    """
+
+    def _parse_yaml_metadata(self, metadata_lines: list[str]) -> dict[str, Any] | None:
+        """Parse YAML from metadata lines. Returns None on error.
+
+        Args:
+            metadata_lines: Lines containing YAML content
+
+        Returns:
+            Parsed YAML as dict, or None if parsing fails or lines are empty
+        """
+        if not metadata_lines:
+            return None
+        yaml_content = "\n".join(metadata_lines)
+        try:
+            return yaml.safe_load(yaml_content) or {}
+        except yaml.YAMLError:
+            return None
+
+    def _parse_yaml_metadata_strict(self, metadata_lines: list[str]) -> tuple[dict[str, Any], Exception | None]:
+        """Parse YAML, returning both result and exception.
+
+        Use this method when you need to report the error in a ParseResult.
+
+        Args:
+            metadata_lines: Lines containing YAML content
+
+        Returns:
+            Tuple of (parsed dict, exception or None)
+        """
+        if not metadata_lines:
+            return {}, None
+        yaml_content = "\n".join(metadata_lines)
+        try:
+            return yaml.safe_load(yaml_content) or {}, None
+        except yaml.YAMLError as e:
+            return {}, e
 
 
 class BaseSyntax(ABC):
@@ -120,3 +174,41 @@ class BaseSyntax(ABC):
             True if the block is valid, False otherwise
         """
         return True
+
+    def parse_metadata_early(self, candidate: BlockCandidate) -> dict[str, Any] | None:
+        """Parse metadata section early, before content accumulation.
+
+        This method is called when the metadata section completes, allowing
+        early validation and processing. The result can be cached in the
+        candidate for reuse during full block parsing.
+
+        Default implementation returns None (no early parsing).
+        Override in subclasses to provide early metadata parsing.
+
+        Args:
+            candidate: The current block candidate with metadata accumulated
+
+        Returns:
+            Parsed metadata dict if successful, None if parsing not supported
+            or failed
+        """
+        return None
+
+    def parse_content_early(self, candidate: BlockCandidate) -> dict[str, Any] | None:
+        """Parse content section early, before final block extraction.
+
+        This method is called when the content section completes (block closes),
+        allowing early validation. The result can be cached in the candidate
+        for reuse during full block parsing.
+
+        Default implementation returns None (no early parsing).
+        Override in subclasses to provide early content parsing.
+
+        Args:
+            candidate: The complete block candidate with content accumulated
+
+        Returns:
+            Parsed content dict if successful, None if parsing not supported
+            or failed
+        """
+        return None

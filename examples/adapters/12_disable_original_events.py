@@ -6,13 +6,14 @@ maximum performance and minimal overhead.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
-    RawTextEvent,
     Registry,
     StreamBlockProcessor,
+    TextContentEvent,
     TextDeltaEvent,
 )
 from hother.streamblocks.blocks import FileOperations
@@ -22,12 +23,12 @@ from hother.streamblocks.blocks import FileOperations
 class GeminiChunk:
     __module__ = "google.genai.types"
 
-    def __init__(self, text) -> None:
+    def __init__(self, text: str) -> None:
         self.text = text
         self.size = len(text.encode())  # Simulate chunk size
 
 
-async def large_gemini_stream():
+async def large_gemini_stream() -> AsyncGenerator[GeminiChunk]:
     """Simulate large Gemini stream."""
     chunks = [
         "Creating project...\n",
@@ -72,7 +73,7 @@ async def compare_modes() -> None:
             print(f"  📦 GeminiChunk ({event.size} bytes)")
         elif isinstance(event, TextDeltaEvent):
             print("  📝 TextDelta")
-        elif isinstance(event, BlockExtractedEvent):
+        elif isinstance(event, BlockEndEvent):
             print("  ✅ Block")
 
     print(f"\nTotal events: {event_count_normal}")
@@ -94,9 +95,9 @@ async def compare_modes() -> None:
             print("  📦 GeminiChunk (shouldn't see this!)")
         elif isinstance(event, TextDeltaEvent):
             print("  📝 TextDelta")
-        elif isinstance(event, RawTextEvent):
+        elif isinstance(event, TextContentEvent):
             print("  💬 RawText")
-        elif isinstance(event, BlockExtractedEvent):
+        elif isinstance(event, BlockEndEvent):
             print("  ✅ Block")
 
     print(f"\nTotal events: {event_count_light}")

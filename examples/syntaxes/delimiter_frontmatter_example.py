@@ -9,9 +9,16 @@ from collections.abc import AsyncIterator
 
 from pydantic import Field
 
-from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import Block, ExtractedBlock
-from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import (
+    BaseContent,
+    BaseMetadata,
+    BlockDeltaEvent,
+    BlockEndEvent,
+    BlockErrorEvent,
+    TextContentEvent,
+)
 
 
 # Custom content models for this example
@@ -24,7 +31,7 @@ class TaskMetadata(BaseMetadata):
     priority: str = "medium"
     assignee: str | None = None
     due_date: str | None = None
-    tags: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list[str])
     status: str = "todo"
 
 
@@ -32,7 +39,7 @@ class TaskContent(BaseContent):
     """Content for task blocks."""
 
     description: str = ""
-    subtasks: list[str] = Field(default_factory=list)
+    subtasks: list[str] = Field(default_factory=list[str])
 
     @classmethod
     def parse(cls, raw_text: str) -> "TaskContent":
@@ -168,21 +175,23 @@ async def main() -> None:
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(example_stream()):
-        if event.type == EventType.RAW_TEXT:
+        if isinstance(event, TextContentEvent):
             # Raw text passed through
-            if event.data.strip():
-                text = event.data.strip()
+            if event.content.strip():
+                text = event.content.strip()
                 if len(text) > 60:
                     text = text[:57] + "..."
                 print(f"[TEXT] {text}")
 
-        elif event.type == EventType.BLOCK_DELTA:
+        elif isinstance(event, BlockDeltaEvent):
             # Skip deltas for cleaner output
             pass
 
-        elif event.type == EventType.BLOCK_EXTRACTED:
+        elif isinstance(event, BlockEndEvent):
             # Complete block extracted
-            block = event.block
+            block = event.get_block()
+            if block is None:
+                continue
             blocks_extracted.append(block)
 
             # Type narrow to TaskMetadata and TaskContent for specific access
@@ -208,7 +217,7 @@ async def main() -> None:
                         print(f"         - {subtask}")
                 print("=" * 60)
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             # Block rejected
             print(f"\n[REJECT] {event.reason}")
 

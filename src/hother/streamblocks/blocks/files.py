@@ -2,18 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, TypeGuard
 
 from pydantic import BaseModel, Field
 
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
+ActionLiteral = Literal["create", "edit", "delete"]
+
+
+def is_valid_action(value: str) -> TypeGuard[ActionLiteral]:
+    """Check if value is a valid action literal."""
+    return value in ("create", "edit", "delete")
+
 
 class FileOperation(BaseModel):
     """Single file operation."""
 
-    action: Literal["create", "edit", "delete"]
+    action: ActionLiteral
     path: str
 
 
@@ -48,9 +55,14 @@ class FileOperationsContent(BaseContent):
                 msg = f"Unknown action: {action}"
                 raise ValueError(msg)
 
+            action_str = action_map[action.upper()]
+            if not is_valid_action(action_str):
+                msg = f"Invalid action: {action_str}"
+                raise ValueError(msg)
+
             operations.append(
                 FileOperation(
-                    action=action_map[action.upper()],  # type: ignore[arg-type]
+                    action=action_str,
                     path=path.strip(),
                 )
             )

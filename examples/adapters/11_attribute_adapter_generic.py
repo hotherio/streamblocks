@@ -6,10 +6,11 @@ with a text-like attribute, without writing custom adapter code.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
     AttributeAdapter,
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
@@ -21,21 +22,21 @@ from hother.streamblocks.blocks import FileOperations
 class ResponseChunk:
     """Some API response with 'message' attribute."""
 
-    def __init__(self, message, status="active") -> None:
+    def __init__(self, message: str, status: str = "active") -> None:
         self.message = message  # Text is in 'message'
         self.status = status
-        self.finish_reason = None
+        self.finish_reason: str | None = None
 
 
 class FinalChunk(ResponseChunk):
     """Final chunk with finish_reason."""
 
-    def __init__(self, message) -> None:
+    def __init__(self, message: str) -> None:
         super().__init__(message, status="complete")
-        self.finish_reason = "done"
+        self.finish_reason: str | None = "done"
 
 
-async def generic_stream():
+async def generic_stream() -> AsyncGenerator[ResponseChunk]:
     """Stream with generic chunk objects."""
     chunks = [
         ResponseChunk("!!files:files_operations\n"),
@@ -77,9 +78,12 @@ async def main() -> None:
                 print(f"   🏁 Finish reason: {event.finish_reason}")
 
         # Blocks
-        elif isinstance(event, BlockExtractedEvent):
-            print(f"\n✅ Block: {event.block.metadata.id}")
-            for op in event.block.content.operations:
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"\n✅ Block: {block.metadata.id}")
+            for op in block.content.operations:
                 print(f"   - {op.path}")
             print()
 

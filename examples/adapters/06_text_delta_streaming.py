@@ -7,10 +7,11 @@ Perfect for typewriter effects or live progress indicators.
 
 import asyncio
 import sys
+from collections.abc import AsyncGenerator
 
 from hother.streamblocks import (
-    BlockExtractedEvent,
-    BlockOpenedEvent,
+    BlockEndEvent,
+    BlockStartEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
@@ -19,7 +20,7 @@ from hother.streamblocks import (
 from hother.streamblocks.blocks import FileOperations
 
 
-async def character_stream():
+async def character_stream() -> AsyncGenerator[str]:
     """Stream text character by character."""
     text = (
         "Creating project structure...\n"
@@ -61,16 +62,19 @@ async def main() -> None:
 
             # Show context
             if event.inside_block:
-                context = f" [{event.block_section}]"
+                context = f" [{event.section}]"
                 # Clear the context indicator on newlines
                 if event.delta == "\n":
                     sys.stdout.write(f"  {context}\n")
 
-        elif isinstance(event, BlockOpenedEvent):
+        elif isinstance(event, BlockStartEvent):
             sys.stdout.write(f"\n[Block starting: {event.syntax}]\n")
 
-        elif isinstance(event, BlockExtractedEvent):
-            print(f"\n[Block extracted: {len(event.block.content.operations)} files]")
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
+            print(f"\n[Block extracted: {len(block.content.operations)} files]")
 
     print("-" * 40)
     print()

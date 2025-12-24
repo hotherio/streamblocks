@@ -15,11 +15,15 @@ from pydantic import BaseModel, Field
 
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
-    EventType,
     Registry,
     StreamBlockProcessor,
 )
 from hother.streamblocks.blocks.structured_output import create_structured_output_block
+from hother.streamblocks.core.types import (
+    BlockDeltaEvent,
+    BlockEndEvent,
+    TextContentEvent,
+)
 
 # ============================================================================
 # EXAMPLE 1: Basic Person Schema
@@ -86,8 +90,10 @@ That's the profile data.
 
     # Process the stream
     async for event in processor.process_stream(person_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             print(f"\n✅ Extracted Person Block: {block.metadata.id}")
 
             # Access structured data - fields are directly on content object
@@ -108,9 +114,9 @@ That's the profile data.
                 )
                 print(f"\n   Validated: {person.model_dump()}")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
 
 # ============================================================================
@@ -215,8 +221,10 @@ All tasks loaded!
     # Process
     tasks: list[Any] = []
     async for event in processor.process_stream(task_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             tasks.append(block)
 
             # Access structured data - fields are directly on content object
@@ -229,9 +237,9 @@ All tasks loaded!
                 if content.description:
                     print(f"   Description: {content.description}")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
     # Summary
     print(f"\n📊 Total tasks: {len(tasks)}")
@@ -343,8 +351,10 @@ Profile loaded.
 
     # Process
     async for event in processor.process_stream(person_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
 
             # Access structured data - fields are directly on content object
             content = cast("Any", block.content)
@@ -431,8 +441,10 @@ Configuration loaded successfully.
 
     # Process
     async for event in processor.process_stream(config_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
 
             # Access structured data - fields are directly on content object
             content = cast("Any", block.content)
@@ -449,9 +461,9 @@ Configuration loaded successfully.
                 for host in content.allowed_hosts:
                     print(f"      - {host}")
 
-        elif event.type == EventType.RAW_TEXT:
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+        elif isinstance(event, TextContentEvent):
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
 
 # ============================================================================
@@ -534,17 +546,19 @@ The analysis is complete. The data shows strong positive sentiment overall.
     print("\n[Streaming LLM response...]")
 
     async for event in processor.process_stream(llm_stream()):
-        if event.type == EventType.RAW_TEXT:
+        if isinstance(event, TextContentEvent):
             # Stream text as it arrives
-            if event.data.strip():
-                print(f"{event.data.strip()}")
+            if event.content.strip():
+                print(f"{event.content.strip()}")
 
-        elif event.type == EventType.BLOCK_DELTA:
+        elif isinstance(event, BlockDeltaEvent):
             # Show progress while block is being accumulated
             print(".", end="", flush=True)
 
-        elif event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
+        elif isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is None:
+                continue
             print("\n")
 
             # Access structured data - fields are directly on content object

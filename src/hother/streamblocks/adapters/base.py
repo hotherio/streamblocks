@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeVar, runtime_checkable
-
-TChunk = TypeVar("TChunk", contravariant=True)
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable
-class StreamAdapter(Protocol[TChunk]):
+class StreamAdapter[TChunk](Protocol):
     """Protocol for extracting text from stream chunks.
 
     Adapters convert provider-specific chunk formats (Gemini, OpenAI, etc.)

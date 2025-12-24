@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from pydantic import ValidationError
 
+from hother.streamblocks.core.types import BaseContent
+
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from hother.streamblocks.core.types import BaseContent
-
-T = TypeVar("T", bound="BaseContent")
 
 
 class ParseStrategy(StrEnum):
@@ -24,7 +22,7 @@ class ParseStrategy(StrEnum):
     PERMISSIVE = auto()  # Fall back to raw_content on error
 
 
-def parse_as_yaml(
+def parse_as_yaml[T: BaseContent](
     *,
     strategy: ParseStrategy = ParseStrategy.PERMISSIVE,
     handle_non_dict: bool = True,
@@ -75,7 +73,7 @@ def parse_as_yaml(
     return decorator
 
 
-def parse_as_json(
+def parse_as_json[T: BaseContent](
     *,
     strategy: ParseStrategy = ParseStrategy.PERMISSIVE,
     handle_non_dict: bool = True,

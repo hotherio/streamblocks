@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 from hother.streamblocks import (
     DelimiterPreambleSyntax,
-    EventType,
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -69,26 +69,27 @@ async def main() -> None:
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(example_stream()):
-        if event.type == EventType.RAW_TEXT:
+        if isinstance(event, TextContentEvent):
             # Raw text passed through
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
-        elif event.type == EventType.BLOCK_EXTRACTED:
+        elif isinstance(event, BlockEndEvent):
             # Complete block extracted
-            block = event.block
-            blocks_extracted.append(block)
+            block = event.get_block()
+            if block is not None:
+                blocks_extracted.append(block)
 
-            print("\n[BLOCK] Extracted!")
-            print(f"  ID: {block.metadata.id}")
-            print(f"  Type: {block.metadata.block_type}")
-            print(f"  Raw content preview: {block.content.raw_content[:50]}...")
+                print("\n[BLOCK] Extracted!")
+                print(f"  ID: {block.metadata.id}")
+                print(f"  Type: {block.metadata.block_type}")
+                print(f"  Raw content preview: {block.content.raw_content[:50]}...")
 
-            # All blocks have raw_content automatically
-            lines = block.content.raw_content.split("\n")
-            print(f"  Content lines: {len(lines)}")
+                # All blocks have raw_content automatically
+                lines = block.content.raw_content.split("\n")
+                print(f"  Content lines: {len(lines)}")
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             # Block rejected
             print(f"\n[REJECT] {event.reason}")
 

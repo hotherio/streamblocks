@@ -5,11 +5,11 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any, Protocol
 
-import yaml
+from pydantic import ValidationError
 
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
-from hother.streamblocks.syntaxes.base import BaseSyntax
+from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
@@ -116,7 +116,9 @@ class DelimiterPreambleSyntax(BaseSyntax):
             # Convert all metadata values to strings for type safety
             typed_metadata = {k: str(v) for k, v in detection.metadata.items()}
             metadata = metadata_class(**typed_metadata)
-        except Exception as e:
+        except ValidationError as e:
+            return ParseResult(success=False, error=f"Metadata validation error: {e}", exception=e)
+        except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
 
         # Parse content (skip first and last lines)
@@ -125,7 +127,9 @@ class DelimiterPreambleSyntax(BaseSyntax):
         try:
             # All content classes must have parse method
             content = content_class.parse(content_text)
-        except Exception as e:
+        except ValidationError as e:
+            return ParseResult(success=False, error=f"Content validation error: {e}", exception=e)
+        except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
 
         return ParseResult(success=True, metadata=metadata, content=content)
@@ -134,8 +138,36 @@ class DelimiterPreambleSyntax(BaseSyntax):
         """Additional validation after parsing."""
         return True
 
+    def parse_metadata_early(self, candidate: BlockCandidate) -> dict[str, Any] | None:
+        """Parse metadata from inline preamble.
 
-class DelimiterFrontmatterSyntax(BaseSyntax):
+        For this syntax, metadata is extracted from the opening line
+        (e.g., !!id:type:param1:param2).
+        """
+        if not candidate.lines:
+            return None
+
+        detection = self.detect_line(candidate.lines[0], None)
+        if detection.metadata:
+            # Convert all values to strings for consistency
+            return {k: str(v) for k, v in detection.metadata.items()}
+        return None
+
+    def parse_content_early(self, candidate: BlockCandidate) -> dict[str, Any] | None:
+        """Parse content section early.
+
+        Returns raw content dict with the content text.
+        """
+        if len(candidate.lines) < 2:
+            return None
+
+        # Content is all lines except first (header) and last (closing)
+        content_lines = candidate.lines[1:-1] if len(candidate.lines) > 2 else candidate.lines[1:]
+        raw_content = "\n".join(content_lines)
+        return {"raw_content": raw_content}
+
+
+class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     """Syntax: Delimiter markers with YAML frontmatter.
 
     Format:
@@ -198,16 +230,10 @@ class DelimiterFrontmatterSyntax(BaseSyntax):
 
     def extract_block_type(self, candidate: BlockCandidate) -> str | None:
         """Extract block_type from YAML frontmatter."""
-        if not candidate.metadata_lines:
-            return None
-
-        # Parse YAML to extract block_type
-        yaml_content = "\n".join(candidate.metadata_lines)
-        try:
-            metadata_dict: dict[str, Any] = yaml.safe_load(yaml_content) or {}
-            return str(metadata_dict.get("block_type")) if "block_type" in metadata_dict else None
-        except Exception:
-            return None
+        metadata_dict = self._parse_yaml_metadata(candidate.metadata_lines)
+        if metadata_dict and "block_type" in metadata_dict:
+            return str(metadata_dict["block_type"])
+        return None
 
     def parse_block(
         self, candidate: BlockCandidate, block_class: type[Any] | None = None
@@ -224,13 +250,9 @@ class DelimiterFrontmatterSyntax(BaseSyntax):
             metadata_class, content_class = extract_block_types(block_class)
 
         # Parse metadata from accumulated metadata lines
-        metadata_dict: dict[str, Any] = {}
-        if candidate.metadata_lines:
-            yaml_content = "\n".join(candidate.metadata_lines)
-            try:
-                metadata_dict = yaml.safe_load(yaml_content) or {}
-            except Exception as e:
-                return ParseResult(success=False, error=f"Invalid YAML: {e}", exception=e)
+        metadata_dict, yaml_error = self._parse_yaml_metadata_strict(candidate.metadata_lines)
+        if yaml_error:
+            return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
         # Ensure id and block_type have defaults
         # Only fill in defaults if using BaseMetadata (no custom class provided)
@@ -244,7 +266,9 @@ class DelimiterFrontmatterSyntax(BaseSyntax):
         try:
             # Pass metadata dict directly to Pydantic for validation
             metadata = metadata_class(**metadata_dict)
-        except Exception as e:
+        except ValidationError as e:
+            return ParseResult(success=False, error=f"Metadata validation error: {e}", exception=e)
+        except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
 
         content_text = "\n".join(candidate.content_lines)
@@ -252,7 +276,9 @@ class DelimiterFrontmatterSyntax(BaseSyntax):
         try:
             # All content classes must have parse method
             content = content_class.parse(content_text)
-        except Exception as e:
+        except ValidationError as e:
+            return ParseResult(success=False, error=f"Content validation error: {e}", exception=e)
+        except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
 
         return ParseResult(success=True, metadata=metadata, content=content)
@@ -260,4 +286,18 @@ class DelimiterFrontmatterSyntax(BaseSyntax):
     def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing."""
         return True
-        return True
+
+    def parse_metadata_early(self, candidate: BlockCandidate) -> dict[str, Any] | None:
+        """Parse YAML metadata section early.
+
+        Returns parsed YAML frontmatter as a dict.
+        """
+        return self._parse_yaml_metadata(candidate.metadata_lines)
+
+    def parse_content_early(self, candidate: BlockCandidate) -> dict[str, Any] | None:
+        """Parse content section early.
+
+        Returns raw content dict with the content text.
+        """
+        raw_content = "\n".join(candidate.content_lines)
+        return {"raw_content": raw_content}

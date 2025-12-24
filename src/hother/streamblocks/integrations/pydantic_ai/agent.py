@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator
 
     from hother.streamblocks.core.registry import Registry
-    from hother.streamblocks.core.types import StreamEvent
+    from hother.streamblocks.core.types import Event
 
 
 class BlockAwareAgent:
@@ -60,7 +60,7 @@ class BlockAwareAgent:
         message_history: Any = None,
         deps: Any = None,
         **kwargs: Any,
-    ) -> AsyncGenerator[str | StreamEvent[Any, Any]]:
+    ) -> AsyncGenerator[str | Event]:
         """Run the agent and stream blocks in real-time.
 
         Args:
@@ -72,7 +72,7 @@ class BlockAwareAgent:
         Yields:
             Mixed stream of:
             - Original text chunks (if emit_original_events=True)
-            - StreamEvent objects as blocks are detected and extracted
+            - Event objects as blocks are detected and extracted
         """
 
         # Start agent streaming

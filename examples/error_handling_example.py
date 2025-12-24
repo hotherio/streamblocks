@@ -11,12 +11,13 @@ from typing import TYPE_CHECKING
 import yaml
 from pydantic import ValidationError
 
-from hother.streamblocks import EventType, Registry, StreamBlockProcessor
+from hother.streamblocks import Registry, StreamBlockProcessor
+from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 from hother.streamblocks.syntaxes.models import Syntax
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockRejectedEvent
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
 async def main() -> None:
@@ -82,17 +83,18 @@ Some more text at the end.
     print("=" * 60)
 
     extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
-    rejected_blocks: list[BlockRejectedEvent[BaseMetadata, BaseContent]] = []
+    rejected_blocks: list[BlockErrorEvent[BaseMetadata, BaseContent]] = []
 
     async for event in processor.process_stream(mock_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            block = event.block
-            extracted_blocks.append(block)
-            print(f"\n✅ EXTRACTED: Block {block.metadata.id}")
-            print(f"   Type: {block.metadata.block_type}")
-            print(f"   Content length: {len(block.content.raw_content)} chars")
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block is not None:
+                extracted_blocks.append(block)
+                print(f"\n✅ EXTRACTED: Block {block.metadata.id}")
+                print(f"   Type: {block.metadata.block_type}")
+                print(f"   Content length: {len(block.content.raw_content)} chars")
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             rejected_blocks.append(event)
             print(f"\n❌ REJECTED: Block at lines {event.start_line}-{event.end_line}")
             print(f"   Syntax: {event.syntax}")
@@ -129,15 +131,13 @@ Some more text at the end.
                 else:
                     print(f"   → Other error: {event.exception}")
 
-            # Show partial content that was rejected
-            preview = event.data[:100].replace("\n", "\\n")
-            if len(event.data) > 100:
-                preview += "..."
-            print(f"   Preview: {preview}")
+            # Show block_id if available
+            if event.block_id:
+                print(f"   Block ID: {event.block_id}")
 
-        elif event.type == EventType.RAW_TEXT:
+        elif isinstance(event, TextContentEvent):
             # Normal text outside blocks
-            text = event.data.strip()
+            text = event.content.strip()
             if text:
                 print(f"📄 TEXT: {text}")
 

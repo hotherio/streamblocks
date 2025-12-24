@@ -23,7 +23,7 @@ from textual.widgets import (
     Static,
 )
 
-from hother.streamblocks import DelimiterFrontmatterSyntax, EventType, Registry, StreamBlockProcessor
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.blocks.interactive import (
     ChoiceContent,
     ChoiceMetadata,
@@ -43,6 +43,7 @@ from hother.streamblocks.blocks.interactive import (
     YesNoMetadata,
 )
 from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent
 
 
 class InteractiveWidget(Static):
@@ -488,11 +489,13 @@ class InteractiveBlocksApp(App[None]):
 
         # Process stream and show widgets as they arrive
         async for event in self.processor.process_stream(demo_stream()):
-            if event.type == EventType.BLOCK_EXTRACTED:
-                block = event.block
+            if isinstance(event, BlockEndEvent):
+                block = event.get_block()
+                if block is None:
+                    continue
                 self.log(f"Extracted block: {block.metadata.id} ({block.metadata.block_type})")
                 await self.add_interactive_block(block)
-            elif event.type == EventType.BLOCK_REJECTED:
+            elif isinstance(event, BlockErrorEvent):
                 self.log(f"Block rejected: {event.reason}")
 
     async def add_interactive_block(self, block: Block[Any, Any]) -> None:

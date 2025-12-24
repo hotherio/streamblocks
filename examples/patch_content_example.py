@@ -7,12 +7,18 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from hother.streamblocks import (
     DelimiterPreambleSyntax,
-    EventType,
     Registry,
     StreamBlockProcessor,
 )
 from hother.streamblocks.core.models import Block
-from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import (
+    BaseContent,
+    BaseMetadata,
+    BlockDeltaEvent,
+    BlockEndEvent,
+    BlockErrorEvent,
+    TextContentEvent,
+)
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -215,21 +221,23 @@ async def main() -> None:
     }
 
     async for event in processor.process_stream(example_stream()):
-        if event.type == EventType.RAW_TEXT:
+        if isinstance(event, TextContentEvent):
             # Show text but truncate long lines
-            if event.data.strip():
-                text = event.data.strip()
+            if event.content.strip():
+                text = event.content.strip()
                 if len(text) > 70:
                     text = text[:67] + "..."
                 print(f"[TEXT] {text}")
 
-        elif event.type == EventType.BLOCK_DELTA:
+        elif isinstance(event, BlockDeltaEvent):
             # Skip deltas for cleaner output
             pass
 
-        elif event.type == EventType.BLOCK_EXTRACTED:
+        elif isinstance(event, BlockEndEvent):
             # Complete patch extracted
-            block = event.block
+            block = event.get_block()
+            if block is None:
+                continue
             patches.append(block)
 
             # Type narrowing for SimplePatchContent and SimplePatchMetadata
@@ -303,7 +311,7 @@ async def main() -> None:
             if any("TODO" in line for line in lines):
                 print("        📝  CONTAINS TODO ITEMS")
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             # Block rejected
             print(f"\n[REJECT] Patch rejected: {event.reason}")
 

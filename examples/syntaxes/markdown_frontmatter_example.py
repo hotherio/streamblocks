@@ -4,8 +4,14 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
-from hother.streamblocks import EventType, MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks import MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.blocks.patch import Patch
+from hother.streamblocks.core.types import (
+    BlockDeltaEvent,
+    BlockEndEvent,
+    BlockErrorEvent,
+    TextContentEvent,
+)
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -104,12 +110,12 @@ async def main() -> None:
     current_partial = None
 
     async for event in processor.process_stream(example_stream()):
-        if event.type == EventType.RAW_TEXT:
+        if isinstance(event, TextContentEvent):
             # Raw text passed through
-            if event.data.strip():
-                print(f"[TEXT] {event.data.strip()}")
+            if event.content.strip():
+                print(f"[TEXT] {event.content.strip()}")
 
-        elif event.type == EventType.BLOCK_DELTA:
+        elif isinstance(event, BlockDeltaEvent):
             # Track partial block updates
             syntax = event.syntax
             section = event.section
@@ -117,9 +123,11 @@ async def main() -> None:
                 print(f"\n[DELTA] Started {syntax} block (section: {section})")
                 current_partial = syntax
 
-        elif event.type == EventType.BLOCK_EXTRACTED:
+        elif isinstance(event, BlockEndEvent):
             # Complete block extracted
-            block = event.block
+            block = event.get_block()
+            if block is None:
+                continue
             blocks_extracted.append(block)
             current_partial = None
 
@@ -152,7 +160,7 @@ async def main() -> None:
             if len(lines) > 3:
                 print(f"          ... ({len(lines) - 3} more lines)")
 
-        elif event.type == EventType.BLOCK_REJECTED:
+        elif isinstance(event, BlockErrorEvent):
             # Block rejected
             reason = event.reason
             syntax = event.syntax

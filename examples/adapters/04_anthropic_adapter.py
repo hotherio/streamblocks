@@ -24,7 +24,7 @@ except ImportError:
 
 from hother.streamblocks import (
     AnthropicAdapter,
-    BlockExtractedEvent,
+    BlockEndEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
@@ -104,9 +104,12 @@ IMPORTANT:
                     print(f"📝 Delta: {repr(event.delta)[:40]}")
 
                 # Blocks
-                elif isinstance(event, BlockExtractedEvent):
-                    print(f"\n✅ Block: {event.block.metadata.id}")
-                    for op in event.block.content.operations:
+                elif isinstance(event, BlockEndEvent):
+                    block = event.get_block()
+                    if block is None:
+                        continue
+                    print(f"\n✅ Block: {block.metadata.id}")
+                    for op in block.content.operations:
                         print(f"   - {op.path}")
                     print()
 
