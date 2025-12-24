@@ -1,104 +1,100 @@
-"""Tests for automatic adapter detection."""
+"""Tests for automatic adapter detection via InputAdapterRegistry."""
 
 from __future__ import annotations
 
+import hother.streamblocks.extensions.anthropic
+
+# Import extensions to register their adapters
+import hother.streamblocks.extensions.gemini
+import hother.streamblocks.extensions.openai  # noqa: F401
 from hother.streamblocks.adapters import (
-    AdapterDetector,
-    AnthropicAdapter,
-    AttributeAdapter,
-    GeminiAdapter,
-    IdentityAdapter,
-    OpenAIAdapter,
+    EventCategory,
+    InputAdapterRegistry,
+    detect_input_adapter,
+)
+from hother.streamblocks.adapters.input import (
+    AttributeInputAdapter,
+    IdentityInputAdapter,
 )
 
 
-class TestAdapterDetection:
-    """Test automatic adapter detection."""
+class TestInputAdapterRegistry:
+    """Test automatic adapter detection via InputAdapterRegistry."""
 
     def test_detects_plain_text(self):
-        """Should use IdentityAdapter for strings."""
-        adapter = AdapterDetector.detect("plain text")
-        assert isinstance(adapter, IdentityAdapter)
+        """Should use IdentityInputAdapter for strings."""
+        adapter = InputAdapterRegistry.detect("plain text")
+        assert isinstance(adapter, IdentityInputAdapter)
+
+    def test_identity_adapter_categorizes_as_text_content(self):
+        """IdentityInputAdapter should categorize all input as TEXT_CONTENT."""
+        adapter = IdentityInputAdapter()
+        assert adapter.categorize("any text") == EventCategory.TEXT_CONTENT
+
+    def test_identity_adapter_extracts_text(self):
+        """IdentityInputAdapter should return text unchanged."""
+        adapter = IdentityInputAdapter()
+        assert adapter.extract_text("Hello world") == "Hello world"
 
     def test_detects_gemini_by_module(self):
         """Should detect Gemini chunks by module path."""
+        from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
         # Create a mock class with Gemini-like module
         class GeminiChunk:
             __module__ = "google.genai.types"
             text = "test"
 
-        adapter = AdapterDetector.detect(GeminiChunk())
-        assert isinstance(adapter, GeminiAdapter)
+        adapter = InputAdapterRegistry.detect(GeminiChunk())
+        assert isinstance(adapter, GeminiInputAdapter)
 
-    def test_detects_gemini_alt_module(self):
-        """Should detect Gemini from alternative module path."""
-
-        class GeminiChunk:
-            __module__ = "google.ai.generativelanguage.v1"
-            text = "test"
-
-        adapter = AdapterDetector.detect(GeminiChunk())
-        assert isinstance(adapter, GeminiAdapter)
-
-    def test_detects_by_attributes(self):
-        """Should detect based on attribute patterns."""
-
-        class UnknownChunk:
-            text = "content"
-            candidates = []  # Gemini-like structure
-
-        adapter = AdapterDetector.detect(UnknownChunk())
-        assert isinstance(adapter, GeminiAdapter)
-
-    def test_detects_openai_by_structure(self):
-        """Should detect OpenAI chunks by structure."""
+    def test_detects_openai_by_module(self):
+        """Should detect OpenAI chunks by module path."""
+        from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
         class Delta:
             content = "test"
 
         class Choice:
             delta = Delta()
+            finish_reason = None
 
-        class Chunk:
+        class OpenAIChunk:
+            __module__ = "openai.types.chat"
             choices = [Choice()]
-            model = "gpt-4"
-            object = "chat.completion.chunk"
 
-        adapter = AdapterDetector.detect(Chunk())
-        assert isinstance(adapter, OpenAIAdapter)
+        adapter = InputAdapterRegistry.detect(OpenAIChunk())
+        assert isinstance(adapter, OpenAIInputAdapter)
 
-    def test_detects_anthropic_by_structure(self):
-        """Should detect Anthropic events by structure."""
+    def test_detects_anthropic_by_module(self):
+        """Should detect Anthropic events by module path."""
+        from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Delta:
-            text = "test"
-
-        class Event:
+        class AnthropicEvent:
+            __module__ = "anthropic.types"
             type = "content_block_delta"
-            delta = Delta()
 
-        adapter = AdapterDetector.detect(Event())
-        assert isinstance(adapter, AnthropicAdapter)
+        adapter = InputAdapterRegistry.detect(AnthropicEvent())
+        assert isinstance(adapter, AnthropicInputAdapter)
 
     def test_fallback_to_attribute_adapter_text(self):
-        """Should fall back to AttributeAdapter for unknown types with 'text'."""
+        """Should fall back to AttributeInputAdapter for unknown types with 'text'."""
 
         class CustomChunk:
             text = "fallback"
 
-        adapter = AdapterDetector.detect(CustomChunk())
-        assert isinstance(adapter, AttributeAdapter)
+        adapter = InputAdapterRegistry.detect(CustomChunk())
+        assert isinstance(adapter, AttributeInputAdapter)
         assert adapter.text_attr == "text"
 
     def test_fallback_to_attribute_adapter_content(self):
-        """Should fall back to AttributeAdapter for unknown types with 'content'."""
+        """Should fall back to AttributeInputAdapter for unknown types with 'content'."""
 
         class CustomChunk:
             content = "fallback"
 
-        adapter = AdapterDetector.detect(CustomChunk())
-        assert isinstance(adapter, AttributeAdapter)
+        adapter = InputAdapterRegistry.detect(CustomChunk())
+        assert isinstance(adapter, AttributeInputAdapter)
         assert adapter.text_attr == "content"
 
     def test_returns_none_for_unrecognized(self):
@@ -107,101 +103,119 @@ class TestAdapterDetection:
         class WeirdChunk:
             data = "no standard attributes"
 
-        adapter = AdapterDetector.detect(WeirdChunk())
+        adapter = InputAdapterRegistry.detect(WeirdChunk())
         assert adapter is None
+
+    def test_detect_input_adapter_raises_for_unknown(self):
+        """detect_input_adapter should raise ValueError for unknown formats."""
+        import pytest
+
+        class WeirdChunk:
+            data = "no standard attributes"
+
+        with pytest.raises(ValueError, match="No input adapter found"):
+            detect_input_adapter(WeirdChunk())
 
     def test_custom_adapter_registration_by_module(self):
         """Should use registered custom adapters (module-based)."""
 
-        class MyAdapter:
+        class MyInputAdapter:
+            def categorize(self, event):
+                return EventCategory.TEXT_CONTENT
+
             def extract_text(self, chunk):
                 return chunk.custom_field
+
+            def get_metadata(self, chunk):
+                return None
+
+            def is_complete(self, chunk):
+                return False
 
         class MyChunk:
             __module__ = "mycompany.ai.types"
             custom_field = "test"
 
         # Register
-        AdapterDetector.register_adapter(
-            module_prefix="mycompany.ai",
-            adapter_class=MyAdapter,
-        )
+        InputAdapterRegistry.register_module("mycompany.ai", MyInputAdapter)
 
         try:
-            adapter = AdapterDetector.detect(MyChunk())
-            assert isinstance(adapter, MyAdapter)
+            adapter = InputAdapterRegistry.detect(MyChunk())
+            assert isinstance(adapter, MyInputAdapter)
         finally:
-            # Cleanup
-            AdapterDetector.clear_custom_adapters()
+            # Cleanup - remove from registry
+            del InputAdapterRegistry._type_registry["mycompany.ai"]
 
     def test_custom_adapter_registration_by_attributes(self):
         """Should use registered custom adapters (attribute-based)."""
 
-        class MyAdapter:
+        class MyInputAdapter:
+            def categorize(self, event):
+                return EventCategory.TEXT_CONTENT
+
             def extract_text(self, chunk):
                 return chunk.custom_field
+
+            def get_metadata(self, chunk):
+                return None
+
+            def is_complete(self, chunk):
+                return False
 
         class MyChunk:
             custom_field = "test"
             special_marker = True
 
         # Register
-        AdapterDetector.register_adapter(
-            attributes=["custom_field", "special_marker"],
-            adapter_class=MyAdapter,
+        InputAdapterRegistry.register_pattern(
+            ["custom_field", "special_marker"],
+            MyInputAdapter,
         )
 
         try:
-            adapter = AdapterDetector.detect(MyChunk())
-            assert isinstance(adapter, MyAdapter)
+            adapter = InputAdapterRegistry.detect(MyChunk())
+            assert isinstance(adapter, MyInputAdapter)
         finally:
-            # Cleanup
-            AdapterDetector.clear_custom_adapters()
+            # Cleanup - remove from pattern registry
+            InputAdapterRegistry._pattern_registry = [
+                (attrs, cls) for attrs, cls in InputAdapterRegistry._pattern_registry if cls is not MyInputAdapter
+            ]
 
-    def test_custom_adapters_have_priority(self):
-        """Should check custom adapters before built-in ones."""
+    def test_get_registered_modules(self):
+        """Should return copy of registered modules."""
+        modules = InputAdapterRegistry.get_registered_modules()
+        assert isinstance(modules, dict)
+        # Extensions should be registered
+        assert any("google" in key or "gemini" in key.lower() for key in modules)
 
-        class MyAdapter:
+    def test_get_registered_patterns(self):
+        """Should return copy of registered patterns."""
+        patterns = InputAdapterRegistry.get_registered_patterns()
+        assert isinstance(patterns, list)
+
+    def test_register_decorator(self):
+        """Should work as a decorator."""
+
+        @InputAdapterRegistry.register(module_prefix="test.decorator.module")
+        class DecoratorTestAdapter:
+            def categorize(self, event):
+                return EventCategory.TEXT_CONTENT
+
             def extract_text(self, chunk):
-                return "custom: " + chunk.text
+                return "decorated"
 
-        class Chunk:
-            text = "test"
+            def get_metadata(self, chunk):
+                return None
 
-        # Register custom adapter with higher priority
-        AdapterDetector.register_adapter(
-            attributes=["text"],
-            adapter_class=MyAdapter,
-        )
+            def is_complete(self, chunk):
+                return False
+
+        class TestChunk:
+            __module__ = "test.decorator.module.types"
 
         try:
-            adapter = AdapterDetector.detect(Chunk())
-            # Should use custom adapter, not AttributeAdapter
-            assert isinstance(adapter, MyAdapter)
+            adapter = InputAdapterRegistry.detect(TestChunk())
+            assert isinstance(adapter, DecoratorTestAdapter)
         finally:
             # Cleanup
-            AdapterDetector.clear_custom_adapters()
-
-    def test_clear_custom_adapters_resets_to_defaults(self):
-        """Should reset to default adapters after clearing."""
-
-        class MyAdapter:
-            pass
-
-        # Register custom
-        AdapterDetector.register_adapter(
-            module_prefix="test.module",
-            adapter_class=MyAdapter,
-        )
-
-        # Clear
-        AdapterDetector.clear_custom_adapters()
-
-        # Should still detect built-in types
-        assert isinstance(AdapterDetector.detect("text"), IdentityAdapter)
-
-        class GeminiLike:
-            text = "test"
-            candidates = []
-
-        assert isinstance(AdapterDetector.detect(GeminiLike()), GeminiAdapter)
+            del InputAdapterRegistry._type_registry["test.decorator.module"]

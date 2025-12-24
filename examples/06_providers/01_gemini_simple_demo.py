@@ -28,9 +28,13 @@ except ImportError:
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hother.streamblocks import (
+    BlockDeltaEvent,
+    BlockEndEvent,
+    BlockErrorEvent,
     DelimiterFrontmatterSyntax,
     Registry,
     StreamBlockProcessor,
+    TextContentEvent,
 )
 from hother.streamblocks.blocks.files import (
     FileContent,
@@ -41,12 +45,6 @@ from hother.streamblocks.blocks.files import (
     FileOperationsMetadata,
 )
 from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
-from hother.streamblocks.core.types import (
-    BlockDeltaEvent,
-    BlockEndEvent,
-    BlockErrorEvent,
-    TextContentEvent,
-)
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -141,7 +139,7 @@ async def get_gemini_response(prompt: str) -> AsyncIterator[Any]:
 
 async def main() -> None:
     """Run the simple Gemini demo."""
-    print("🤖 StreamBlocks + Gemini Simple Demo")
+    print("StreamBlocks + Gemini Simple Demo")
     print("=" * 60)
     print("\nUsing unified delimiter + frontmatter syntax for all blocks")
 
@@ -201,7 +199,7 @@ async def main() -> None:
         else:
             user_prompt = user_input
 
-    print(f"\n🚀 Processing: {user_prompt}")
+    print(f"\nProcessing: {user_prompt}")
     print("=" * 60)
 
     # Track extracted blocks
@@ -234,7 +232,7 @@ async def main() -> None:
                     metadata = block.metadata
                     content = block.content
 
-                    print(f"\n📦 Block: {metadata.id} (files_operations)")
+                    print(f"\nBlock: {metadata.id} (files_operations)")
                     if metadata.description:
                         print(f"   Description: {metadata.description}")
 
@@ -244,11 +242,11 @@ async def main() -> None:
                         operations[op.action].append(op.path)
 
                     if operations["create"]:
-                        print(f"   ✅ Create: {', '.join(operations['create'])}")
+                        print(f"   Create: {', '.join(operations['create'])}")
                     if operations["edit"]:
-                        print(f"   ✏️  Edit: {', '.join(operations['edit'])}")
+                        print(f"   Edit: {', '.join(operations['edit'])}")
                     if operations["delete"]:
-                        print(f"   ❌ Delete: {', '.join(operations['delete'])}")
+                        print(f"   Delete: {', '.join(operations['delete'])}")
 
                 elif block.metadata.block_type == "file_content":
                     # Type narrow to FileContent block
@@ -260,8 +258,8 @@ async def main() -> None:
                     metadata = block.metadata
                     content = block.content
 
-                    print(f"\n📦 Block: {metadata.id} (file_content)")
-                    print(f"   📄 File: {metadata.file}")
+                    print(f"\nBlock: {metadata.id} (file_content)")
+                    print(f"   File: {metadata.file}")
                     if metadata.description:
                         print(f"   Description: {metadata.description}")
 
@@ -283,20 +281,20 @@ async def main() -> None:
                     metadata = block.metadata
                     content = block.content
 
-                    print(f"\n📦 Block: {metadata.id} (message)")
+                    print(f"\nBlock: {metadata.id} (message)")
                     icons = {
-                        "info": "ℹ️ ",
-                        "warning": "⚠️ ",
-                        "error": "❌",
-                        "success": "✅",
-                        "status": "📊",
-                        "explanation": "💡",
+                        "info": "i",
+                        "warning": "!",
+                        "error": "x",
+                        "success": "ok",
+                        "status": "s",
+                        "explanation": "?",
                     }
-                    icon = icons.get(metadata.message_type, "💬")
+                    icon = icons.get(metadata.message_type, "-")
                     if metadata.title:
-                        print(f"   {icon} {metadata.title} ({metadata.message_type}):")
+                        print(f"   [{icon}] {metadata.title} ({metadata.message_type}):")
                     else:
-                        print(f"   {icon} {metadata.message_type}:")
+                        print(f"   [{icon}] {metadata.message_type}:")
 
                     # Show first few lines of message
                     lines = content.raw_content.split("\n")
@@ -307,7 +305,7 @@ async def main() -> None:
 
             elif isinstance(event, BlockDeltaEvent):
                 # Show progress
-                print("\r⏳ Processing block...", end="", flush=True)
+                print("\r Processing block...", end="", flush=True)
 
             elif isinstance(event, TextContentEvent):
                 # Collect any text outside blocks
@@ -316,10 +314,10 @@ async def main() -> None:
                     raw_text.append(text)
 
             elif isinstance(event, BlockErrorEvent):
-                print(f"\n⚠️  Block rejected: {event.reason}")
+                print(f"\nBlock rejected: {event.reason}")
 
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         import traceback
 
         traceback.print_exc()
@@ -327,7 +325,7 @@ async def main() -> None:
     # Summary
     print(f"\n\n{'=' * 60}")
     print("SUMMARY:")
-    print(f"  ✅ Extracted {len(extracted_blocks)} blocks")
+    print(f"  Extracted {len(extracted_blocks)} blocks")
 
     # Count block types
     block_types: dict[str, int] = {}
@@ -339,7 +337,7 @@ async def main() -> None:
         print(f"     - {bt}: {count}")
 
     if raw_text:
-        print(f"\n  💬 Raw text lines: {len(raw_text)}")
+        print(f"\n  Raw text lines: {len(raw_text)}")
 
 
 if __name__ == "__main__":

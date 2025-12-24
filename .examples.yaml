@@ -3,45 +3,51 @@
 
 # Examples to always skip
 skip:
-  - "examples/ui/interactive_ui_demo.py"  # TUI - requires user interaction
+  - "examples/07_ui/02_interactive_ui_demo.py"  # TUI - requires user interaction
 
 # Custom timeouts for specific examples (in seconds)
 timeouts:
   default: 30
-  "examples/gemini_architect_example.py": 60  # Makes multiple API calls
-  "examples/integrations/pydantic_ai_integration.py": 60  # Complex integration
+  "examples/06_providers/02_gemini_architect.py": 60  # Makes multiple API calls
+  "examples/05_integrations/01_pydantic_ai_integration.py": 60  # Complex integration
 
 # API key requirements
 # Auto-detected by scanning files, but can be overridden here
 requires_api:
   GEMINI_API_KEY:
-    - "examples/adapters/02_gemini_auto_detect.py"
-    - "examples/adapters/13_manual_chunk_processing.py"
-    - "examples/gemini_simple_demo.py"
-    - "examples/gemini_architect_example.py"
+    - "examples/02_adapters/02_gemini_auto_detect.py"
+    - "examples/02_adapters/13_manual_chunk_processing.py"
+    - "examples/06_providers/01_gemini_simple_demo.py"
+    - "examples/06_providers/02_gemini_architect.py"
 
   OPENAI_API_KEY:
-    - "examples/adapters/03_openai_explicit_adapter.py"
-    - "examples/integrations/pydantic_ai_integration.py"
+    - "examples/02_adapters/03_openai_explicit_adapter.py"
+    - "examples/05_integrations/01_pydantic_ai_integration.py"
 
   ANTHROPIC_API_KEY:
-    - "examples/adapters/04_anthropic_adapter.py"
+    - "examples/02_adapters/04_anthropic_adapter.py"
 
 # Examples that are expected to be slow (for CI optimization)
 slow_examples:
-  - "examples/gemini_architect_example.py"
-  - "examples/integrations/pydantic_ai_integration.py"
+  - "examples/06_providers/02_gemini_architect.py"
+  - "examples/05_integrations/01_pydantic_ai_integration.py"
 
 # Categories
 # Auto-detected from folder structure, but can be customized
 categories:
-  adapters:
-    - "examples/adapters/*.py"
-  logging:
-    - "examples/logging/*.py"
-  ui:
-    - "examples/ui/*.py"
-  integrations:
-    - "examples/integrations/*.py"
-  syntaxes:
-    - "examples/syntaxes/*.py"
+  00_basics:
+    - "examples/00_basics/*.py"
+  01_syntaxes:
+    - "examples/01_syntaxes/*.py"
+  02_adapters:
+    - "examples/02_adapters/*.py"
+  03_content:
+    - "examples/03_content/*.py"
+  04_logging:
+    - "examples/04_logging/*.py"
+  05_integrations:
+    - "examples/05_integrations/*.py"
+  06_providers:
+    - "examples/06_providers/*.py"
+  07_ui:
+    - "examples/07_ui/*.py"

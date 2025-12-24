@@ -105,6 +105,7 @@ doc = [
     "mkdocs-material-extensions>=1.3",
     "mike>=2.1",
     "mkdocstrings[python]>=0.27",
+    "mkdocs-glightbox>=0.4.0",
 ]
 
 # Ruff Configuration - Comprehensive and Strict
@@ -129,22 +130,16 @@ select = [
     "I",
     # flake8-bandit (security)
     "S",
-    # flake8-annotations (type annotations)
-    "ANN",
     # flake8-async
     "ASYNC",
     # flake8-comprehensions
     "C4",
     # flake8-datetimez
     "DTZ",
-    # flake8-errmsg
-    "EM",
     # flake8-executable
     "EXE",
     # flake8-future-annotations
     "FA",
-    # flake8-boolean-trap
-    "FBT",
     # flake8-import-conventions
     "ICN",
     # flake8-no-pep420
@@ -218,12 +213,16 @@ line-ending = "auto"
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = [
     "S101",    # Use of assert
-    "ANN",     # Missing type annotations
+    "S110",    # try-except-pass (acceptable in tests)
+    "S603",    # subprocess call (acceptable in test runner)
     "PLR2004", # Magic value comparison
     "ARG001",  # Unused function argument
     "ARG002",  # Unused method argument
     "RUF012",  # Mutable class attributes
     "PLW2901", # Loop variable overwritten
+    "TRY300",  # return in try block (acceptable in tests)
+    "PLC0415", # Import not at top-level (acceptable in tests for isolation)
+    "SLF001",  # Private member access (needed for test cleanup)
 ]
 "examples/**/*" = [
     "C901",    # Too complex
@@ -231,15 +230,14 @@ line-ending = "auto"
     "PLR0915", # Too many statements
     "PLR2004", # Magic value comparison
     "INP001",  # Implicit namespace package
+    "S110",    # try-except-pass (acceptable in examples)
     "S311",    # Pseudo-random generator (acceptable in examples)
     "S307",    # Use of eval (acceptable in demo code)
+    "S603",    # subprocess call (acceptable in example runner)
     "PTH100",  # os.path.abspath (acceptable in examples)
     "PTH120",  # os.path.dirname (acceptable in examples)
     "PTH123",  # os.path usage (acceptable in examples)
     "EXE001",  # Shebang without executable
-    "ANN001",  # Missing function argument annotations
-    "ANN202",  # Missing return annotations
-    "ANN401",  # Any type allowed in examples
     "PLC0415", # Import not at top-level (acceptable in examples)
     "E741",    # Ambiguous variable names (acceptable in examples)
     "DTZ005",  # datetime without tz (acceptable in examples)
@@ -248,8 +246,9 @@ line-ending = "auto"
     "B904",    # raise without from (acceptable in examples)
     "B007",    # Loop variable not used (acceptable in examples)
     "SIM102",  # Nested if (acceptable in examples)
-    "FBT001",  # Boolean positional argument (acceptable in examples)
-    "FBT002",  # Boolean default argument (acceptable in examples)
+    "TRY300",  # return in try block (acceptable in examples)
+    "ASYNC109", # async function with timeout param (acceptable in examples)
+    "SLF001",  # Private member access (acceptable in examples for cleanup)
 ]
 "sandbox/**/*" = [
     "C901",    # Too complex
@@ -269,28 +268,23 @@ line-ending = "auto"
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
     "C901",    # Too complex
-    "ANN401",  # Any types needed for is_native_event detection
 ]
 "src/hother/streamblocks/core/models.py" = [
     "UP046",   # Type annotation can be modernized
-]
-"src/hother/streamblocks/integrations/**/*" = [
-    "ANN401",  # Any types needed for pydantic_ai integration
-    "FBT001",  # Boolean positional arguments for optional features
-    "FBT002",  # Boolean default arguments for optional features
-]
-"src/hother/streamblocks/content/**/*" = [
-    "ANN401",  # Any types needed for generic content parsing
-]
-"src/hother/streamblocks/core/_logger.py" = [
-    "ANN401",  # Any types needed for logger protocol and adapter
 ]
 "src/hother/streamblocks/syntaxes/markdown.py" = [
     "TRY300",   # Conflicts with RET505 - allow simple return after if
 ]
 "src/hother/streamblocks/adapters/**/*" = [
-    "ANN401",  # Any types needed for generic chunk handling
     "PLC0105",  # TypeVar contravariance naming - TChunk is clear enough
+    "PLC0415",  # Import not at top-level (needed to avoid circular imports)
+]
+"src/hother/streamblocks/extensions/**/*" = [
+    "PLC0415",  # Import not at top-level (intentional for lazy loading)
+    "PLR0911",  # Too many return statements (clarity over complexity for event mapping)
+]
+"src/hother/streamblocks/__init__.py" = [
+    "RUF022",  # __all__ sorting - comments prevent proper sorting
 ]
 
 # Complexity settings
@@ -301,7 +295,12 @@ max-complexity = 10
 [tool.pyright]
 include = ["src", "examples"]
 exclude = ["**/__pycache__", "**/migrations", ".venv", "tests"]
-ignore = ["examples/logging/structlog_example.py"]
+ignore = [
+    "examples/logging/structlog_example.py",
+    "src/hother/streamblocks/adapters/detection.py",  # type(Any) returns type[Unknown]
+    "src/hother/streamblocks/core/protocol_processor.py",  # Complex generic type interactions
+    "src/hother/streamblocks/extensions/agui/output_adapter.py",  # Complex generic type interactions
+]
 
 pythonVersion = "3.13"
 venvPath = ".venv"

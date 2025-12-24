@@ -1,6 +1,6 @@
 # StreamBlocks Examples
 
-This directory contains example scripts demonstrating various features of StreamBlocks.
+This directory contains example scripts demonstrating various features of StreamBlocks, organized in a progressive learning path.
 
 ## Running Examples
 
@@ -29,7 +29,7 @@ The `run_examples.py` script provides flexible control over example execution:
 uv run python examples/run_examples.py
 
 # Run only adapter examples
-uv run python examples/run_examples.py --category adapters
+uv run python examples/run_examples.py --category 02_adapters
 
 # Skip API-dependent examples
 uv run python examples/run_examples.py --skip-api
@@ -74,17 +74,17 @@ JSON output format:
   },
   "results": [
     {
-      "path": "examples/adapters/01_identity_adapter_plain_text.py",
+      "path": "examples/02_adapters/01_identity_adapter_plain_text.py",
       "status": "pass",
-      "category": "adapters",
+      "category": "02_adapters",
       "duration": 0.82
     }
   ],
   "skipped": [
     {
-      "path": "examples/ui/interactive_ui_demo.py",
+      "path": "examples/07_ui/02_interactive_ui_demo.py",
       "reason": "TUI example (requires user interaction)",
-      "category": "ui"
+      "category": "07_ui"
     }
   ]
 }
@@ -116,7 +116,24 @@ pytest tests/test_examples.py -v
 
 ## Example Categories
 
-### Adapters (`adapters/`)
+### 00_basics - Getting Started
+
+Foundational examples to understand core StreamBlocks concepts:
+
+- `01_basic_usage.py` - Basic StreamBlocks usage and core concepts
+- `02_minimal_api.py` - Minimal API example for quick reference
+- `03_error_handling.py` - Error handling patterns and best practices
+- `04_structured_output.py` - Working with structured output
+
+### 01_syntaxes - Syntax Formats
+
+Examples showing different block syntax formats:
+
+- `01_markdown_frontmatter.py` - Markdown frontmatter syntax
+- `02_delimiter_frontmatter.py` - Delimiter with frontmatter syntax
+- `03_parsing_decorators.py` - Using parsing decorators for custom parsers
+
+### 02_adapters - Stream Adapters
 
 Examples demonstrating stream adapters for different AI providers:
 
@@ -134,46 +151,63 @@ Examples demonstrating stream adapters for different AI providers:
 - `12_disable_original_events.py` - Controlling event emission
 - `13_manual_chunk_processing.py` - **Requires GEMINI_API_KEY** - Manual chunk processing
 
-### Integrations (`integrations/`)
+### 03_content - Content Processing
 
-Examples showing integration with other libraries:
+Examples for content manipulation and processing:
 
-- `pydantic_ai_integration.py` - **Requires API keys** - PydanticAI integration
+- `01_patch_content.py` - Patch content operations
 
-### Logging (`logging/`)
+### 04_logging - Logging Integration
 
 Examples demonstrating different logging approaches:
 
-- `custom_logger_example.py` - Custom logger implementation
-- `stdlib_logging_example.py` - Python stdlib logging
-- `structlog_example.py` - Structured logging with structlog
+- `01_stdlib_logging.py` - Python stdlib logging integration
+- `02_structlog.py` - Structured logging with structlog
+- `03_custom_logger.py` - Custom logger implementation
 
-### Syntaxes (`syntaxes/`)
+### 05_integrations - Framework Integrations
 
-Examples showing different syntax formats:
+Examples showing integration with other libraries:
 
-- `delimiter_frontmatter_example.py` - Delimiter with frontmatter syntax
-- `markdown_frontmatter_example.py` - Markdown frontmatter syntax
+- `01_pydantic_ai_integration.py` - **Requires API keys** - PydanticAI integration
 
-### UI (`ui/`)
+### 06_providers - AI Provider Demos
+
+Complete examples with AI providers:
+
+- `01_gemini_simple_demo.py` - **Requires GEMINI_API_KEY** - Simple Gemini demo
+- `02_gemini_architect.py` - **Requires GEMINI_API_KEY** - Complex Gemini example with multiple calls
+
+### 07_ui - User Interface
 
 User interface examples:
 
-- `interactive_blocks_example.py` - Interactive block types (CLI output)
-- `interactive_ui_demo.py` - **TUI - Cannot run automatically** - Full Textual UI demo
+- `01_interactive_blocks.py` - Interactive block types (CLI output)
+- `02_interactive_ui_demo.py` - **TUI - Cannot run automatically** - Full Textual UI demo
 
-### Root Examples
+## Learning Path
 
-Core examples in the root directory:
+For the best learning experience, we recommend following this order:
 
-- `basic_usage.py` - Basic StreamBlocks usage
-- `error_handling_example.py` - Error handling patterns
-- `gemini_simple_demo.py` - **Requires GEMINI_API_KEY** - Simple Gemini demo
-- `gemini_architect_example.py` - **Requires GEMINI_API_KEY** - Complex Gemini example
-- `minimal_api_example.py` - Minimal API example
-- `parsing_decorators_example.py` - Using parsing decorators
-- `patch_content_example.py` - Patch content operations
-- `structured_output_example.py` - Structured output handling
+1. **Start with basics** (`00_basics/`)
+   - Understand core concepts with `01_basic_usage.py`
+   - See the minimal API with `02_minimal_api.py`
+
+2. **Learn syntaxes** (`01_syntaxes/`)
+   - Explore different block formats
+   - Understand parsing decorators
+
+3. **Master adapters** (`02_adapters/`)
+   - Start with plain text (`01_identity_adapter_plain_text.py`)
+   - Progress to provider-specific adapters
+   - Learn custom adapter creation
+
+4. **Explore integrations** (`05_integrations/`, `06_providers/`)
+   - See real-world usage with AI providers
+   - Integrate with frameworks like PydanticAI
+
+5. **Build UIs** (`07_ui/`)
+   - Create interactive applications
 
 ## API Keys
 
@@ -211,11 +245,11 @@ You can always run examples directly:
 
 ```bash
 # Simple example (no API key)
-uv run python examples/basic_usage.py
+uv run python examples/00_basics/01_basic_usage.py
 
 # API example (requires key)
 export GEMINI_API_KEY="your-key-here"
-uv run python examples/gemini_simple_demo.py
+uv run python examples/06_providers/01_gemini_simple_demo.py
 ```
 
 ## Configuration
@@ -272,10 +306,10 @@ uv pip install -e ".[dev,gemini,openai,anthropic]"
 
 When adding new examples:
 
-1. **Place in appropriate category folder** - adapters, integrations, logging, etc.
-2. **Add docstring** - Explain what the example demonstrates
-3. **Document requirements** - Note any API keys or special dependencies
-4. **Follow naming convention** - Use descriptive names (e.g., `12_feature_name.py`)
+1. **Place in appropriate category folder** - Use numbered prefixes (e.g., `00_basics/`, `02_adapters/`)
+2. **Use numbered file names** - Follow the pattern `NN_feature_name.py` (e.g., `14_new_feature.py`)
+3. **Add docstring** - Explain what the example demonstrates
+4. **Document requirements** - Note any API keys or special dependencies
 5. **Make it runnable** - Include `if __name__ == "__main__":` block
 6. **Test it** - Run with `uv run python examples/run_examples.py` to verify
 

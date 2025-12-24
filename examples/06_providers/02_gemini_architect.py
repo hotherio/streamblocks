@@ -285,29 +285,29 @@ async def process_file_operations(block: ExtractedBlock[BaseMetadata, BaseConten
     metadata = block.metadata
     content = block.content
 
-    print(f"\n📁 File Operations: {metadata.id}")
+    print(f"\nFile Operations: {metadata.id}")
     if metadata.description:
-        print(f"📝 {metadata.description}")
+        print(f"  {metadata.description}")
 
     # Group operations by type
     ops_by_type: dict[str, list[str]] = {"create": [], "edit": [], "delete": []}
     for op in content.operations:
         ops_by_type[op.action].append(op.path)
 
-    print(f"📊 Total operations: {len(content.operations)}")
+    print(f"  Total operations: {len(content.operations)}")
 
     if ops_by_type["create"]:
-        print(f"\n✅ CREATE ({len(ops_by_type['create'])} files):")
+        print(f"\n  CREATE ({len(ops_by_type['create'])} files):")
         for path in ops_by_type["create"][:5]:
             print(f"   + {path}")
 
     if ops_by_type["edit"]:
-        print(f"\n✏️  EDIT ({len(ops_by_type['edit'])} files):")
+        print(f"\n  EDIT ({len(ops_by_type['edit'])} files):")
         for path in ops_by_type["edit"][:5]:
             print(f"   ~ {path}")
 
     if ops_by_type["delete"]:
-        print(f"\n❌ DELETE ({len(ops_by_type['delete'])} files):")
+        print(f"\n  DELETE ({len(ops_by_type['delete'])} files):")
         for path in ops_by_type["delete"][:5]:
             print(f"   - {path}")
 
@@ -323,10 +323,10 @@ async def process_patch(block: ExtractedBlock[BaseMetadata, BaseContent]) -> Non
     metadata = block.metadata
     content = block.content
 
-    print(f"\n🔧 Patch: {metadata.id}")
-    print(f"📄 File: {metadata.file}")
+    print(f"\nPatch: {metadata.id}")
+    print(f"  File: {metadata.file}")
     if metadata.description:
-        print(f"📝 {metadata.description}")
+        print(f"  {metadata.description}")
 
     # Show preview of diff
     diff_lines = content.diff.split("\n")[:10]
@@ -349,12 +349,12 @@ async def process_tool_call(block: ExtractedBlock[BaseMetadata, BaseContent]) ->
     metadata = block.metadata
     content = block.content
 
-    print(f"\n🛠️  Tool Call: {metadata.id}")
-    print(f"🔧 Tool: {metadata.tool_name}")
+    print(f"\nTool Call: {metadata.id}")
+    print(f"  Tool: {metadata.tool_name}")
     if metadata.description:
-        print(f"📝 {metadata.description}")
+        print(f"  {metadata.description}")
 
-    print("📊 Parameters:")
+    print("  Parameters:")
     for key, value in content.parameters.items():
         print(f"   - {key}: {value}")
 
@@ -370,17 +370,17 @@ async def process_memory(block: ExtractedBlock[BaseMetadata, BaseContent]) -> No
     metadata = block.metadata
     content = block.content
 
-    print(f"\n🧠 Memory: {metadata.id}")
-    print(f"🔑 Type: {metadata.memory_type}")
-    print(f"📍 Key: {metadata.key}")
-    print(f"📦 Namespace: {metadata.namespace}")
+    print(f"\nMemory: {metadata.id}")
+    print(f"  Type: {metadata.memory_type}")
+    print(f"  Key: {metadata.key}")
+    print(f"  Namespace: {metadata.namespace}")
 
     if metadata.memory_type == "store":
-        print(f"💾 Storing value: {content.value}")
+        print(f"  Storing value: {content.value}")
     elif metadata.memory_type == "recall":
-        print("📖 Recalling value")
+        print("  Recalling value")
     elif metadata.memory_type == "list":
-        print("📋 Listing keys")
+        print("  Listing keys")
 
 
 async def process_visualization(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
@@ -394,21 +394,21 @@ async def process_visualization(block: ExtractedBlock[BaseMetadata, BaseContent]
     metadata = block.metadata
     content = block.content
 
-    print(f"\n📊 Visualization: {metadata.id}")
-    print(f"📈 Type: {metadata.viz_type}")
-    print(f"📝 Title: {metadata.title}")
-    print(f"📄 Format: {metadata.format}")
+    print(f"\nVisualization: {metadata.id}")
+    print(f"  Type: {metadata.viz_type}")
+    print(f"  Title: {metadata.title}")
+    print(f"  Format: {metadata.format}")
 
     # Show data preview
     if metadata.viz_type == "diagram":
         nodes = content.data.get("nodes", [])
         edges = content.data.get("edges", [])
-        print(f"\n🔵 Nodes: {', '.join(str(n) for n in nodes[:5])}")
+        print(f"\n  Nodes: {', '.join(str(n) for n in nodes[:5])}")
         if len(nodes) > 5:
             print(f"   ... and {len(nodes) - 5} more")
-        print(f"🔗 Edges: {len(edges)}")
+        print(f"  Edges: {len(edges)}")
     else:
-        print(f"\n📊 Data keys: {list(content.data.keys())}")
+        print(f"\n  Data keys: {list(content.data.keys())}")
 
 
 async def process_file_content(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
@@ -422,14 +422,14 @@ async def process_file_content(block: ExtractedBlock[BaseMetadata, BaseContent])
     metadata = block.metadata
     content = block.content
 
-    print(f"\n📄 File Content: {metadata.id}")
-    print(f"📁 File: {metadata.file}")
+    print(f"\nFile Content: {metadata.id}")
+    print(f"  File: {metadata.file}")
     if metadata.description:
-        print(f"📝 {metadata.description}")
+        print(f"  {metadata.description}")
 
     # Show content preview
     lines = content.raw_content.strip().split("\n")
-    print(f"\n📊 Content preview ({len(lines)} lines):")
+    print(f"\n  Content preview ({len(lines)} lines):")
     for i, line in enumerate(lines[:10]):
         print(f"   {i + 1}: {line}")
     if len(lines) > 10:
@@ -447,14 +447,21 @@ async def process_message(block: ExtractedBlock[BaseMetadata, BaseContent]) -> N
     metadata = block.metadata
     content = block.content
 
-    # Choose emoji based on message type
-    emoji_map = {"info": "ℹ️", "warning": "⚠️", "error": "❌", "success": "✅", "status": "📊", "explanation": "💡"}
-    emoji = emoji_map.get(metadata.message_type, "💬")
+    # Choose indicator based on message type
+    indicator_map = {
+        "info": "[i]",
+        "warning": "[!]",
+        "error": "[x]",
+        "success": "[ok]",
+        "status": "[s]",
+        "explanation": "[?]",
+    }
+    indicator = indicator_map.get(metadata.message_type, "[-]")
 
-    print(f"\n{emoji} Message: {metadata.id}")
+    print(f"\n{indicator} Message: {metadata.id}")
     if metadata.title:
-        print(f"📝 {metadata.title}")
-    print(f"🔖 Type: {metadata.message_type} | Priority: {metadata.priority}")
+        print(f"  {metadata.title}")
+    print(f"  Type: {metadata.message_type} | Priority: {metadata.priority}")
 
     # Display the message content
     print("\n" + "-" * 60)
@@ -488,7 +495,7 @@ async def get_gemini_response(prompt: str) -> AsyncIterator[Any]:
 
 async def main() -> None:
     """Run the architect example."""
-    print("🏗️  Gemini AI Architect - Multi-Block Demo")
+    print("Gemini AI Architect - Multi-Block Demo")
     print("=" * 60)
 
     # Setup single unified processor
@@ -546,7 +553,7 @@ async def main() -> None:
         else:
             user_prompt = user_input
 
-    print(f"\n🚀 Processing: {user_prompt}")
+    print(f"\nProcessing: {user_prompt}")
     print("=" * 60)
 
     # Track blocks by type
@@ -577,7 +584,7 @@ async def main() -> None:
                 blocks_by_type[block_type] += 1
 
                 print(f"\n{'=' * 60}")
-                print(f"📦 Block extracted: {block_type}")
+                print(f"Block extracted: {block_type}")
                 print(f"{'=' * 60}")
 
                 # Process based on type
@@ -599,25 +606,25 @@ async def main() -> None:
             elif isinstance(event, TextContentEvent):
                 text = event.content.strip()
                 if text:
-                    print(f"\n💬 {text}")
+                    print(f"\n{text}")
 
             elif isinstance(event, BlockErrorEvent):
                 reason = event.reason
-                print(f"\n⚠️  Block rejected: {reason}")
+                print(f"\nBlock rejected: {reason}")
                 # Show the raw data that was rejected
                 preview = event.data[:200] if len(event.data) > 200 else event.data
                 print(f"   Raw data preview: {preview!r}")
 
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         traceback.print_exc()
 
     # Summary
     print(f"\n\n{'=' * 60}")
-    print("📊 SUMMARY")
+    print("SUMMARY")
     print(f"{'=' * 60}")
     total_blocks = sum(blocks_by_type.values())
-    print(f"✅ Total blocks extracted: {total_blocks}")
+    print(f"Total blocks extracted: {total_blocks}")
     print("\nBreakdown by type:")
     for block_type, count in blocks_by_type.items():
         if count > 0:

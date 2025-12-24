@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar
 from uuid import uuid4
 
-from hother.streamblocks.adapters.detection import AdapterDetector
-from hother.streamblocks.adapters.providers import IdentityAdapter
+from hother.streamblocks.adapters.detection import InputAdapterRegistry
+from hother.streamblocks.adapters.input import IdentityInputAdapter
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.block_state_machine import BlockStateMachine
 from hother.streamblocks.core.line_accumulator import LineAccumulator
@@ -62,7 +62,7 @@ class ProcessorConfig:
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator, Callable
 
-    from hother.streamblocks.adapters.base import StreamAdapter
+    from hother.streamblocks.adapters.protocols import InputProtocolAdapter
     from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.registry import Registry
 
@@ -155,7 +155,7 @@ class StreamBlockProcessor:
         self._stream_state = StreamState()
 
         # Adapter state
-        self._adapter: StreamAdapter[Any] | None = None
+        self._adapter: InputProtocolAdapter[Any] | None = None
         self._first_chunk_processed = False
 
     # Expose legacy properties for backward compatibility
@@ -205,7 +205,7 @@ class StreamBlockProcessor:
     def process_chunk(
         self,
         chunk: TChunk,
-        adapter: StreamAdapter[TChunk] | None = None,
+        adapter: InputProtocolAdapter[TChunk] | None = None,
     ) -> list[TChunk | Event]:
         """Process a single chunk and return resulting events.
 
@@ -242,7 +242,7 @@ class StreamBlockProcessor:
         self._ensure_adapter(chunk, adapter)
 
         # Emit original chunk (passthrough)
-        if self.config.emit_original_events and not isinstance(self._adapter, IdentityAdapter):
+        if self.config.emit_original_events and not isinstance(self._adapter, IdentityInputAdapter):
             events.append(chunk)
 
         # Extract text from chunk
@@ -377,7 +377,7 @@ class StreamBlockProcessor:
     async def process_stream(
         self,
         stream: AsyncIterator[TChunk],
-        adapter: StreamAdapter[TChunk] | None = None,
+        adapter: InputProtocolAdapter[TChunk] | None = None,
     ) -> AsyncGenerator[TChunk | Event]:
         """Process stream and yield mixed events.
 
@@ -419,7 +419,7 @@ class StreamBlockProcessor:
             self._ensure_adapter(chunk, None)
 
             # Emit original chunk (passthrough)
-            if self.config.emit_original_events and not isinstance(self._adapter, IdentityAdapter):
+            if self.config.emit_original_events and not isinstance(self._adapter, IdentityInputAdapter):
                 yield chunk
 
             # Extract text from chunk
@@ -463,7 +463,7 @@ class StreamBlockProcessor:
             self._update_stats([event])
             yield event
 
-    def _ensure_adapter(self, chunk: TChunk, adapter: StreamAdapter[TChunk] | None) -> None:
+    def _ensure_adapter(self, chunk: TChunk, adapter: InputProtocolAdapter[TChunk] | None) -> None:
         """Ensure adapter is set, auto-detecting if needed."""
         if self._first_chunk_processed:
             return
@@ -471,7 +471,7 @@ class StreamBlockProcessor:
         if adapter:
             self._adapter = adapter
         elif self.config.auto_detect_adapter:
-            detected = AdapterDetector.detect(chunk)
+            detected = InputAdapterRegistry.detect(chunk)
             if detected:
                 self._adapter = detected
                 self.logger.info(
@@ -479,10 +479,10 @@ class StreamBlockProcessor:
                     adapter=type(self._adapter).__name__,
                 )
             else:
-                self._adapter = IdentityAdapter()
+                self._adapter = IdentityInputAdapter()
                 self.logger.debug("using_identity_adapter")
         else:
-            self._adapter = IdentityAdapter()
+            self._adapter = IdentityInputAdapter()
 
         self._first_chunk_processed = True
 

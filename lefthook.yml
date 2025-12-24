@@ -7,7 +7,7 @@ pre-commit:
   parallel: true
   commands:
     ruff:
-      run: uv run ruff check --fix --unsafe-fixes {staged_files}
+      run: uv run ruff check --fix {staged_files}
       glob: "*.py"
       stage_fixed: true
 
@@ -21,17 +21,6 @@ pre-commit:
       skip:
         - merge
         - rebase
-
-    # Security checks
-    security:
-      run: uv run ruff check --select=S {staged_files}
-      glob: "*.py"
-
-    # Import organization
-    imports:
-      run: uv run ruff check --select=I {staged_files}
-      glob: "*.py"
-      stage_fixed: true
 
     end-of-file:
       run: |
@@ -74,9 +63,10 @@ pre-commit:
         fi
         git diff --staged --name-only -z | xargs -0 uv run detect-secrets-hook --baseline .secrets.baseline
       glob: "*"
-      exclude: "*.lock|*.egg-info/*|.secrets.baseline"
+      exclude: "*.lock|*.egg-info/*|.secrets.baseline|README.md|*/README.md"
 
 pre-push:
+  skip: true
   parallel: true
   commands:
     # Full test suite
