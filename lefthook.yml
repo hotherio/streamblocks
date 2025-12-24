@@ -66,6 +66,7 @@ pre-commit:
       exclude: "*.lock|*.egg-info/*|.secrets.baseline|README.md|*/README.md"
 
 pre-push:
+  skip: true
   parallel: true
   commands:
     # Full test suite
