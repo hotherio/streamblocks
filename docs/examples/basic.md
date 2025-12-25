@@ -1,10 +1,10 @@
 # Basic Examples
 
-These examples cover the foundational concepts of StreamBlocks.
+These examples cover the foundational concepts of Streamblocks.
 
 ## 01_basic_usage.py
 
-Basic StreamBlocks usage demonstrating core concepts:
+Basic Streamblocks usage demonstrating core concepts:
 
 #! examples/01_basics/01_basic_usage.py
 

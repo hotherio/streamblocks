@@ -4,7 +4,7 @@ Stream adapters for converting provider-specific formats.
 
 ## Overview
 
-Adapters convert provider-specific stream formats into text chunks that StreamBlocks can process. Each adapter implements a callable interface that transforms the input stream.
+Adapters convert provider-specific stream formats into text chunks that Streamblocks can process. Each adapter implements a callable interface that transforms the input stream.
 
 ## Provider Adapters
 
@@ -46,7 +46,7 @@ async for event in processor.process_stream(adapter(anthropic_stream)):
 
 ## Auto-Detection
 
-StreamBlocks can automatically detect the appropriate adapter:
+Streamblocks can automatically detect the appropriate adapter:
 
 ```python
 from hother.streamblocks.adapters import auto_detect_adapter

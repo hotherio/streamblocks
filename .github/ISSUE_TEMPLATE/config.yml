@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussions
+    url: https://github.com/hother/streamblocks/discussions
+    about: Ask questions and discuss StreamBlocks usage
+  - name: Security Vulnerabilities
+    url: https://github.com/hother/streamblocks/security/policy
+    about: Report security vulnerabilities privately

@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Common issues and solutions for StreamBlocks.
+Common issues and solutions for Streamblocks.
 
 ## Blocks Not Detected
 
@@ -80,7 +80,7 @@ Common issues and solutions for StreamBlocks.
 
 ## Import Errors
 
-**Problem**: Cannot import StreamBlocks modules.
+**Problem**: Cannot import Streamblocks modules.
 
 **Solutions**:
 

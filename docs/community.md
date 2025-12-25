@@ -8,7 +8,7 @@ For bug reports and feature requests, please use [GitHub Issues](https://github.
 
 When reporting a bug, please include:
 
-- StreamBlocks version (`pip show streamblocks`)
+- Streamblocks version (`pip show streamblocks`)
 - Python version
 - Minimal reproducible example
 - Expected vs actual behavior
@@ -26,7 +26,7 @@ We welcome contributions! See our [Contributing Guide](contributing.md) for deta
 - **Report bugs**: Open an issue with a minimal reproducible example
 - **Suggest features**: Open an issue describing the use case
 - **Improve documentation**: Submit PRs for docs improvements
-- **Add examples**: Share your StreamBlocks usage patterns
+- **Add examples**: Share your Streamblocks usage patterns
 - **Write code**: Fix bugs or implement features
 
 ### Development Setup
@@ -52,4 +52,4 @@ We are committed to providing a welcoming and inclusive environment. Please read
 
 ## License
 
-StreamBlocks is released under the MIT License. See [LICENSE](https://github.com/hotherio/streamblocks/blob/main/LICENSE) for details.
+Streamblocks is released under the MIT License. See [LICENSE](https://github.com/hotherio/streamblocks/blob/main/LICENSE) for details.

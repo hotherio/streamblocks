@@ -1,6 +1,6 @@
 # PydanticAI Integration
 
-StreamBlocks integrates with [PydanticAI](https://ai.pydantic.dev/) for processing structured agent responses.
+Streamblocks integrates with [PydanticAI](https://ai.pydantic.dev/) for processing structured agent responses.
 
 ## Installation
 
@@ -12,7 +12,7 @@ pip install streamblocks pydantic-ai
 
 ```python
 from pydantic_ai import Agent
-from hother.streamblocks.integrations.pydantic_ai import StreamBlocksProcessor
+from hother.streamblocks.integrations.pydantic_ai import StreamblocksProcessor
 
 # Create a PydanticAI agent
 agent = Agent(
@@ -21,7 +21,7 @@ agent = Agent(
 )
 
 # Create the processor
-processor = StreamBlocksProcessor()
+processor = StreamblocksProcessor()
 
 # Process agent responses
 async def run_agent(prompt: str):

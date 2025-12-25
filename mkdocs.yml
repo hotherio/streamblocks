@@ -119,3 +119,7 @@ plugins:
             - sys.path.append('../src')
           merge_init_into_class: yes
           show_submodules: no
+
+# Custom hooks for example injection and snippet extraction
+hooks:
+  - docs/.hooks/main.py

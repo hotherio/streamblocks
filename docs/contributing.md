@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to StreamBlocks!
+Thank you for your interest in contributing to Streamblocks!
 
 ## Development Setup
 

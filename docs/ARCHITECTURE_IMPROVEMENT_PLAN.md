@@ -1,8 +1,8 @@
-# StreamBlocks Architecture Improvement Plan
+# Streamblocks Architecture Improvement Plan
 
 ## Overview
 
-This plan improves StreamBlocks across four areas: **code quality**, **testing**, **documentation**, and **architecture**. The architecture is redesigned with a pipeline/middleware pattern and event hooks. Breaking changes to the public API are allowed for cleaner design.
+This plan improves Streamblocks across four areas: **code quality**, **testing**, **documentation**, and **architecture**. The architecture is redesigned with a pipeline/middleware pattern and event hooks. Breaking changes to the public API are allowed for cleaner design.
 
 ## Constraints
 

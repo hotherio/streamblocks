@@ -38,7 +38,7 @@ candidate = BlockCandidate(
 
 ## Block Types
 
-StreamBlocks supports various block types for different content:
+Streamblocks supports various block types for different content:
 
 ### Message Blocks
 

@@ -1,6 +1,6 @@
 # Common Patterns
 
-This guide covers common usage patterns with StreamBlocks.
+This guide covers common usage patterns with Streamblocks.
 
 ## Processing LLM Responses
 

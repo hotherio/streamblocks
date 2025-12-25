@@ -1,12 +1,12 @@
-# StreamBlocks Architecture
+# Streamblocks Architecture
 
-This document describes the architecture of StreamBlocks, a Python library for real-time extraction and processing of structured blocks from text streams.
+This document describes the architecture of Streamblocks, a Python library for real-time extraction and processing of structured blocks from text streams.
 
 ## Overview
 
 ### Design Philosophy
 
-StreamBlocks is built around these core principles:
+Streamblocks is built around these core principles:
 
 1. **Real-time Processing**: Process streams as they arrive, without waiting for complete input
 2. **Event-Driven**: Emit fine-grained events for each processing stage

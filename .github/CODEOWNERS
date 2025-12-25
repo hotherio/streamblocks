@@ -1,0 +1,26 @@
+# CODEOWNERS for StreamBlocks
+# These owners will be requested for review when someone opens a pull request.
+
+# Default owners for everything in the repo
+* @aquemy
+
+# Core library code
+/src/hother/streamblocks/core/ @aquemy
+
+# Syntax implementations
+/src/hother/streamblocks/syntaxes/ @aquemy
+
+# Adapters for AI providers
+/src/hother/streamblocks/adapters/ @aquemy
+
+# Block implementations
+/src/hother/streamblocks/blocks/ @aquemy
+
+# Documentation
+/docs/ @aquemy
+
+# CI/CD and GitHub configuration
+/.github/ @aquemy
+
+# Project configuration
+pyproject.toml @aquemy

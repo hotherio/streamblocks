@@ -1,16 +1,20 @@
-# StreamBlocks
+# Streamblocks
 
 [![PyPI version](https://img.shields.io/pypi/v/streamblocks?color=brightgreen)](https://pypi.org/project/streamblocks/)
 [![Python Versions](https://img.shields.io/badge/python-3.13%20%7C%203.14-blue)](https://pypi.org/project/streamblocks/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/streamblocks/streamblocks/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/streamblocks/streamblocks/actions/workflows/test.yaml)
 [![Coverage](https://codecov.io/gh/streamblocks/streamblocks/branch/main/graph/badge.svg)](https://codecov.io/gh/streamblocks/streamblocks)
+[![Docs](https://img.shields.io/badge/docs-streamblocks.hother.io-blue)](https://streamblocks.hother.io)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-blue.svg)](https://conventionalcommits.org)
+[![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com/)
 
 Real-time extraction and processing of structured blocks from text streams.
 
 ## Overview
 
-StreamBlocks is a Python 3.13+ library for detecting and extracting structured blocks from streaming text. It provides:
+Streamblocks is a Python 3.13+ library for detecting and extracting structured blocks from streaming text. It provides:
 
 - **Pluggable syntax system** - Define your own block syntaxes or use built-in ones
 - **Async stream processing** - Process text streams line-by-line with full async support
@@ -28,7 +32,7 @@ pip install streamblocks
 
 ### With AI Provider Support
 
-StreamBlocks supports multiple AI providers through optional dependencies:
+Streamblocks supports multiple AI providers through optional dependencies:
 
 ```bash
 # For Google Gemini (gemini-2.5-flash)
@@ -105,7 +109,7 @@ asyncio.run(main())
 
 ## Processing Modes
 
-StreamBlocks supports two processing modes to fit different use cases:
+Streamblocks supports two processing modes to fit different use cases:
 
 ### 1. Automatic Stream Processing (Recommended)
 
@@ -234,7 +238,7 @@ registry.add_validator("my_type", my_validator)
 
 ## Interactive Blocks
 
-StreamBlocks includes built-in support for interactive content blocks that can capture user interactions. These are useful for building conversational interfaces, forms, surveys, and other interactive applications.
+Streamblocks includes built-in support for interactive content blocks that can capture user interactions. These are useful for building conversational interfaces, forms, surveys, and other interactive applications.
 
 ### Available Interactive Block Types
 
@@ -313,7 +317,7 @@ See `examples/interactive_blocks_example.py` for a simpler example of parsing in
 
 ### Dependency Groups
 
-StreamBlocks uses dependency groups for development and documentation:
+Streamblocks uses dependency groups for development and documentation:
 
 | Group | Purpose | Key Dependencies |
 |-------|---------|------------------|

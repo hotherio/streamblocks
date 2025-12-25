@@ -1,6 +1,6 @@
-# PydanticAI Integration for StreamBlocks
+# PydanticAI Integration for Streamblocks
 
-This integration allows PydanticAI agents to transparently generate StreamBlocks-compatible output that is extracted and processed in real-time during streaming.
+This integration allows PydanticAI agents to transparently generate Streamblocks-compatible output that is extracted and processed in real-time during streaming.
 
 ## Installation
 
@@ -19,7 +19,7 @@ pip install pydantic-ai
 ## Architecture
 
 ```
-User Prompt → PydanticAI Agent → Text Stream → StreamBlocks Processor → Events
+User Prompt → PydanticAI Agent → Text Stream → Streamblocks Processor → Events
                     ↑                                                      ↓
             Registry (block formats)                        Extracted Blocks + Raw Text
 ```
@@ -28,7 +28,7 @@ User Prompt → PydanticAI Agent → Text Stream → StreamBlocks Processor → 
 
 ### BlockAwareAgent
 
-A wrapper around PydanticAI Agent that automatically configures it with StreamBlocks syntax knowledge:
+A wrapper around PydanticAI Agent that automatically configures it with Streamblocks syntax knowledge:
 
 ```python
 from streamblocks import Registry, DelimiterPreambleSyntax
@@ -68,7 +68,7 @@ async for event in processor.process_agent_stream(agent_stream):
 
 ### RegistryToPrompt
 
-Converts StreamBlocks registry definitions into agent instructions:
+Converts Streamblocks registry definitions into agent instructions:
 
 ```python
 from streamblocks.integrations.pydantic_ai import RegistryToPrompt
@@ -126,7 +126,7 @@ agent = Agent(
     system_prompt="Use !!id:type format for structured blocks..."
 )
 
-# Process with StreamBlocks
+# Process with Streamblocks
 processor = AgentStreamProcessor(registry)
 
 async with agent.run_stream(prompt) as result:
@@ -141,10 +141,10 @@ async with agent.run_stream(prompt) as result:
 
 ## How It Works
 
-1. **Registry Analysis**: The integration analyzes the StreamBlocks registry to understand available block formats
+1. **Registry Analysis**: The integration analyzes the Streamblocks registry to understand available block formats
 2. **Prompt Enhancement**: Agent system prompts are automatically enhanced with instructions about block formats
 3. **Streaming Generation**: Agent generates text with embedded blocks using the learned formats
-4. **Real-time Extraction**: StreamBlocks processor extracts blocks as they appear in the stream
+4. **Real-time Extraction**: Streamblocks processor extracts blocks as they appear in the stream
 5. **Event Emission**: Both raw text and extracted blocks are emitted as events
 
 ## Block Format Instructions
@@ -167,7 +167,7 @@ The blocks will be automatically extracted and processed.
 ## Compatibility
 
 - Works with all PydanticAI-supported models (OpenAI, Anthropic, Google, etc.)
-- Compatible with all StreamBlocks syntaxes
+- Compatible with all Streamblocks syntaxes
 - Supports both sync and async operations
 - Full streaming support with partial block updates
 

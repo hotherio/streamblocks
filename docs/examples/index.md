@@ -1,6 +1,6 @@
 # Examples
 
-StreamBlocks comes with a comprehensive collection of examples organized by topic.
+Streamblocks comes with a comprehensive collection of examples organized by topic.
 
 ## Running Examples
 

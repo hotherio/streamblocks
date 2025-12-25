@@ -1,7 +1,7 @@
-# StreamBlocks Development Progress
+# Streamblocks Development Progress
 
 ## Project Overview
-StreamBlocks is a Python 3.13+ library for real-time extraction and processing of structured blocks from text streams.
+Streamblocks is a Python 3.13+ library for real-time extraction and processing of structured blocks from text streams.
 
 ## Progress Summary
 
