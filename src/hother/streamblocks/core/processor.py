@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from hother.streamblocks.adapters.detection import InputAdapterRegistry
 from hother.streamblocks.adapters.input import IdentityInputAdapter
+from hother.streamblocks.adapters.protocols import HasNativeModulePrefix
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.block_state_machine import BlockStateMachine
 from hother.streamblocks.core.line_accumulator import LineAccumulator
@@ -290,12 +291,12 @@ class StreamBlockProcessor:
         if self._adapter is None:
             return False
 
-        prefix = getattr(self._adapter, "native_module_prefix", None)
-        if prefix is None:
+        # Use Protocol-based check for native module prefix
+        if not isinstance(self._adapter, HasNativeModulePrefix):
             return False
 
         # Check if event's module matches the adapter's prefix
-        return type(event).__module__.startswith(prefix)
+        return type(event).__module__.startswith(self._adapter.native_module_prefix)
 
     async def process_stream(
         self,

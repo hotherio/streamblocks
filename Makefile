@@ -1,97 +1,97 @@
-PYTHON_VERSION := 3.12
 VENV := $(PWD)/.venv
-PYTHON := $(VENV)/bin/python$(PYTHON_VERSION)
-PIP := $(PYTHON) -m pip
-VERSION := $(file < VERSION)
-PACKAGE := 'hother'
-FORMAT := "md"  # License format
+PACKAGE := 'streamblocks'
 
-.PHONY: help lint test package clean install
+.PHONY: help install install-dev install-docs test coverage lint format type-check docs clean build package check-dist changelog
 
-build: clean venv install ### Builds the environment
+help: ## Show this help message
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-build-dev: build install-dev ### Builds the environment with test dependencies
-
-venv: clean-all ### Install a Python Virtual Environment.
-	uv venv
-	. $(VENV)/bin/activate
-
-
-test: clean-build install-test  # Runs all the project tests
-	$(PYTHON) -m pytest tests/
-
-coverage:
-	uv run $(PYTHON) -m pytest src --cov=hother
-
-package: clean # Runs the project setup
-	hatch build
-
-
-
-clean: clean-build clean-pyc ### Removes environment and artifacts
-
-clean-all: clean clean-env ### Removes all
-
-clean-build: ### Removes builds
-	find . -type d -iname "build" ! -path "./.venv/*" -exec rm -rf {} +
-	find . -type d -iname "dist" ! -path "./.venv/*" -exec rm -rf {} +
-	find . -type d -iname "*.egg-info" ! -path "./.venv/*" -exec rm -rf {} +
-
-clean-env: ### Removes environment directory
-	rm -rf $(VENV) &> /dev/null
-###. $(VENV)/bin/deactivate &> /dev/null
-
-clean-pyc: ### Removes python compiled bytecode files
-	find . -iname "*.pyc" ! -path "./.venv/*" -delete
-	find . -type d -iname "__pycache__" ! -path "./.venv/*" -exec rm -rf {} +
-
-
-
-build-wheel:
-	hatch build -t wheel
-
-version:
-	@echo "Current version: $(shell hatch version 2>/dev/null || echo 'No tags yet')"
-
-tag-release:
-	@echo "Run: git tag -a v$(VERSION) -m 'Release v$(VERSION)' && git push origin v$(VERSION)"
-
-install: # Installs required dependencies
+# Installation targets
+install: ## Install production dependencies
 	uv sync
 
-install-dev: # Installs required dependencies
+install-dev: ## Install development dependencies and git hooks
 	uv sync --group dev
-	. $(VENV)/bin/activate
-	lefthook install
+	. $(VENV)/bin/activate && lefthook install
 
-
-install-docs:
-	uv venv
+install-docs: ## Install documentation dependencies
 	uv sync --group doc
-	. $(VENV)/bin/activate
 
-install-dist:	### Installs specific distribution
-	$(PIP) install dist/$(PACKAGE)-$(VERSION).tar.gz
+install-all: ## Install all dependencies (dev + docs + extras)
+	uv sync --group dev --group doc --all-extras
 
-install-wheel:
-	$(PIP) install dist/$(PACKAGE)-$(VERSION)-py3-none-any.whl
+# Testing targets
+test: ## Run tests
+	uv run pytest
 
+coverage: ## Run tests with coverage report
+	uv run pytest --cov=hother.streamblocks --cov-report=term-missing --cov-report=html
 
+coverage-check: ## Run tests and fail if coverage is below threshold
+	uv run pytest --cov=hother.streamblocks --cov-fail-under=90
 
+# Code quality targets
+lint: ## Run pre-commit hooks on all files
+	uv run lefthook run pre-commit --all-files -- --no-stash
 
-docs-publish:  # Publishes the documentation
-	$(PIP) install .
-	mike deploy --push --update-aliases $(VERSION) latest
+format: ## Format code with ruff
+	uv run ruff format src tests examples
 
+type-check: ## Run type checking with basedpyright
+	uv run basedpyright src
 
-licenses:
-	uvx --from pip-licenses==5.0.0 pip-licenses --from=mixed --order count -f $(FORMAT) --output-file licenses.$(FORMAT)
+check: lint type-check test ## Run all quality checks
 
-changelog: ### Generate full changelog
+# Examples
+examples: ## Run all examples (skip API-dependent ones)
+	uv run python examples/run_examples.py --skip-api
+
+# Documentation targets
+docs: ## Serve documentation locally
+	uv run mkdocs serve
+
+docs-build: ## Build documentation
+	uv run mkdocs build
+
+# Build targets
+build: clean-build ## Build package
+	uv build
+
+package: build ## Alias for build
+
+check-dist: build ## Check distribution for PyPI compatibility
+	uv run twine check dist/*
+
+# Changelog targets
+changelog: ## Generate full changelog
 	git-cliff -o CHANGELOG.md
 
-changelog-unreleased: ### Preview unreleased changes
+changelog-unreleased: ## Preview unreleased changes
 	@git-cliff --unreleased
 
-changelog-tag: ### Get changelog for latest tag (for releases)
+changelog-latest: ## Get changelog for latest tag
 	@git-cliff --latest --strip header
+
+# Version management
+version: ## Show current version
+	@echo "Current version: $$(grep -m1 'version = ' pyproject.toml | cut -d'\"' -f2)"
+
+# Clean targets
+clean: clean-build clean-pyc clean-coverage ## Remove all build artifacts
+
+clean-build: ## Remove build artifacts
+	rm -rf dist/
+	rm -rf *.egg-info/
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+
+clean-pyc: ## Remove Python compiled files
+	find . -type f -name "*.pyc" -delete
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+
+clean-coverage: ## Remove coverage artifacts
+	rm -rf htmlcov/
+	rm -rf .coverage
+	rm -rf coverage.xml
+	rm -rf coverage.json

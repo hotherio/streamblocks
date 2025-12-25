@@ -341,3 +341,7 @@ target/
 
 # UV lock file for libraries (uncomment if this is a pure library)
 # uv.lock
+sandbox/
+
+# Auto Claude data directory
+.auto-claude/
