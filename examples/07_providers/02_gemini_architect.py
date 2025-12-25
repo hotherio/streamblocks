@@ -36,12 +36,7 @@ except ImportError:
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from hother.streamblocks import (
-    DelimiterFrontmatterSyntax,
-    Registry,
-    StreamBlockProcessor,
-)
-from hother.streamblocks.blocks.files import (
+from examples.blocks.agent.files import (
     FileContent,
     FileContentContent,
     FileContentMetadata,
@@ -49,11 +44,16 @@ from hother.streamblocks.blocks.files import (
     FileOperationsContent,
     FileOperationsMetadata,
 )
-from hother.streamblocks.blocks.memory import Memory, MemoryContent, MemoryMetadata
-from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
-from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
-from hother.streamblocks.blocks.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
-from hother.streamblocks.blocks.visualization import Visualization, VisualizationContent, VisualizationMetadata
+from examples.blocks.agent.memory import Memory, MemoryContent, MemoryMetadata
+from examples.blocks.agent.message import Message, MessageContent, MessageMetadata
+from examples.blocks.agent.patch import Patch, PatchContent, PatchMetadata
+from examples.blocks.agent.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
+from examples.blocks.agent.visualization import Visualization, VisualizationContent, VisualizationMetadata
+from hother.streamblocks import (
+    DelimiterFrontmatterSyntax,
+    Registry,
+    StreamBlockProcessor,
+)
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 
 if TYPE_CHECKING:

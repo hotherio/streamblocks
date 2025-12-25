@@ -105,7 +105,12 @@ def test_example(example_path: Path) -> None:
         if missing_keys:
             pytest.skip(f"Missing API keys: {', '.join(missing_keys)}")
 
-    # Run the example
+    # Run the example with project root in PYTHONPATH so examples can import from examples.blocks
+    project_root = str(EXAMPLES_DIR.parent)
+    env = os.environ.copy()
+    existing_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+
     result = subprocess.run(
         [sys.executable, str(example_path)],
         check=False,
@@ -113,6 +118,7 @@ def test_example(example_path: Path) -> None:
         text=True,
         timeout=60,  # 60 second timeout for slow examples
         stdin=subprocess.DEVNULL,
+        env=env,
     )
 
     # Check for success

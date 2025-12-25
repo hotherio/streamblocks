@@ -6,6 +6,7 @@ import asyncio
 from textwrap import dedent
 from typing import Any
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     MetadataValidationFailureMode,
@@ -13,7 +14,6 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     ValidationResult,
 )
-from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent
 
 # --8<-- [end:imports]

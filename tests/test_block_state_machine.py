@@ -2,11 +2,11 @@
 
 import pytest
 
+from examples.blocks.agent import FileOperations
 from hother.streamblocks import (
     DelimiterPreambleSyntax,
     Registry,
 )
-from hother.streamblocks.blocks import FileOperations
 from hother.streamblocks.core.block_state_machine import BlockStateMachine
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,

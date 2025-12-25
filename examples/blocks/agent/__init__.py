@@ -1,14 +1,21 @@
-"""Block definitions and content models for StreamBlocks."""
+"""Agent block definitions for StreamBlocks.
 
-from hother.streamblocks.blocks.files import (
+This module provides block definitions for AI agent applications,
+including communication, tool calling, memory, and interactive blocks.
+"""
+
+from examples.blocks.agent.files import (
+    ACTION_MAP,
+    ActionLiteral,
     FileContent,
     FileContentContent,
     FileContentMetadata,
+    FileOperation,
     FileOperations,
     FileOperationsContent,
     FileOperationsMetadata,
 )
-from hother.streamblocks.blocks.interactive import (
+from examples.blocks.agent.interactive import (
     Choice,
     ChoiceContent,
     ChoiceMetadata,
@@ -37,14 +44,23 @@ from hother.streamblocks.blocks.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks.blocks.memory import Memory, MemoryContent, MemoryMetadata
-from hother.streamblocks.blocks.message import Message, MessageContent, MessageMetadata
-from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
-from hother.streamblocks.blocks.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
-from hother.streamblocks.blocks.visualization import Visualization, VisualizationContent, VisualizationMetadata
+from examples.blocks.agent.memory import Memory, MemoryContent, MemoryMetadata
+from examples.blocks.agent.message import Message, MessageContent, MessageMetadata
+from examples.blocks.agent.patch import Patch, PatchContent, PatchMetadata
+from examples.blocks.agent.structured_output import (
+    StructuredOutputMetadata,
+    create_structured_output_block,
+)
+from examples.blocks.agent.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
+from examples.blocks.agent.visualization import (
+    Visualization,
+    VisualizationContent,
+    VisualizationMetadata,
+)
 
 __all__ = [
-    # Block classes
+    "ACTION_MAP",
+    "ActionLiteral",
     "Choice",
     "ChoiceContent",
     "ChoiceMetadata",
@@ -54,8 +70,8 @@ __all__ = [
     "FileContent",
     "FileContentContent",
     "FileContentMetadata",
+    "FileOperation",
     "FileOperations",
-    # File operations
     "FileOperationsContent",
     "FileOperationsMetadata",
     "Form",
@@ -66,21 +82,17 @@ __all__ = [
     "InputContent",
     "InputMetadata",
     "InteractiveContent",
-    # Interactive base
     "InteractiveMetadata",
-    # Memory
     "Memory",
     "MemoryContent",
     "MemoryMetadata",
     "Message",
-    # Message
     "MessageContent",
     "MessageMetadata",
     "MultiChoice",
     "MultiChoiceContent",
     "MultiChoiceMetadata",
     "Patch",
-    # Patch
     "PatchContent",
     "PatchMetadata",
     "Ranking",
@@ -89,16 +101,15 @@ __all__ = [
     "Scale",
     "ScaleContent",
     "ScaleMetadata",
-    # Tool calling
+    "StructuredOutputMetadata",
     "ToolCall",
     "ToolCallContent",
     "ToolCallMetadata",
-    # Visualization
     "Visualization",
     "VisualizationContent",
     "VisualizationMetadata",
     "YesNo",
     "YesNoContent",
-    # Interactive specific
     "YesNoMetadata",
+    "create_structured_output_block",
 ]

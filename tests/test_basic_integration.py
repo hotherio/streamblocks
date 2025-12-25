@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 
+from examples.blocks.agent import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -12,7 +13,6 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import FileOperations
 
 
 @pytest.mark.asyncio

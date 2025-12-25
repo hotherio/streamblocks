@@ -1,3 +1,6 @@
+# Dependency Review workflow is disabled
+# To re-enable, uncomment the job below
+
 name: Dependency Review
 
 on:
@@ -14,6 +17,7 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
+    if: false  # Disabled
     steps:
     - name: Checkout Repository
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5

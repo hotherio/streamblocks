@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from hother.streamblocks.blocks.patch import Patch, PatchContent, PatchMetadata
+from examples.blocks.agent.patch import Patch, PatchContent, PatchMetadata
 
 
 class TestPatchMetadata:

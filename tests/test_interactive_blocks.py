@@ -5,14 +5,7 @@ from typing import Any
 
 import pytest
 
-from hother.streamblocks import (
-    BlockEndEvent,
-    DelimiterFrontmatterSyntax,
-    EventType,
-    Registry,
-    StreamBlockProcessor,
-)
-from hother.streamblocks.blocks import (
+from examples.blocks.agent import (
     Choice,
     ChoiceContent,
     Confirm,
@@ -28,6 +21,13 @@ from hother.streamblocks.blocks import (
     ScaleContent,
     YesNo,
     YesNoContent,
+)
+from hother.streamblocks import (
+    BlockEndEvent,
+    DelimiterFrontmatterSyntax,
+    EventType,
+    Registry,
+    StreamBlockProcessor,
 )
 
 # Block type mapping for all interactive types

@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from textwrap import dedent
 from typing import Any
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry
 from hother.streamblocks.adapters.categories import EventCategory
-from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
 from hother.streamblocks.core.types import BaseEvent, BlockEndEvent, TextDeltaEvent
 

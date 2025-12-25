@@ -6,8 +6,8 @@ import asyncio
 from textwrap import dedent
 from typing import Any
 
+from examples.blocks.agent.toolcall import ToolCall
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.toolcall import ToolCall
 from hother.streamblocks.core.types import BlockEndEvent
 
 # --8<-- [end:imports]

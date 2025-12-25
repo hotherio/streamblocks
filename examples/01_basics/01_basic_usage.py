@@ -5,8 +5,8 @@ from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
+from examples.blocks.agent.files import FileOperations, FileOperationsContent, FileOperationsMetadata
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.files import FileOperations, FileOperationsContent, FileOperationsMetadata
 from hother.streamblocks.core.models import ExtractedBlock
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
