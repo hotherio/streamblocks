@@ -5,6 +5,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/streamblocks/streamblocks/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/streamblocks/streamblocks/actions/workflows/test.yaml)
 [![Coverage](https://codecov.io/gh/streamblocks/streamblocks/branch/main/graph/badge.svg)](https://codecov.io/gh/streamblocks/streamblocks)
+[![Docs](https://img.shields.io/badge/docs-streamblocks.hother.io-blue)](https://streamblocks.hother.io)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-blue.svg)](https://conventionalcommits.org)
+[![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com/)
 
 Real-time extraction and processing of structured blocks from text streams.
 
