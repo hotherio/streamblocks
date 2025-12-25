@@ -1,6 +1,6 @@
 # Support
 
-This document explains how to get help with StreamBlocks.
+This document explains how to get help with Streamblocks.
 
 ## Getting Help
 

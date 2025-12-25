@@ -1,6 +1,6 @@
 # Roadmap
 
-This document outlines the planned development direction for StreamBlocks.
+This document outlines the planned development direction for Streamblocks.
 
 ## Current Version: 0.5.x
 
@@ -37,7 +37,7 @@ The current focus is on stability and ecosystem expansion.
 
 ## Long-Term Vision
 
-StreamBlocks aims to be the standard library for extracting structured content from AI model output streams. We prioritize:
+Streamblocks aims to be the standard library for extracting structured content from AI model output streams. We prioritize:
 
 1. **Reliability**: Rock-solid parsing in production environments
 2. **Performance**: Minimal overhead for real-time streaming

@@ -1,10 +1,10 @@
 # Governance
 
-This document describes the governance model for the StreamBlocks project.
+This document describes the governance model for the Streamblocks project.
 
 ## Overview
 
-StreamBlocks is a small, focused project maintained by a single lead maintainer with potential for community contributions. We follow a **Benevolent Dictator For Life (BDFL)** model adapted for a small project.
+Streamblocks is a small, focused project maintained by a single lead maintainer with potential for community contributions. We follow a **Benevolent Dictator For Life (BDFL)** model adapted for a small project.
 
 ## Roles
 

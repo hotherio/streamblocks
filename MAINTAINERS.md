@@ -1,6 +1,6 @@
 # Maintainers
 
-This document lists the maintainers of the StreamBlocks project.
+This document lists the maintainers of the Streamblocks project.
 
 ## Core Maintainers
 

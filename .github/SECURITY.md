@@ -34,18 +34,18 @@ Include the following information in your report:
 
 This security policy applies to:
 
-- The StreamBlocks library (`hother-streamblocks` package)
+- The Streamblocks library (`streamblocks` package)
 - Official documentation
 - Example code in the repository
 
 ### Out of Scope
 
 - Third-party dependencies (please report to the respective maintainers)
-- Issues in user implementations using StreamBlocks
+- Issues in user implementations using Streamblocks
 
 ## Security Best Practices
 
-When using StreamBlocks:
+When using Streamblocks:
 
 1. **Keep dependencies updated**: Regularly update to the latest version
 2. **Validate input**: Always validate and sanitize input streams
@@ -53,4 +53,4 @@ When using StreamBlocks:
 
 ## Acknowledgments
 
-We appreciate the security research community's efforts in helping keep StreamBlocks secure. Contributors who report valid security issues will be acknowledged here (with permission).
+We appreciate the security research community's efforts in helping keep Streamblocks secure. Contributors who report valid security issues will be acknowledged here (with permission).
