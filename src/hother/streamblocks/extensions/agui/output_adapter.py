@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from hother.streamblocks.extensions.agui.filters import AGUIEventFilter
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.types import BaseEvent
+
+
+@runtime_checkable
+class HasEventType(Protocol):
+    """Protocol for events with a type attribute."""
+
+    type: Any
 
 
 class AGUIOutputAdapter:
@@ -19,7 +26,9 @@ class AGUIOutputAdapter:
     StreamBlocks events are mapped to AG-UI as follows:
     - TextDeltaEvent, TextContentEvent → TextMessageContentEvent
     - BlockStartEvent → CustomEvent(name="streamblocks.block_start")
-    - BlockDeltaEvent → CustomEvent(name="streamblocks.block_delta")
+    - BlockHeaderDeltaEvent → CustomEvent(name="streamblocks.block_delta")
+    - BlockMetadataDeltaEvent → CustomEvent(name="streamblocks.block_delta")
+    - BlockContentDeltaEvent → CustomEvent(name="streamblocks.block_delta")
     - BlockEndEvent → CustomEvent(name="streamblocks.block_end")
     - BlockErrorEvent → CustomEvent(name="streamblocks.block_error")
 
@@ -67,9 +76,11 @@ class AGUIOutputAdapter:
             ag-ui-protocol as a runtime dependency.
         """
         from hother.streamblocks.core.types import (
-            BlockDeltaEvent,
+            BlockContentDeltaEvent,
             BlockEndEvent,
             BlockErrorEvent,
+            BlockHeaderDeltaEvent,
+            BlockMetadataDeltaEvent,
             BlockStartEvent,
             TextContentEvent,
             TextDeltaEvent,
@@ -105,14 +116,15 @@ class AGUIOutputAdapter:
                 },
             }
 
-        if isinstance(event, BlockDeltaEvent):
+        if isinstance(event, (BlockHeaderDeltaEvent, BlockMetadataDeltaEvent, BlockContentDeltaEvent)):
+            section = event.type.value.replace("BLOCK_", "").replace("_DELTA", "").lower()
             return {
                 "type": "CUSTOM",
                 "name": "streamblocks.block_delta",
                 "value": {
                     "block_id": event.block_id,
                     "syntax": event.syntax,
-                    "section": event.section,
+                    "section": section,
                     "delta": event.delta,
                     "current_line": event.current_line,
                 },
@@ -165,7 +177,7 @@ class AGUIOutputAdapter:
         if isinstance(original_event, dict) and "type" in original_event:
             return original_event
 
-        if hasattr(original_event, "type"):
+        if isinstance(original_event, HasEventType):
             return original_event
 
         # For other events, wrap in a raw event format
@@ -187,9 +199,11 @@ class AGUIOutputAdapter:
             True if event should be emitted
         """
         from hother.streamblocks.core.types import (
-            BlockDeltaEvent,
+            BlockContentDeltaEvent,
             BlockEndEvent,
             BlockErrorEvent,
+            BlockHeaderDeltaEvent,
+            BlockMetadataDeltaEvent,
             BlockStartEvent,
             TextContentEvent,
             TextDeltaEvent,
@@ -204,7 +218,7 @@ class AGUIOutputAdapter:
         if isinstance(event, BlockStartEvent):
             return AGUIEventFilter.BLOCK_OPENED in self.event_filter
 
-        if isinstance(event, BlockDeltaEvent):
+        if isinstance(event, (BlockHeaderDeltaEvent, BlockMetadataDeltaEvent, BlockContentDeltaEvent)):
             return AGUIEventFilter.BLOCK_DELTA in self.event_filter
 
         if isinstance(event, BlockEndEvent):

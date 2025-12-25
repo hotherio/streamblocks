@@ -267,3 +267,239 @@ class TestFlush:
         """Flush with no candidates should return empty list."""
         events = machine.flush()
         assert events == []
+
+
+class TestMetadataValidationModes:
+    """Tests for different metadata validation failure modes.
+
+    These tests cover branch 216->233 in block_state_machine.py.
+    """
+
+    def test_metadata_validation_failure_continue_mode(self, syntax: DelimiterPreambleSyntax) -> None:
+        """Test metadata validation failure with CONTINUE mode.
+
+        When metadata validation fails but mode is CONTINUE, processing should
+        continue instead of aborting. This covers branch 216->233.
+        """
+        from hother.streamblocks.core.block_state_machine import BlockStateMachine
+        from hother.streamblocks.core.registry import MetadataValidationFailureMode, ValidationResult
+        from hother.streamblocks.syntaxes.delimiter import DelimiterFrontmatterSyntax
+
+        # Use DelimiterFrontmatterSyntax to get proper metadata section handling
+        frontmatter_syntax = DelimiterFrontmatterSyntax()
+
+        # Create registry with CONTINUE mode
+        registry = Registry(
+            syntax=frontmatter_syntax,
+            metadata_failure_mode=MetadataValidationFailureMode.CONTINUE,
+        )
+        registry.register("test", FileOperations)
+
+        # Add a metadata validator that fails
+        def failing_metadata_validator(raw: str, parsed: dict | None) -> ValidationResult:
+            return ValidationResult.failure("Intentional failure for test")
+
+        registry.add_metadata_validator("test", failing_metadata_validator)
+
+        machine = BlockStateMachine(frontmatter_syntax, registry)
+
+        # Process a block with YAML frontmatter
+        machine.process_line("!!start", 1)
+        machine.process_line("---", 2)
+        machine.process_line("block_type: test", 3)
+        machine.process_line("id: test-id", 4)
+        events = machine.process_line("---", 5)  # End of metadata, triggers validation
+
+        # With CONTINUE mode, we should NOT get an error event here
+        # The block should continue processing
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) == 0, "CONTINUE mode should not generate immediate error"
+
+        # Verify we still have an active candidate
+        assert machine.has_active_candidates
+
+    def test_metadata_validation_failure_skip_content_mode(self, syntax: DelimiterPreambleSyntax) -> None:
+        """Test metadata validation failure with SKIP_CONTENT mode.
+
+        Similar to CONTINUE mode, SKIP_CONTENT should not abort immediately.
+        This also covers branch 216->233.
+        """
+        from hother.streamblocks.core.block_state_machine import BlockStateMachine
+        from hother.streamblocks.core.registry import MetadataValidationFailureMode, ValidationResult
+        from hother.streamblocks.syntaxes.delimiter import DelimiterFrontmatterSyntax
+
+        frontmatter_syntax = DelimiterFrontmatterSyntax()
+
+        registry = Registry(
+            syntax=frontmatter_syntax,
+            metadata_failure_mode=MetadataValidationFailureMode.SKIP_CONTENT,
+        )
+        registry.register("test", FileOperations)
+
+        def failing_metadata_validator(raw: str, parsed: dict | None) -> ValidationResult:
+            return ValidationResult.failure("Intentional failure for test")
+
+        registry.add_metadata_validator("test", failing_metadata_validator)
+
+        machine = BlockStateMachine(frontmatter_syntax, registry)
+
+        machine.process_line("!!start", 1)
+        machine.process_line("---", 2)
+        machine.process_line("block_type: test", 3)
+        machine.process_line("id: test-id", 4)
+        events = machine.process_line("---", 5)
+
+        # With SKIP_CONTENT mode, we should NOT get an error event here
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) == 0, "SKIP_CONTENT mode should not generate immediate error"
+
+
+class TestParseFailures:
+    """Tests for parse failure handling.
+
+    These tests cover lines 379-387, 395-396, 411-416, 422-427 in block_state_machine.py.
+    """
+
+    def test_parse_failure_generates_error_event(self, syntax: DelimiterPreambleSyntax, registry: Registry) -> None:
+        """Parse failure should generate BlockErrorEvent with PARSE_FAILED code.
+
+        This covers lines 379-387.
+        """
+        from unittest.mock import patch
+
+        from hother.streamblocks.core.types import ParseResult
+
+        machine = BlockStateMachine(syntax, registry)
+
+        # Start a block
+        machine.process_line("!!test:files_operations", 1)
+        machine.process_line("file.py:C", 2)
+
+        # Mock the syntax's parse_block to return a failure
+        with patch.object(syntax, "parse_block", return_value=ParseResult(success=False, error="Test parse error")):
+            events = machine.process_line("!!end", 3)
+
+        # Should have an error event
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) >= 1
+        assert error_events[0].error_code == BlockErrorCode.PARSE_FAILED
+        assert "parse error" in error_events[0].reason.lower() or "parse failed" in error_events[0].reason.lower()
+
+    def test_parse_failure_with_no_error_message(self, syntax: DelimiterPreambleSyntax, registry: Registry) -> None:
+        """Parse failure with None error should use default message.
+
+        This covers the fallback to 'Parse failed' on line 379.
+        """
+        from unittest.mock import patch
+
+        from hother.streamblocks.core.types import ParseResult
+
+        machine = BlockStateMachine(syntax, registry)
+
+        machine.process_line("!!test:files_operations", 1)
+        machine.process_line("file.py:C", 2)
+
+        # Mock parse_block to return failure with no error message
+        with patch.object(syntax, "parse_block", return_value=ParseResult(success=False, error=None)):
+            events = machine.process_line("!!end", 3)
+
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) >= 1
+        assert error_events[0].error_code == BlockErrorCode.PARSE_FAILED
+
+    def test_missing_metadata_generates_error(self, syntax: DelimiterPreambleSyntax, registry: Registry) -> None:
+        """Missing metadata in parse result should generate error.
+
+        This covers lines 395-396.
+        """
+        from unittest.mock import MagicMock, patch
+
+        machine = BlockStateMachine(syntax, registry)
+
+        machine.process_line("!!test:files_operations", 1)
+        machine.process_line("file.py:C", 2)
+
+        # Create a mock ParseResult that returns None for metadata
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_result.metadata = None
+        mock_result.content = MagicMock()
+
+        with patch.object(syntax, "parse_block", return_value=mock_result):
+            events = machine.process_line("!!end", 3)
+
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) >= 1
+        assert error_events[0].error_code == BlockErrorCode.MISSING_METADATA
+
+    def test_missing_content_generates_error(self, syntax: DelimiterPreambleSyntax, registry: Registry) -> None:
+        """Missing content in parse result should generate error.
+
+        This covers lines 395-396.
+        """
+        from unittest.mock import MagicMock, patch
+
+        machine = BlockStateMachine(syntax, registry)
+
+        machine.process_line("!!test:files_operations", 1)
+        machine.process_line("file.py:C", 2)
+
+        # Create a mock ParseResult that returns None for content
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_result.metadata = MagicMock()
+        mock_result.metadata.block_type = "test"
+        mock_result.content = None
+
+        with patch.object(syntax, "parse_block", return_value=mock_result):
+            events = machine.process_line("!!end", 3)
+
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) >= 1
+        assert error_events[0].error_code == BlockErrorCode.MISSING_CONTENT
+
+    def test_syntax_validation_failure_generates_error(
+        self, syntax: DelimiterPreambleSyntax, registry: Registry
+    ) -> None:
+        """Syntax validation failure should generate error.
+
+        This covers lines 411-416.
+        """
+        from unittest.mock import patch
+
+        machine = BlockStateMachine(syntax, registry)
+
+        machine.process_line("!!test:files_operations", 1)
+        machine.process_line("file.py:C", 2)
+
+        # Mock syntax.validate_block to return False
+        with patch.object(syntax, "validate_block", return_value=False):
+            events = machine.process_line("!!end", 3)
+
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) >= 1
+        assert error_events[0].error_code == BlockErrorCode.VALIDATION_FAILED
+        assert "syntax validation" in error_events[0].reason.lower()
+
+    def test_registry_validation_failure_generates_error(
+        self, syntax: DelimiterPreambleSyntax, registry: Registry
+    ) -> None:
+        """Registry validation failure should generate error.
+
+        This covers lines 422-427.
+        """
+        from unittest.mock import patch
+
+        machine = BlockStateMachine(syntax, registry)
+
+        machine.process_line("!!test:files_operations", 1)
+        machine.process_line("file.py:C", 2)
+
+        # Mock registry.validate_block to return False
+        with patch.object(registry, "validate_block", return_value=False):
+            events = machine.process_line("!!end", 3)
+
+        error_events = [e for e in events if isinstance(e, BlockErrorEvent)]
+        assert len(error_events) >= 1
+        assert error_events[0].error_code == BlockErrorCode.VALIDATION_FAILED
+        assert "registry validation" in error_events[0].reason.lower()

@@ -355,9 +355,9 @@ AdapterDetector.register_custom(MyAdapter, module_prefix="my_provider")
 ### StreamBlockProcessor Options
 
 ```python
-StreamBlockProcessor(
-    registry=registry,
-    logger=my_logger,           # Custom logger
+from hother.streamblocks.core.processor import ProcessorConfig
+
+config = ProcessorConfig(
     lines_buffer=5,             # Recent lines buffer size
     max_line_length=16_384,     # Truncate long lines
     max_block_size=1_048_576,   # Reject blocks > 1MB
@@ -365,6 +365,7 @@ StreamBlockProcessor(
     emit_text_deltas=True,      # Emit real-time deltas
     auto_detect_adapter=True,   # Auto-detect stream format
 )
+StreamBlockProcessor(registry, config=config, logger=my_logger)
 ```
 
 ### Size Limits

@@ -9,7 +9,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
-from hother.streamblocks.syntaxes.models import get_syntax_instance
+from hother.streamblocks.syntaxes.factory import get_syntax_instance
 
 if TYPE_CHECKING:
     from hother.streamblocks.core._logger import Logger
@@ -184,7 +184,8 @@ class Registry:
         Returns:
             True if all validators pass
         """
-        block_type = getattr(block.metadata, "block_type", None)
+        # block.metadata is BaseMetadata which always has block_type
+        block_type = block.metadata.block_type
         if not block_type:
             return True
 

@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Patch block for code diffs and modifications."""
+
+# --8<-- [start:imports]
+import asyncio
+from textwrap import dedent
+
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks.blocks.patch import Patch
+from hother.streamblocks.core.types import BlockEndEvent
+
+# --8<-- [end:imports]
+
+
+# --8<-- [start:main]
+async def main() -> None:
+    """Extract patch blocks with diff content."""
+    # --8<-- [start:setup]
+    syntax = DelimiterFrontmatterSyntax()
+    registry = Registry(syntax=syntax)
+    registry.register("patch", Patch)
+    processor = StreamBlockProcessor(registry)
+    # --8<-- [end:setup]
+
+    # --8<-- [start:stream]
+    text = dedent("""
+        !!start
+        ---
+        id: patch01
+        block_type: patch
+        file: src/utils.py
+        start_line: 42
+        author: developer
+        description: Fix null check
+        ---
+        -if value is None:
+        +if value is None or value == "":
+             return default
+        !!end
+    """).strip()
+
+    async def stream():
+        yield text
+
+    # --8<-- [end:stream]
+
+    # --8<-- [start:process]
+    async for event in processor.process_stream(stream()):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block:
+                print(f"File: {block.metadata.file}")
+                print(f"Line: {block.metadata.start_line}")
+                print(f"Author: {block.metadata.author}")
+                print(f"Diff:\n{block.content.diff}")
+    # --8<-- [end:process]
+
+
+# --8<-- [end:main]
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -27,11 +27,16 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
         Tuple of (metadata_class, content_class)
     """
     # Extract from Pydantic field annotations
-    if hasattr(block_class, "model_fields"):
+    if issubclass(block_class, BaseModel):
         metadata_field = block_class.model_fields.get("metadata")
         content_field = block_class.model_fields.get("content")
 
-        if metadata_field and content_field:
+        if (
+            metadata_field
+            and content_field
+            and metadata_field.annotation is not None
+            and content_field.annotation is not None
+        ):
             return (metadata_field.annotation, content_field.annotation)
 
     # Fallback to base classes

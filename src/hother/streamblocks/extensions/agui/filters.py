@@ -35,7 +35,7 @@ class AGUIEventFilter(Flag):
     """Emit BlockOpenedEvent as CustomEvent."""
 
     BLOCK_DELTA = auto()
-    """Emit BlockDeltaEvent as CustomEvent."""
+    """Emit section delta events (BlockHeaderDeltaEvent, BlockMetadataDeltaEvent, BlockContentDeltaEvent) as CustomEvent."""
 
     BLOCK_EXTRACTED = auto()
     """Emit BlockExtractedEvent as CustomEvent."""

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+# Import extensions to trigger adapter registration via @InputAdapterRegistry.register
 import hother.streamblocks.extensions.anthropic
-
-# Import extensions to register their adapters
 import hother.streamblocks.extensions.gemini
 import hother.streamblocks.extensions.openai  # noqa: F401
 from hother.streamblocks.adapters import (
@@ -12,6 +11,7 @@ from hother.streamblocks.adapters import (
     InputAdapterRegistry,
     detect_input_adapter,
 )
+from hother.streamblocks.adapters.detection import HasContent, HasText
 from hother.streamblocks.adapters.input import (
     AttributeInputAdapter,
     IdentityInputAdapter,
@@ -219,3 +219,145 @@ class TestInputAdapterRegistry:
         finally:
             # Cleanup
             del InputAdapterRegistry._type_registry["test.decorator.module"]
+
+    def test_clear_clears_all_registries(self):
+        """Test that clear() removes all registered adapters.
+
+        This covers lines 174-175.
+        """
+        # Save current state
+        original_types = InputAdapterRegistry._type_registry.copy()
+        original_patterns = InputAdapterRegistry._pattern_registry.copy()
+
+        # Register something
+        class TestAdapter:
+            def categorize(self, event):
+                return EventCategory.TEXT_CONTENT
+
+            def extract_text(self, chunk):
+                return ""
+
+            def get_metadata(self, chunk):
+                return None
+
+            def is_complete(self, chunk):
+                return False
+
+        InputAdapterRegistry.register_module("test.clear.module", TestAdapter)
+
+        # Clear
+        InputAdapterRegistry.clear()
+
+        # Verify cleared
+        assert len(InputAdapterRegistry._type_registry) == 0
+        assert len(InputAdapterRegistry._pattern_registry) == 0
+
+        # Restore
+        InputAdapterRegistry._type_registry = original_types
+        InputAdapterRegistry._pattern_registry = original_patterns
+
+    def test_register_with_attributes_only_no_module_prefix(self):
+        """Test register decorator with only attributes, no module_prefix.
+
+        This covers branch 70->72 in detection.py where module_prefix is None
+        but attributes is provided.
+        """
+        # Save current state
+        original_patterns = InputAdapterRegistry._pattern_registry.copy()
+        original_types = InputAdapterRegistry._type_registry.copy()
+
+        @InputAdapterRegistry.register(attributes=["unique_attr_test"])
+        class AttributeOnlyAdapter:
+            def categorize(self, event):
+                return EventCategory.TEXT_CONTENT
+
+            def extract_text(self, chunk):
+                return chunk.unique_attr_test
+
+            def get_metadata(self, chunk):
+                return None
+
+            def is_complete(self, chunk):
+                return False
+
+        try:
+            # Verify it's in pattern registry but NOT in type registry with module_prefix
+            assert any(
+                "unique_attr_test" in attrs and adapter_cls is AttributeOnlyAdapter
+                for attrs, adapter_cls in InputAdapterRegistry._pattern_registry
+            )
+
+            # Test that it works for detection
+            class TestChunk:
+                unique_attr_test = "test value"
+
+            adapter = InputAdapterRegistry.detect(TestChunk())
+            assert isinstance(adapter, AttributeOnlyAdapter)
+        finally:
+            # Restore
+            InputAdapterRegistry._pattern_registry = original_patterns
+            InputAdapterRegistry._type_registry = original_types
+
+
+class TestHasTextProtocol:
+    """Tests for HasText protocol."""
+
+    def test_has_text_protocol_is_runtime_checkable(self) -> None:
+        """HasText protocol supports isinstance checks."""
+
+        class TextChunk:
+            text: str | None = "hello"
+
+        chunk = TextChunk()
+        assert isinstance(chunk, HasText)
+
+    def test_has_text_works_with_detection(self) -> None:
+        """Detection uses HasText protocol for fallback."""
+
+        class UnknownChunk:
+            text: str | None = "test"
+
+        adapter = InputAdapterRegistry.detect(UnknownChunk())
+        assert isinstance(adapter, AttributeInputAdapter)
+        assert adapter.text_attr == "text"
+
+    def test_object_without_text_not_has_text(self) -> None:
+        """Objects without text attribute don't satisfy HasText."""
+
+        class NoTextChunk:
+            content: str = "data"
+
+        chunk = NoTextChunk()
+        assert not isinstance(chunk, HasText)
+
+
+class TestHasContentProtocol:
+    """Tests for HasContent protocol."""
+
+    def test_has_content_protocol_is_runtime_checkable(self) -> None:
+        """HasContent protocol supports isinstance checks."""
+
+        class ContentChunk:
+            content: str | None = "hello"
+
+        chunk = ContentChunk()
+        assert isinstance(chunk, HasContent)
+
+    def test_has_content_works_with_detection(self) -> None:
+        """Detection uses HasContent protocol for fallback."""
+
+        class UnknownChunk:
+            content: str | None = "test"
+
+        adapter = InputAdapterRegistry.detect(UnknownChunk())
+        assert isinstance(adapter, AttributeInputAdapter)
+        assert adapter.text_attr == "content"
+
+    def test_object_without_content_not_has_content(self) -> None:
+        """Objects without content attribute don't satisfy HasContent."""
+
+        class NoContentChunk:
+            data: str = "test"
+
+        chunk = NoContentChunk()
+        assert not isinstance(chunk, HasContent)

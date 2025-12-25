@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, TypeVar
 from hother.streamblocks.adapters.categories import EventCategory
 from hother.streamblocks.adapters.detection import detect_input_adapter
 from hother.streamblocks.adapters.output import StreamBlocksOutputAdapter
-from hother.streamblocks.core.processor import StreamBlockProcessor
+from hother.streamblocks.core.processor import ProcessorConfig, StreamBlockProcessor
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -61,12 +61,9 @@ class ProtocolStreamProcessor[TInput, TOutput]:
         registry: Registry,
         input_adapter: InputProtocolAdapter[TInput] | None = None,
         output_adapter: OutputProtocolAdapter[TOutput] | None = None,
+        config: ProcessorConfig | None = None,
         *,
         logger: Logger | None = None,
-        emit_text_deltas: bool = True,
-        lines_buffer: int = 5,
-        max_line_length: int = 16_384,
-        max_block_size: int = 1_048_576,  # 1MB
     ) -> None:
         """Initialize the protocol stream processor.
 
@@ -76,30 +73,27 @@ class ProtocolStreamProcessor[TInput, TOutput]:
                           If None, will auto-detect from first event.
             output_adapter: Output adapter for transforming StreamBlocks events.
                            If None, will emit native StreamBlocks events.
+            config: Configuration object for processor settings
             logger: Optional logger
-            emit_text_deltas: If True, emit TextDeltaEvent for real-time streaming
-            lines_buffer: Number of lines to keep in buffer
-            max_line_length: Maximum line length before truncation
-            max_block_size: Maximum block size in bytes
         """
         self.registry = registry
         self._input_adapter = input_adapter
         self._output_adapter: OutputProtocolAdapter[TOutput] = (
             output_adapter if output_adapter is not None else StreamBlocksOutputAdapter()  # type: ignore[assignment]
         )
-        self._emit_text_deltas = emit_text_deltas
         self._auto_detected = False
+
+        # Store config, using modified defaults for protocol processing
+        self._config = config or ProcessorConfig(
+            emit_original_events=False,  # We handle original events via passthrough
+            auto_detect_adapter=False,  # We handle detection ourselves
+        )
 
         # Create internal core processor
         self._core_processor = StreamBlockProcessor(
             registry,
+            config=self._config,
             logger=logger,
-            lines_buffer=lines_buffer,
-            max_line_length=max_line_length,
-            max_block_size=max_block_size,
-            emit_original_events=False,  # We handle original events via passthrough
-            emit_text_deltas=emit_text_deltas,
-            auto_detect_adapter=False,  # We handle detection ourselves
         )
 
     @property
@@ -286,13 +280,8 @@ class ProtocolStreamProcessor[TInput, TOutput]:
         # Recreate core processor to reset its state
         self._core_processor = StreamBlockProcessor(
             self.registry,
+            config=self._config,
             logger=self._core_processor.logger,
-            lines_buffer=self._core_processor.lines_buffer,
-            max_line_length=self._core_processor.max_line_length,
-            max_block_size=self._core_processor.max_block_size,
-            emit_original_events=False,
-            emit_text_deltas=self._emit_text_deltas,
-            auto_detect_adapter=False,
         )
 
     async def _ensure_async_iterable(

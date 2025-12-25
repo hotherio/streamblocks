@@ -1,8 +1,8 @@
 """Tests for core models."""
 
 from hother.streamblocks import DelimiterPreambleSyntax
-from hother.streamblocks.core.models import BlockCandidate
-from hother.streamblocks.core.types import BlockState
+from hother.streamblocks.core.models import BlockCandidate, extract_block_types
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState
 
 
 class TestBlockCandidate:
@@ -74,3 +74,82 @@ class TestBlockCandidate:
         assert "10" in repr_str
         assert "1" in repr_str  # lines=1
         assert "content" in repr_str
+
+
+class TestExtractBlockTypes:
+    """Tests for extract_block_types function."""
+
+    def test_extract_block_types_no_model_fields(self) -> None:
+        """Test extract_block_types with class having no model_fields.
+
+        This covers line 38 of models.py (fallback case).
+        """
+
+        # A plain class without model_fields attribute
+        class PlainClass:
+            pass
+
+        metadata, content = extract_block_types(PlainClass)
+
+        assert metadata is BaseMetadata
+        assert content is BaseContent
+
+    def test_extract_block_types_missing_metadata_field(self) -> None:
+        """Test extract_block_types with class missing metadata field.
+
+        This also covers line 38 of models.py (fallback case).
+        """
+
+        class PartialModel:
+            # Has model_fields but missing metadata field
+            model_fields = {"content": object()}
+
+        metadata, content = extract_block_types(PartialModel)
+
+        assert metadata is BaseMetadata
+        assert content is BaseContent
+
+    def test_extract_block_types_missing_content_field(self) -> None:
+        """Test extract_block_types with class missing content field.
+
+        This also covers line 38 of models.py (fallback case).
+        """
+
+        class PartialModel:
+            # Has model_fields but missing content field
+            model_fields = {"metadata": object()}
+
+        metadata, content = extract_block_types(PartialModel)
+
+        assert metadata is BaseMetadata
+        assert content is BaseContent
+
+    def test_extract_block_types_with_none_annotations(self) -> None:
+        """Test extract_block_types with BaseModel having None annotations.
+
+        This covers the fallback branch (34->43) when a BaseModel subclass exists
+        but field annotations are None.
+        """
+        from unittest.mock import MagicMock
+
+        from pydantic import BaseModel
+
+        # Create a mock BaseModel subclass
+        class MockBlock(BaseModel):
+            pass
+
+        # Mock model_fields to have fields with None annotations
+        mock_metadata_field = MagicMock()
+        mock_metadata_field.annotation = None
+        mock_content_field = MagicMock()
+        mock_content_field.annotation = None
+
+        MockBlock.model_fields = {
+            "metadata": mock_metadata_field,
+            "content": mock_content_field,
+        }
+
+        metadata, content = extract_block_types(MockBlock)
+
+        assert metadata is BaseMetadata
+        assert content is BaseContent

@@ -138,6 +138,22 @@ class OutputProtocolAdapter(Protocol[TOutput]):
 
 
 @runtime_checkable
+class HasNativeModulePrefix(Protocol):
+    """Protocol for adapters that can identify native events by module prefix.
+
+    Adapters implementing this protocol can help the processor determine
+    which events are "native" to their protocol and should be passed through.
+
+    Example:
+        >>> class OpenAIInputAdapter:
+        ...     native_module_prefix: ClassVar[str] = "openai.types"
+        ...     ...
+    """
+
+    native_module_prefix: str
+
+
+@runtime_checkable
 class BidirectionalAdapter(Protocol[TInput, TOutput]):
     """Combined bidirectional adapter for full protocol transformation.
 

@@ -16,7 +16,6 @@ from hother.streamblocks.core.line_accumulator import LineAccumulator
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
     BlockContentEndEvent,
-    BlockDeltaEvent,
     BlockEndEvent,
     BlockErrorEvent,
     BlockHeaderDeltaEvent,
@@ -91,15 +90,6 @@ class StreamBlockProcessor:
         config: ProcessorConfig | None = None,
         *,
         logger: Logger | None = None,
-        # Legacy arguments for backward compatibility
-        lines_buffer: int | None = None,
-        max_line_length: int | None = None,
-        max_block_size: int | None = None,
-        emit_original_events: bool | None = None,
-        emit_text_deltas: bool | None = None,
-        emit_section_end_events: bool | None = None,
-        auto_detect_adapter: bool | None = None,
-        # Dependency injection
         state_machine_factory: Callable[..., BlockStateMachine] = BlockStateMachine,
         accumulator_factory: Callable[..., LineAccumulator] = LineAccumulator,
     ) -> None:
@@ -107,38 +97,16 @@ class StreamBlockProcessor:
 
         Args:
             registry: Registry with a single syntax
-            config: Configuration object. If provided, legacy arguments are ignored.
+            config: Configuration object for processor settings
             logger: Optional logger (any object with debug/info/warning/error/exception methods).
                    Defaults to stdlib logging.getLogger(__name__)
-            lines_buffer: Number of lines to keep in buffer (legacy)
-            max_line_length: Maximum line length before truncation (legacy)
-            max_block_size: Maximum block size in bytes (legacy)
-            emit_original_events: If True, pass through original stream chunks unchanged (legacy)
-            emit_text_deltas: If True, emit TextDeltaEvent for real-time streaming (legacy)
-            emit_section_end_events: If True, emit BlockMetadataEndEvent and BlockContentEndEvent
-                when sections complete. These enable early validation and processing. (legacy)
-            auto_detect_adapter: If True, automatically detect adapter from first chunk (legacy)
             state_machine_factory: Factory for creating BlockStateMachine (dependency injection)
             accumulator_factory: Factory for creating LineAccumulator (dependency injection)
         """
         self.registry = registry
         self.syntax = registry.syntax
         self.logger = logger or StdlibLoggerAdapter(logging.getLogger(__name__))
-
-        # Handle configuration
-        if config:
-            self.config = config
-        else:
-            # Fallback to legacy arguments or defaults
-            self.config = ProcessorConfig(
-                lines_buffer=lines_buffer if lines_buffer is not None else 5,
-                max_line_length=max_line_length if max_line_length is not None else 16_384,
-                max_block_size=max_block_size if max_block_size is not None else 1_048_576,
-                emit_original_events=emit_original_events if emit_original_events is not None else True,
-                emit_text_deltas=emit_text_deltas if emit_text_deltas is not None else True,
-                emit_section_end_events=emit_section_end_events if emit_section_end_events is not None else True,
-                auto_detect_adapter=auto_detect_adapter if auto_detect_adapter is not None else True,
-            )
+        self.config = config or ProcessorConfig()
 
         # Processing components
         self._line_accumulator = accumulator_factory(
@@ -157,50 +125,6 @@ class StreamBlockProcessor:
         # Adapter state
         self._adapter: InputProtocolAdapter[Any] | None = None
         self._first_chunk_processed = False
-
-    # Expose legacy properties for backward compatibility
-    @property
-    def lines_buffer(self) -> int:
-        return self.config.lines_buffer
-
-    @property
-    def max_line_length(self) -> int:
-        return self.config.max_line_length
-
-    @property
-    def max_block_size(self) -> int:
-        return self.config.max_block_size
-
-    @property
-    def emit_original_events(self) -> bool:
-        return self.config.emit_original_events
-
-    @property
-    def emit_text_deltas(self) -> bool:
-        return self.config.emit_text_deltas
-
-    @property
-    def emit_section_end_events(self) -> bool:
-        return self.config.emit_section_end_events
-
-    @property
-    def auto_detect_adapter(self) -> bool:
-        return self.config.auto_detect_adapter
-
-    @property
-    def _buffer(self) -> list[str]:
-        """Get the recent lines buffer (for backward compatibility)."""
-        return self._line_accumulator.buffer
-
-    @property
-    def _candidates(self) -> list[Any]:
-        """Get the active candidates (for backward compatibility)."""
-        return self._block_machine.candidates
-
-    @property
-    def _line_counter(self) -> int:
-        """Get the current line number (for backward compatibility)."""
-        return self._line_accumulator.line_number
 
     def process_chunk(
         self,
@@ -351,7 +275,6 @@ class StreamBlockProcessor:
                 TextContentEvent,
                 TextDeltaEvent,
                 BlockStartEvent,
-                BlockDeltaEvent,
                 BlockHeaderDeltaEvent,
                 BlockMetadataDeltaEvent,
                 BlockContentDeltaEvent,
@@ -394,7 +317,7 @@ class StreamBlockProcessor:
             Mixed stream of:
             - Original chunks (if emit_original_events=True)
             - TextDeltaEvent (if emit_text_deltas=True)
-            - TextContentEvent, BlockStartEvent, BlockDeltaEvent, BlockEndEvent, BlockErrorEvent
+            - TextContentEvent, BlockStartEvent, BlockEndEvent, BlockErrorEvent, and section delta events
 
         Example:
             >>> # Plain text

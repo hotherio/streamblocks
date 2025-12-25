@@ -2,9 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 from hother.streamblocks.adapters.categories import EventCategory
+
+
+@runtime_checkable
+class HasFinishReason(Protocol):
+    """Protocol for events with a finish_reason attribute."""
+
+    finish_reason: str | None
+
+
+@runtime_checkable
+class HasModel(Protocol):
+    """Protocol for events with a model attribute."""
+
+    model: str
 
 
 class IdentityInputAdapter:
@@ -125,12 +139,12 @@ class AttributeInputAdapter:
         """
         metadata: dict[str, Any] = {}
 
-        # Try to extract finish reason
-        if hasattr(event, "finish_reason") and event.finish_reason:
+        # Extract finish reason using Protocol
+        if isinstance(event, HasFinishReason) and event.finish_reason:
             metadata["finish_reason"] = event.finish_reason
 
-        # Try to extract model
-        if hasattr(event, "model"):
+        # Extract model using Protocol
+        if isinstance(event, HasModel):
             metadata["model"] = event.model
 
         return metadata if metadata else None
@@ -142,6 +156,8 @@ class AttributeInputAdapter:
             event: Input event
 
         Returns:
-            True if event has a finish_reason attribute
+            True if event has a finish_reason attribute with a truthy value
         """
-        return getattr(event, "finish_reason", None) is not None
+        if isinstance(event, HasFinishReason):
+            return event.finish_reason is not None
+        return False

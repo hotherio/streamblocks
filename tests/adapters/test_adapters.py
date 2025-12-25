@@ -93,6 +93,19 @@ class TestAttributeInputAdapter:
         adapter = AttributeInputAdapter("text")
         assert not adapter.is_complete(Chunk())
 
+    def test_no_completion_when_no_finish_reason_attribute(self):
+        """AttributeInputAdapter returns False when event has no finish_reason attribute.
+
+        This covers line 163 of identity.py (the fallback return False).
+        """
+
+        class Chunk:
+            text = "content"
+            # No finish_reason attribute at all
+
+        adapter = AttributeInputAdapter("text")
+        assert not adapter.is_complete(Chunk())
+
     def test_extracts_metadata_when_present(self):
         """AttributeInputAdapter extracts common metadata fields."""
 
@@ -123,70 +136,78 @@ class TestGeminiInputAdapter:
 
     def test_extracts_text_from_gemini_chunk(self):
         """Should extract from chunk.text attribute."""
+        from google.genai.types import GenerateContentResponse
+
         from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
-        class GeminiChunk:
-            text = "Hello from Gemini"
+        # Create a real GenerateContentResponse with text
+        response = GenerateContentResponse(candidates=[{"content": {"parts": [{"text": "Hello from Gemini"}]}}])
 
         adapter = GeminiInputAdapter()
-        assert adapter.extract_text(GeminiChunk()) == "Hello from Gemini"
+        assert adapter.extract_text(response) == "Hello from Gemini"
 
     def test_handles_empty_text(self):
         """Should handle chunks with empty text."""
+        from google.genai.types import GenerateContentResponse
+
         from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
-        class GeminiChunk:
-            text = ""
+        # Create response with empty text
+        response = GenerateContentResponse(candidates=[{"content": {"parts": [{"text": ""}]}}])
 
         adapter = GeminiInputAdapter()
-        assert adapter.extract_text(GeminiChunk()) == ""
+        assert adapter.extract_text(response) == ""
 
     def test_handles_none_text(self):
-        """Should handle chunks with no text attribute."""
+        """Should handle chunks with no text (no candidates)."""
+        from google.genai.types import GenerateContentResponse
+
         from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
-        class GeminiChunk:
-            pass
+        # Create response with no candidates
+        response = GenerateContentResponse(candidates=[])
 
         adapter = GeminiInputAdapter()
-        assert adapter.extract_text(GeminiChunk()) is None
+        # When there are no candidates, text property returns None
+        assert adapter.extract_text(response) is None
 
     def test_categorizes_as_text_content(self):
         """Should categorize all chunks as TEXT_CONTENT."""
+        from google.genai.types import GenerateContentResponse
+
         from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
-        class GeminiChunk:
-            text = "test"
+        response = GenerateContentResponse(candidates=[{"content": {"parts": [{"text": "test"}]}}])
 
         adapter = GeminiInputAdapter()
-        assert adapter.categorize(GeminiChunk()) == EventCategory.TEXT_CONTENT
+        assert adapter.categorize(response) == EventCategory.TEXT_CONTENT
 
     def test_never_signals_completion(self):
         """Gemini doesn't have explicit completion markers."""
+        from google.genai.types import GenerateContentResponse
+
         from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
-        class GeminiChunk:
-            text = "test"
+        response = GenerateContentResponse(candidates=[{"content": {"parts": [{"text": "test"}]}}])
 
         adapter = GeminiInputAdapter()
-        assert not adapter.is_complete(GeminiChunk())
+        assert not adapter.is_complete(response)
 
     def test_extracts_usage_metadata(self):
         """Should extract usage information when available."""
+        from google.genai.types import GenerateContentResponse
+
         from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 
-        class UsageMetadata:
-            prompt_token_count = 10
-            candidates_token_count = 20
-            total_token_count = 30
-
-        class GeminiChunk:
-            text = "response"
-            usage_metadata = UsageMetadata()
-            model_version = "gemini-2.0"
+        # Create response with usage metadata
+        response = GenerateContentResponse(
+            candidates=[{"content": {"parts": [{"text": "response"}]}}],
+            usage_metadata={"prompt_token_count": 10, "candidates_token_count": 20, "total_token_count": 30},
+            model_version="gemini-2.0",
+        )
 
         adapter = GeminiInputAdapter()
-        metadata = adapter.get_metadata(GeminiChunk())
+        metadata = adapter.get_metadata(response)
 
         assert metadata is not None
         assert "usage" in metadata
@@ -199,116 +220,129 @@ class TestOpenAIInputAdapter:
 
     def test_extracts_delta_content(self):
         """Should extract from choices[0].delta.content."""
+        from openai.types.chat import ChatCompletionChunk
+        from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+
         from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
-        class Delta:
-            content = "Hello"
-
-        class Choice:
-            delta = Delta()
-            finish_reason = None
-
-        class Chunk:
-            choices = [Choice()]
+        chunk = ChatCompletionChunk(
+            id="test",
+            created=0,
+            model="gpt-4",
+            object="chat.completion.chunk",
+            choices=[Choice(index=0, delta=ChoiceDelta(content="Hello"), finish_reason=None)],
+        )
 
         adapter = OpenAIInputAdapter()
-        assert adapter.extract_text(Chunk()) == "Hello"
+        assert adapter.extract_text(chunk) == "Hello"
 
     def test_handles_none_content(self):
         """Should handle deltas with no content."""
+        from openai.types.chat import ChatCompletionChunk
+        from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+
         from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
-        class Delta:
-            role = "assistant"  # First chunk often has role, not content
-
-        class Choice:
-            delta = Delta()
-            finish_reason = None
-
-        class Chunk:
-            choices = [Choice()]
+        # Delta with role but no content (first chunk pattern)
+        chunk = ChatCompletionChunk(
+            id="test",
+            created=0,
+            model="gpt-4",
+            object="chat.completion.chunk",
+            choices=[Choice(index=0, delta=ChoiceDelta(role="assistant"), finish_reason=None)],
+        )
 
         adapter = OpenAIInputAdapter()
-        assert adapter.extract_text(Chunk()) is None
+        assert adapter.extract_text(chunk) is None
 
     def test_handles_empty_choices(self):
         """Should handle chunks with empty choices array."""
+        from openai.types.chat import ChatCompletionChunk
+
         from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
-        class Chunk:
-            choices = []
+        chunk = ChatCompletionChunk(
+            id="test",
+            created=0,
+            model="gpt-4",
+            object="chat.completion.chunk",
+            choices=[],
+        )
 
         adapter = OpenAIInputAdapter()
-        assert adapter.extract_text(Chunk()) is None
+        assert adapter.extract_text(chunk) is None
 
     def test_categorizes_as_text_content(self):
         """Should categorize all chunks as TEXT_CONTENT."""
+        from openai.types.chat import ChatCompletionChunk
+        from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+
         from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
-        class Delta:
-            content = "test"
-
-        class Choice:
-            delta = Delta()
-            finish_reason = None
-
-        class Chunk:
-            choices = [Choice()]
+        chunk = ChatCompletionChunk(
+            id="test",
+            created=0,
+            model="gpt-4",
+            object="chat.completion.chunk",
+            choices=[Choice(index=0, delta=ChoiceDelta(content="test"), finish_reason=None)],
+        )
 
         adapter = OpenAIInputAdapter()
-        assert adapter.categorize(Chunk()) == EventCategory.TEXT_CONTENT
+        assert adapter.categorize(chunk) == EventCategory.TEXT_CONTENT
 
     def test_detects_completion(self):
         """Should detect when finish_reason is set."""
+        from openai.types.chat import ChatCompletionChunk
+        from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+
         from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
-        class Delta:
-            pass
-
-        class Choice:
-            delta = Delta()
-            finish_reason = "stop"
-
-        class Chunk:
-            choices = [Choice()]
+        chunk = ChatCompletionChunk(
+            id="test",
+            created=0,
+            model="gpt-4",
+            object="chat.completion.chunk",
+            choices=[Choice(index=0, delta=ChoiceDelta(), finish_reason="stop")],
+        )
 
         adapter = OpenAIInputAdapter()
-        assert adapter.is_complete(Chunk())
+        assert adapter.is_complete(chunk)
 
     def test_no_completion_when_finish_reason_none(self):
         """Should not signal completion when finish_reason is None."""
+        from openai.types.chat import ChatCompletionChunk
+        from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+
         from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
-        class Delta:
-            content = "test"
-
-        class Choice:
-            delta = Delta()
-            finish_reason = None
-
-        class Chunk:
-            choices = [Choice()]
+        chunk = ChatCompletionChunk(
+            id="test",
+            created=0,
+            model="gpt-4",
+            object="chat.completion.chunk",
+            choices=[Choice(index=0, delta=ChoiceDelta(content="test"), finish_reason=None)],
+        )
 
         adapter = OpenAIInputAdapter()
-        assert not adapter.is_complete(Chunk())
+        assert not adapter.is_complete(chunk)
 
     def test_extracts_finish_metadata(self):
         """Should extract model and finish reason."""
+        from openai.types.chat import ChatCompletionChunk
+        from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+
         from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 
-        class Delta:
-            pass
-
-        class Choice:
-            delta = Delta()
-            finish_reason = "length"
-
-        class Chunk:
-            model = "gpt-4"
-            choices = [Choice()]
+        chunk = ChatCompletionChunk(
+            id="test",
+            created=0,
+            model="gpt-4",
+            object="chat.completion.chunk",
+            choices=[Choice(index=0, delta=ChoiceDelta(), finish_reason="length")],
+        )
 
         adapter = OpenAIInputAdapter()
-        metadata = adapter.get_metadata(Chunk())
+        metadata = adapter.get_metadata(chunk)
 
         assert metadata is not None
         assert metadata["model"] == "gpt-4"
@@ -320,111 +354,214 @@ class TestAnthropicInputAdapter:
 
     def test_extracts_text_from_content_delta(self):
         """Should extract from content_block_delta events."""
+        from anthropic.types import ContentBlockDeltaEvent, TextDelta
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class TextDelta:
-            text = "Hello"
-
-        class Event:
-            type = "content_block_delta"
-            delta = TextDelta()
+        # Create a real ContentBlockDeltaEvent with TextDelta
+        text_delta = TextDelta(text="Hello", type="text_delta")
+        event = ContentBlockDeltaEvent(delta=text_delta, index=0, type="content_block_delta")
 
         adapter = AnthropicInputAdapter()
-        assert adapter.extract_text(Event()) == "Hello"
+        assert adapter.extract_text(event) == "Hello"
 
-    def test_ignores_non_text_events(self):
-        """Should return None for events without text."""
+    def test_returns_none_for_non_text_events(self):
+        """Should return None for events that don't contain text."""
+        from anthropic.types import MessageStopEvent
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Event:
-            type = "message_start"
+        # MessageStopEvent has no text
+        event = MessageStopEvent(type="message_stop")
 
         adapter = AnthropicInputAdapter()
-        assert adapter.extract_text(Event()) is None
+        assert adapter.extract_text(event) is None
 
-    def test_handles_missing_delta(self):
-        """Should handle events with no delta attribute."""
+    def test_returns_none_for_non_text_delta(self):
+        """Should return None for content_block_delta with non-text delta."""
+        from anthropic.types import ContentBlockDeltaEvent
+        from anthropic.types.input_json_delta import InputJSONDelta
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Event:
-            type = "content_block_delta"
+        # ContentBlockDeltaEvent with InputJSONDelta (not TextDelta)
+        json_delta = InputJSONDelta(partial_json='{"key":', type="input_json_delta")
+        event = ContentBlockDeltaEvent(delta=json_delta, index=0, type="content_block_delta")
 
         adapter = AnthropicInputAdapter()
-        assert adapter.extract_text(Event()) is None
+        assert adapter.extract_text(event) is None
 
     def test_categorizes_text_events_as_text_content(self):
-        """Should categorize text events as TEXT_CONTENT."""
+        """Should categorize content_block_delta events as TEXT_CONTENT."""
+        from anthropic.types import ContentBlockDeltaEvent, TextDelta
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class TextDelta:
-            text = "test"
-
-        class Event:
-            type = "content_block_delta"
-            delta = TextDelta()
+        text_delta = TextDelta(text="test", type="text_delta")
+        event = ContentBlockDeltaEvent(delta=text_delta, index=0, type="content_block_delta")
 
         adapter = AnthropicInputAdapter()
-        assert adapter.categorize(Event()) == EventCategory.TEXT_CONTENT
+        assert adapter.categorize(event) == EventCategory.TEXT_CONTENT
 
     def test_categorizes_non_text_events_as_passthrough(self):
-        """Should categorize non-text events as PASSTHROUGH."""
+        """Should categorize non-content_block_delta events as PASSTHROUGH."""
+        from anthropic.types import MessageStopEvent
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Event:
-            type = "message_start"
+        event = MessageStopEvent(type="message_stop")
 
         adapter = AnthropicInputAdapter()
-        assert adapter.categorize(Event()) == EventCategory.PASSTHROUGH
+        assert adapter.categorize(event) == EventCategory.PASSTHROUGH
 
     def test_detects_message_stop(self):
-        """Should detect stream completion."""
+        """Should detect stream completion via MessageStopEvent."""
+        from anthropic.types import MessageStopEvent
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Event:
-            type = "message_stop"
+        event = MessageStopEvent(type="message_stop")
 
         adapter = AnthropicInputAdapter()
-        assert adapter.is_complete(Event())
+        assert adapter.is_complete(event)
 
     def test_no_completion_for_other_events(self):
-        """Should not signal completion for other event types."""
+        """Should not signal completion for non-MessageStopEvent events."""
+        from anthropic.types import ContentBlockDeltaEvent, TextDelta
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Event:
-            type = "content_block_delta"
+        text_delta = TextDelta(text="test", type="text_delta")
+        event = ContentBlockDeltaEvent(delta=text_delta, index=0, type="content_block_delta")
 
         adapter = AnthropicInputAdapter()
-        assert not adapter.is_complete(Event())
+        assert not adapter.is_complete(event)
 
-    def test_extracts_stop_reason(self):
-        """Should extract stop reason from message_stop event."""
+    def test_message_stop_has_no_metadata(self):
+        """MessageStopEvent returns no metadata (stop_reason is in MessageDeltaEvent)."""
+        from anthropic.types import MessageStopEvent
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Event:
-            type = "message_stop"
-            stop_reason = "end_turn"
+        event = MessageStopEvent(type="message_stop")
 
         adapter = AnthropicInputAdapter()
-        metadata = adapter.get_metadata(Event())
+        metadata = adapter.get_metadata(event)
 
-        assert metadata is not None
-        assert metadata["stop_reason"] == "end_turn"
+        assert metadata is None
 
     def test_extracts_usage_from_message_delta(self):
-        """Should extract usage from delta events."""
+        """Should extract usage from MessageDeltaEvent."""
+        from anthropic.types import MessageDeltaEvent
+        from anthropic.types.message_delta_usage import MessageDeltaUsage
+        from anthropic.types.raw_message_delta_event import Delta
+
         from hother.streamblocks.extensions.anthropic import AnthropicInputAdapter
 
-        class Usage:
-            input_tokens = 10
-            output_tokens = 20
-
-        class Event:
-            type = "message_delta"
-            usage = Usage()
+        delta = Delta(stop_reason="end_turn", stop_sequence=None)
+        usage = MessageDeltaUsage(output_tokens=20)
+        event = MessageDeltaEvent(delta=delta, type="message_delta", usage=usage)
 
         adapter = AnthropicInputAdapter()
-        metadata = adapter.get_metadata(Event())
+        metadata = adapter.get_metadata(event)
 
         assert metadata is not None
         assert "usage" in metadata
         assert metadata["usage"].output_tokens == 20
+
+
+class TestStreamBlocksOutputAdapter:
+    """Tests for StreamBlocksOutputAdapter."""
+
+    def test_to_protocol_event_passes_through(self):
+        """Should return event unchanged."""
+        from hother.streamblocks.adapters.output.streamblocks import StreamBlocksOutputAdapter
+        from hother.streamblocks.core.types import TextContentEvent
+
+        adapter = StreamBlocksOutputAdapter()
+        event = TextContentEvent(content="test", line_number=1)
+
+        result = adapter.to_protocol_event(event)
+
+        assert result is event
+
+    def test_passthrough_returns_none(self):
+        """passthrough should return None (not applicable for native output).
+
+        This covers line 50 of output/streamblocks.py.
+        """
+        from hother.streamblocks.adapters.output.streamblocks import StreamBlocksOutputAdapter
+
+        adapter = StreamBlocksOutputAdapter()
+
+        result = adapter.passthrough({"any": "event"})
+
+        assert result is None
+
+
+class TestProtocolDefaultMethods:
+    """Tests for protocol default method implementations."""
+
+    def test_identity_adapter_get_metadata_returns_none(self):
+        """IdentityInputAdapter.get_metadata should return None.
+
+        This covers line 75 of protocols.py via IdentityInputAdapter implementation.
+        """
+        adapter = IdentityInputAdapter()
+        result = adapter.get_metadata("any text")
+        assert result is None
+
+    def test_identity_adapter_is_complete_returns_false(self):
+        """IdentityInputAdapter.is_complete should return False.
+
+        This covers line 86 of protocols.py via IdentityInputAdapter implementation.
+        """
+        adapter = IdentityInputAdapter()
+        result = adapter.is_complete("any text")
+        assert result is False
+
+    def test_protocol_default_get_metadata(self):
+        """Test that protocol default get_metadata returns None.
+
+        This directly covers line 75 of protocols.py by using
+        the protocol's default implementation.
+        """
+        from hother.streamblocks.adapters.protocols import InputProtocolAdapter
+
+        # Create a minimal adapter class that only implements required methods
+        # and relies on defaults for optional methods
+        class MinimalAdapter:
+            def categorize(self, event):
+                return EventCategory.TEXT_CONTENT
+
+            def extract_text(self, event):
+                return str(event)
+
+        adapter = MinimalAdapter()
+
+        # Call get_metadata via the protocol's default implementation
+        # Since MinimalAdapter doesn't override get_metadata,
+        # we access the protocol default directly
+        result = InputProtocolAdapter.get_metadata(adapter, "test")
+        assert result is None
+
+    def test_protocol_default_is_complete(self):
+        """Test that protocol default is_complete returns False.
+
+        This directly covers line 86 of protocols.py by using
+        the protocol's default implementation.
+        """
+        from hother.streamblocks.adapters.protocols import InputProtocolAdapter
+
+        class MinimalAdapter:
+            def categorize(self, event):
+                return EventCategory.TEXT_CONTENT
+
+            def extract_text(self, event):
+                return str(event)
+
+        adapter = MinimalAdapter()
+
+        # Call is_complete via the protocol's default implementation
+        result = InputProtocolAdapter.is_complete(adapter, "test")
+        assert result is False

@@ -51,7 +51,6 @@ async def test_basic_delimiter_preamble_syntax() -> None:
 
     # Check events
     text_content_events = [e for e in events if e.type == EventType.TEXT_CONTENT]
-    [e for e in events if e.type == EventType.BLOCK_DELTA]
     block_end_events = [e for e in events if e.type == EventType.BLOCK_END]
 
     # We get more events because of how line splitting works - that's OK

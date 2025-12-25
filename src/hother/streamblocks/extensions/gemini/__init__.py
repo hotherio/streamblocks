@@ -20,10 +20,17 @@ Example:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hother.streamblocks.adapters.categories import EventCategory
 from hother.streamblocks.adapters.detection import InputAdapterRegistry
+
+# Import Gemini types - required for this extension
+try:
+    from google.genai.types import GenerateContentResponse
+except ImportError as _import_error:
+    _msg = 'Please install `google-genai` to use the Gemini adapter, you can use the `gemini` optional group — `pip install "streamblocks[gemini]"`'
+    raise ImportError(_msg) from _import_error
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
@@ -57,7 +64,9 @@ class GeminiInputAdapter:
         ...         print(f"Tokens: {metadata['usage']}")
     """
 
-    def categorize(self, event: Any) -> EventCategory:
+    native_module_prefix: ClassVar[str] = "google.genai"
+
+    def categorize(self, event: GenerateContentResponse) -> EventCategory:
         """Categorize event - all Gemini chunks are text content.
 
         Args:
@@ -68,7 +77,7 @@ class GeminiInputAdapter:
         """
         return EventCategory.TEXT_CONTENT
 
-    def extract_text(self, event: Any) -> str | None:
+    def extract_text(self, event: GenerateContentResponse) -> str | None:
         """Extract text from chunk.text attribute.
 
         Args:
@@ -77,9 +86,9 @@ class GeminiInputAdapter:
         Returns:
             Text content, or None if not present
         """
-        return getattr(event, "text", None)
+        return event.text
 
-    def is_complete(self, event: Any) -> bool:
+    def is_complete(self, event: GenerateContentResponse) -> bool:
         """Gemini doesn't have explicit finish markers in each chunk.
 
         Completion is typically detected by the stream ending.
@@ -92,7 +101,7 @@ class GeminiInputAdapter:
         """
         return False
 
-    def get_metadata(self, event: Any) -> dict[str, Any] | None:
+    def get_metadata(self, event: GenerateContentResponse) -> dict[str, Any] | None:
         """Extract usage metadata and model information.
 
         Args:
@@ -104,11 +113,11 @@ class GeminiInputAdapter:
         metadata: dict[str, Any] = {}
 
         # Extract usage metadata if available
-        if hasattr(event, "usage_metadata"):
+        if event.usage_metadata:
             metadata["usage"] = event.usage_metadata
 
         # Extract model version
-        if hasattr(event, "model_version"):
+        if event.model_version:
             metadata["model"] = event.model_version
 
         return metadata if metadata else None

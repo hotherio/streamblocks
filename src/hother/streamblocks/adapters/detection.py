@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from hother.streamblocks.adapters.protocols import InputProtocolAdapter
+
+
+@runtime_checkable
+class HasText(Protocol):
+    """Protocol for objects with a text attribute."""
+
+    text: str | None
+
+
+@runtime_checkable
+class HasContent(Protocol):
+    """Protocol for objects with a content attribute."""
+
+    content: str | None
 
 
 class InputAdapterRegistry:
@@ -140,10 +154,10 @@ class InputAdapterRegistry:
             if all(hasattr(chunk, attr) for attr in required_attrs):
                 return adapter_class()
 
-        # Fallback: generic attribute adapter
-        if hasattr(chunk, "text"):
+        # Fallback: Protocol-based detection
+        if isinstance(chunk, HasText):
             return AttributeInputAdapter("text")
-        if hasattr(chunk, "content"):
+        if isinstance(chunk, HasContent):
             return AttributeInputAdapter("content")
 
         return None

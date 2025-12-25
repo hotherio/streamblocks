@@ -6,7 +6,7 @@ This includes stdlib logging, structlog, loguru, or any custom logger.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     import logging
@@ -105,6 +105,7 @@ class StdlibLoggerAdapter:
             self._logger.exception(formatted_msg, *args, exc_info=exc_info)
 
 
+@runtime_checkable
 class Logger(Protocol):
     """Anything that looks like a logger is a logger.
 

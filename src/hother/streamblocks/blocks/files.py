@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, TypeGuard
+from typing import Final, Literal
 
 from pydantic import BaseModel, Field
 
@@ -11,10 +11,8 @@ from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 ActionLiteral = Literal["create", "edit", "delete"]
 
-
-def is_valid_action(value: str) -> TypeGuard[ActionLiteral]:
-    """Check if value is a valid action literal."""
-    return value in ("create", "edit", "delete")
+# Action code mapping with proper typing
+ACTION_MAP: Final[dict[str, ActionLiteral]] = {"C": "create", "E": "edit", "D": "delete"}
 
 
 class FileOperation(BaseModel):
@@ -49,20 +47,16 @@ class FileOperationsContent(BaseContent):
                 raise ValueError(msg)
 
             path, action = line.rsplit(":", 1)
-            action_map = {"C": "create", "E": "edit", "D": "delete"}
 
-            if action.upper() not in action_map:
+            if action.upper() not in ACTION_MAP:
                 msg = f"Unknown action: {action}"
                 raise ValueError(msg)
 
-            action_str = action_map[action.upper()]
-            if not is_valid_action(action_str):
-                msg = f"Invalid action: {action_str}"
-                raise ValueError(msg)
+            action_literal = ACTION_MAP[action.upper()]
 
             operations.append(
                 FileOperation(
-                    action=action_str,
+                    action=action_literal,
                     path=path.strip(),
                 )
             )
@@ -73,15 +67,14 @@ class FileOperationsContent(BaseContent):
 class FileOperationsMetadata(BaseMetadata):
     """Metadata for file operations blocks."""
 
-    # Override block_type with specific literal and default
-    block_type: Literal["files_operations"] = "files_operations"  # type: ignore[assignment]
+    block_type: Literal["files_operations"] = "files_operations"
     description: str | None = None
 
 
 class FileContentMetadata(BaseMetadata):
     """Metadata for file content blocks."""
 
-    block_type: Literal["file_content"] = "file_content"  # type: ignore[assignment]
+    block_type: Literal["file_content"] = "file_content"
     file: str  # Path to the file
     description: str | None = None
 
