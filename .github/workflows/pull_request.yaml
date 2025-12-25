@@ -90,5 +90,4 @@ jobs:
     - name: Build docs
       run: |
         source .venv/bin/activate
-        uvx hatch version dev
         mkdocs build
