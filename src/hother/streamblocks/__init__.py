@@ -1,6 +1,12 @@
 """StreamBlocks - Real-time extraction and processing of structured blocks from text streams."""
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("streamblocks")
+except PackageNotFoundError:
+    # Package not installed (e.g., running from source)
+    __version__ = "0.0.0+dev"
 
 from hother.streamblocks.adapters import (
     BidirectionalAdapter,

@@ -1,6 +1,6 @@
 [project]
 name = "streamblocks"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Real-time extraction and processing of structured blocks from text streams"
 readme = "README.md"
 classifiers = [
@@ -41,19 +41,23 @@ all-providers = [
 # Enhanced logging
 structlog = ["structlog>=24.1.0"]
 loguru = ["loguru>=0.7.0"]
+# Examples dependencies
+examples = ["streamblocks-examples", "hother-cancelable>=0.1.0"]
 
-# Corrected build system to use UV build backend
+# Build system using hatchling with hatch-vcs for dynamic versioning
 [build-system]
-requires = ["uv_build>=0.8.22,<0.9.0"]
-build-backend = "uv_build"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-# UV build backend configuration with hother namespace
-[tool.uv.build-backend]
-module-name = "hother.streamblocks"
-module-root = "src"
+# Hatchling version configuration
+[tool.hatch.version]
+source = "vcs"
 
-# File inclusion configuration
-source-include = [
+[tool.hatch.build.targets.wheel]
+packages = ["src/hother"]
+
+[tool.hatch.build.targets.sdist]
+include = [
     "src/**",
     "tests/**",
     "CHANGELOG.md",
@@ -63,9 +67,7 @@ source-include = [
     "lefthook.yml",
     "pyproject.toml",
 ]
-
-# File exclusion configuration
-source-exclude = [
+exclude = [
     "**/__pycache__",
     "**/*.pyc",
     "**/*.pyo",
@@ -403,3 +405,10 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "\\.\\.\\.",  # Ellipsis for abstract methods
 ]
+
+# UV Workspace Configuration
+[tool.uv.workspace]
+members = ["examples"]
+
+[tool.uv.sources]
+streamblocks-examples = { workspace = true }
