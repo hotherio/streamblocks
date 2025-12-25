@@ -271,7 +271,8 @@ class TestBufferLimits:
         syntax = DelimiterPreambleSyntax()
         registry = Registry(syntax=syntax)
         registry.register("files_operations", FileOperations)
-        return StreamBlockProcessor(registry, max_line_length=100, max_block_size=500)
+        config = ProcessorConfig(max_line_length=100, max_block_size=500)
+        return StreamBlockProcessor(registry, config=config)
 
     async def test_line_truncation_still_parses(self, processor):
         stream = self._make_stream([

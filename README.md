@@ -1,5 +1,11 @@
 # StreamBlocks
 
+[![PyPI version](https://img.shields.io/pypi/v/streamblocks?color=brightgreen)](https://pypi.org/project/streamblocks/)
+[![Python Versions](https://img.shields.io/badge/python-3.13%20%7C%203.14-blue)](https://pypi.org/project/streamblocks/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/streamblocks/streamblocks/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/streamblocks/streamblocks/actions/workflows/test.yaml)
+[![Coverage](https://codecov.io/gh/streamblocks/streamblocks/branch/main/graph/badge.svg)](https://codecov.io/gh/streamblocks/streamblocks)
+
 Real-time extraction and processing of structured blocks from text streams.
 
 ## Overview
@@ -302,6 +308,75 @@ This demonstrates:
 - Real-time stream processing
 
 See `examples/interactive_blocks_example.py` for a simpler example of parsing interactive blocks.
+
+## Development
+
+### Dependency Groups
+
+StreamBlocks uses dependency groups for development and documentation:
+
+| Group | Purpose | Key Dependencies |
+|-------|---------|------------------|
+| `dev` | Development tools | pytest, ruff, basedpyright, detect-secrets |
+| `doc` | Documentation building | mkdocs, mkdocs-material, mike |
+
+### Installation
+
+**Basic development setup:**
+```bash
+uv sync --group dev
+source .venv/bin/activate
+lefthook install
+```
+
+**Full development setup with extras:**
+```bash
+uv sync --group dev --all-extras
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=hother.streamblocks --cov-report=html
+
+# Run specific test file
+uv run pytest tests/test_processor.py
+```
+
+### Code Quality
+
+```bash
+# Run pre-commit hooks
+uv run lefthook run pre-commit --all-files -- --no-stash
+
+# Run type checking
+uv run basedpyright src
+
+# Run examples
+uv run python examples/run_examples.py --skip-api
+```
+
+### Conventional Commits
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `refactor`: Code refactoring
+- `test`: Test changes
+- `chore`: Maintenance tasks
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+1. All tests pass (`uv run pytest`)
+2. Code quality checks pass (`uv run lefthook run pre-commit --all-files -- --no-stash`)
+3. Commits follow conventional commit format
 
 ## License
 

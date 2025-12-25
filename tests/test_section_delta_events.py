@@ -26,7 +26,10 @@ async def test_section_delta_events_emitted() -> None:
     """Test that section-specific delta events are emitted during processing."""
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(syntax=syntax)
-    processor = StreamBlockProcessor(registry, emit_text_deltas=False)
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(emit_text_deltas=False)
+    processor = StreamBlockProcessor(registry, config=config)
 
     async def mock_stream() -> Any:
         text = """Some text before.
@@ -89,7 +92,10 @@ async def test_metadata_boundary_flag() -> None:
     """Test that is_boundary flag is set on metadata boundary lines."""
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(syntax=syntax)
-    processor = StreamBlockProcessor(registry, emit_text_deltas=False)
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(emit_text_deltas=False)
+    processor = StreamBlockProcessor(registry, config=config)
 
     async def mock_stream() -> Any:
         text = """!!start
@@ -120,7 +126,10 @@ async def test_block_start_event_fields() -> None:
     """Test that BlockStartEvent has correct fields."""
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(syntax=syntax)
-    processor = StreamBlockProcessor(registry, emit_text_deltas=False)
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(emit_text_deltas=False)
+    processor = StreamBlockProcessor(registry, config=config)
 
     async def mock_stream() -> Any:
         text = """!!start
@@ -156,7 +165,10 @@ async def test_delta_events_have_correct_block_id() -> None:
     """Test that all delta events share the same block_id."""
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(syntax=syntax)
-    processor = StreamBlockProcessor(registry, emit_text_deltas=False)
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(emit_text_deltas=False)
+    processor = StreamBlockProcessor(registry, config=config)
 
     async def mock_stream() -> Any:
         text = """!!start
@@ -197,7 +209,10 @@ async def test_delta_events_have_accumulated_size() -> None:
     """Test that delta events track accumulated_size correctly."""
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(syntax=syntax)
-    processor = StreamBlockProcessor(registry, emit_text_deltas=False)
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(emit_text_deltas=False)
+    processor = StreamBlockProcessor(registry, config=config)
 
     async def mock_stream() -> Any:
         text = """!!start
@@ -229,7 +244,10 @@ async def test_delta_events_have_current_line() -> None:
     """Test that delta events have current_line field."""
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(syntax=syntax)
-    processor = StreamBlockProcessor(registry, emit_text_deltas=False)
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(emit_text_deltas=False)
+    processor = StreamBlockProcessor(registry, config=config)
 
     async def mock_stream() -> Any:
         text = """!!start
@@ -258,7 +276,10 @@ async def test_delta_events_have_syntax_field() -> None:
     """Test that all delta events have the syntax field."""
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(syntax=syntax)
-    processor = StreamBlockProcessor(registry, emit_text_deltas=False)
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(emit_text_deltas=False)
+    processor = StreamBlockProcessor(registry, config=config)
 
     async def mock_stream() -> Any:
         text = """!!start

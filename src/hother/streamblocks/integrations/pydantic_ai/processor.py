@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from hother.streamblocks.core.processor import StreamBlockProcessor
+from hother.streamblocks.core.processor import ProcessorConfig, StreamBlockProcessor
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -23,26 +23,18 @@ class AgentStreamProcessor(StreamBlockProcessor):
     def __init__(
         self,
         registry: Registry,
-        lines_buffer: int = 5,
-        max_line_length: int = 16_384,
-        max_block_size: int = 1_048_576,
+        config: ProcessorConfig | None = None,
+        *,
         enable_partial_blocks: bool = True,
     ) -> None:
         """Initialize the agent stream processor.
 
         Args:
             registry: Registry with a single syntax
-            lines_buffer: Number of lines to keep in buffer
-            max_line_length: Maximum line length before truncation
-            max_block_size: Maximum block size in bytes
-            enable_partial_blocks: Whether to emit BLOCK_DELTA events for partial blocks
+            config: Configuration object for processor settings
+            enable_partial_blocks: Whether to emit section delta events for partial blocks
         """
-        super().__init__(
-            registry,
-            lines_buffer=lines_buffer,
-            max_line_length=max_line_length,
-            max_block_size=max_block_size,
-        )
+        super().__init__(registry, config=config)
         self.enable_partial_blocks = enable_partial_blocks
 
     async def process_agent_stream(self, agent_stream: AsyncIterator[str]) -> AsyncGenerator[str | BaseEvent]:

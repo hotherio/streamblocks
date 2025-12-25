@@ -2,15 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from hother.streamblocks.adapters.categories import EventCategory
 from hother.streamblocks.adapters.detection import InputAdapterRegistry
 
-# AG-UI event type constants to avoid magic strings
-_TEXT_MESSAGE_CONTENT = "TEXT_MESSAGE_CONTENT"
-_TEXT_MESSAGE_CHUNK = "TEXT_MESSAGE_CHUNK"
-_RUN_FINISHED = "RUN_FINISHED"
+# Import AG-UI types - required for this extension
+try:
+    from ag_ui.core import (
+        BaseEvent,
+        RunFinishedEvent,
+        TextMessageChunkEvent,
+        TextMessageContentEvent,
+    )
+
+    # Union of text content event types
+    AGUITextEvent = TextMessageContentEvent | TextMessageChunkEvent
+except ImportError as _import_error:  # pragma: no cover
+    _msg = 'Please install `ag-ui` to use the AG-UI adapter, you can use the `agui` optional group — `pip install "streamblocks[agui]"`'
+    raise ImportError(_msg) from _import_error
 
 
 @InputAdapterRegistry.register(module_prefix="ag_ui.")
@@ -33,7 +43,9 @@ class AGUIInputAdapter:
         ...         print(text, end='', flush=True)
     """
 
-    def categorize(self, event: Any) -> EventCategory:
+    native_module_prefix: ClassVar[str] = "ag_ui."
+
+    def categorize(self, event: BaseEvent) -> EventCategory:
         """Categorize event based on type.
 
         Args:
@@ -42,44 +54,27 @@ class AGUIInputAdapter:
         Returns:
             TEXT_CONTENT for text message events, PASSTHROUGH for others
         """
-        event_type = getattr(event, "type", None)
-        if event_type is None:
-            return EventCategory.PASSTHROUGH
-
-        # Handle both string and enum event types
-        event_type_str = event_type.value if hasattr(event_type, "value") else event_type
-
-        if event_type_str in (_TEXT_MESSAGE_CONTENT, _TEXT_MESSAGE_CHUNK):
+        if isinstance(event, (TextMessageContentEvent, TextMessageChunkEvent)):
             return EventCategory.TEXT_CONTENT
 
         # All other events (lifecycle, tool calls, state) pass through
         return EventCategory.PASSTHROUGH
 
-    def extract_text(self, event: Any) -> str | None:
+    def extract_text(self, event: BaseEvent) -> str | None:
         """Extract text from TEXT_CONTENT events.
 
         Args:
             event: AG-UI BaseEvent
 
         Returns:
-            Delta text if TEXT_MESSAGE_CONTENT, content if TEXT_MESSAGE_CHUNK
+            Delta text if TEXT_MESSAGE_CONTENT or TEXT_MESSAGE_CHUNK
         """
-        event_type = getattr(event, "type", None)
-        if event_type is None:
-            return None
-
-        # Handle both string and enum event types
-        event_type_str = event_type.value if hasattr(event_type, "value") else event_type
-
-        if event_type_str == _TEXT_MESSAGE_CONTENT:
-            return getattr(event, "delta", None)
-
-        if event_type_str == _TEXT_MESSAGE_CHUNK:
-            return getattr(event, "content", None)
+        if isinstance(event, (TextMessageContentEvent, TextMessageChunkEvent)):
+            return event.delta
 
         return None
 
-    def is_complete(self, event: Any) -> bool:
+    def is_complete(self, event: BaseEvent) -> bool:
         """Check for RUN_FINISHED event.
 
         Args:
@@ -88,16 +83,9 @@ class AGUIInputAdapter:
         Returns:
             True if this is the RUN_FINISHED event
         """
-        event_type = getattr(event, "type", None)
-        if event_type is None:
-            return False
+        return isinstance(event, RunFinishedEvent)
 
-        # Handle both string and enum event types
-        event_type_str = event_type.value if hasattr(event_type, "value") else event_type
-
-        return event_type_str == _RUN_FINISHED
-
-    def get_metadata(self, event: Any) -> dict[str, Any] | None:
+    def get_metadata(self, event: BaseEvent) -> dict[str, Any] | None:
         """Extract protocol metadata.
 
         Args:
@@ -106,14 +94,12 @@ class AGUIInputAdapter:
         Returns:
             Dictionary with event_type and timestamp if available
         """
-        event_type = getattr(event, "type", None)
-
-        # Handle both string and enum event types
-        event_type_str = event_type.value if hasattr(event_type, "value") and event_type is not None else event_type
+        # Get event type as string
+        event_type_str = event.type.value if event.type else None
 
         metadata: dict[str, Any] = {"event_type": event_type_str}
 
-        if hasattr(event, "timestamp"):
+        if event.timestamp is not None:
             metadata["timestamp"] = event.timestamp
 
         return metadata

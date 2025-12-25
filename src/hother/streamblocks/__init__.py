@@ -21,7 +21,6 @@ from hother.streamblocks.core.types import (
     BaseMetadata,
     BlockContentDeltaEvent,
     BlockContentEndEvent,
-    BlockDeltaEvent,
     BlockEndEvent,
     BlockErrorCode,
     BlockErrorEvent,
@@ -67,7 +66,6 @@ __all__ = [
     # Block events
     "BlockContentDeltaEvent",
     "BlockContentEndEvent",
-    "BlockDeltaEvent",
     "BlockEndEvent",
     "BlockErrorCode",
     "BlockErrorEvent",

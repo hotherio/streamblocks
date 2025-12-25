@@ -89,6 +89,7 @@ dev = [
     "detect-secrets>=1.5",
     "pretty_errors>=1.2",
     "types-pyyaml>=6.0.12.20250915",
+    "vulture>=2.14",
     # CLI tools for example runner
     "typer>=0.12.0",
     "rich>=13.0.0",
@@ -96,6 +97,8 @@ dev = [
     "google-genai>=1.38.0",
     "openai>=1.0.0",
     "anthropic>=0.18.0",
+    # AG-UI for testing
+    "ag-ui-protocol>=0.1.0",
 ]
 
 # Documentation dependencies
@@ -211,6 +214,12 @@ line-ending = "auto"
 
 # Per-file ignores
 [tool.ruff.lint.per-file-ignores]
+"docs/.hooks/**/*" = [
+    "N999",    # Invalid module name (docs hooks use .hooks pattern)
+    "E402",    # Module level import not at top (hooks need sys.path manipulation)
+    "RET504",  # Unnecessary assignment before return (readability in hooks)
+    "PLR0911", # Too many return statements (complex hook logic)
+]
 "tests/**/*" = [
     "S101",    # Use of assert
     "S110",    # try-except-pass (acceptable in tests)
@@ -219,6 +228,10 @@ line-ending = "auto"
     "ARG001",  # Unused function argument
     "ARG002",  # Unused method argument
     "RUF012",  # Mutable class attributes
+    "TC002",   # Third-party imports used at runtime (pytest, etc.)
+    "TRY301",  # Abstract raise to inner function (testing error handling)
+    "TRY003",  # Long exception messages (test error messages)
+    "SIM117",  # Nested with statements (test setup)
     "PLW2901", # Loop variable overwritten
     "TRY300",  # return in try block (acceptable in tests)
     "PLC0415", # Import not at top-level (acceptable in tests for isolation)
@@ -282,6 +295,8 @@ line-ending = "auto"
 "src/hother/streamblocks/extensions/**/*" = [
     "PLC0415",  # Import not at top-level (intentional for lazy loading)
     "PLR0911",  # Too many return statements (clarity over complexity for event mapping)
+    "TC002",    # Third-party imports used at runtime for isinstance checks (Pydantic AI pattern)
+    "TRY003",   # Long ImportError messages provide helpful install instructions
 ]
 "src/hother/streamblocks/__init__.py" = [
     "RUF022",  # __all__ sorting - comments prevent proper sorting
@@ -300,6 +315,12 @@ ignore = [
     "src/hother/streamblocks/adapters/detection.py",  # type(Any) returns type[Unknown]
     "src/hother/streamblocks/core/protocol_processor.py",  # Complex generic type interactions
     "src/hother/streamblocks/extensions/agui/output_adapter.py",  # Complex generic type interactions
+    "src/hother/streamblocks/extensions/agui/input_adapter.py",  # ag_ui.core has no type stubs
+    "src/hother/streamblocks/syntaxes/factory.py",  # Exhaustive match on StrEnum triggers reportUnnecessaryComparison
+    # Block types use Literal narrowing for block_type which triggers reportIncompatibleVariableOverride
+    "src/hother/streamblocks/blocks/patch.py",
+    "src/hother/streamblocks/blocks/files.py",
+    "src/hother/streamblocks/blocks/message.py",
 ]
 
 pythonVersion = "3.13"
@@ -323,6 +344,13 @@ reportUnnecessaryComparison = "error"
 reportUnnecessaryIsInstance = "error"
 reportUnnecessaryCast = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
+
+# Vulture dead code detection
+[tool.vulture]
+min_confidence = 100
+paths = ["src/hother/streamblocks"]
+exclude = ["tests/", "examples/"]
+sort_by_size = true
 
 # Pytest configuration
 [tool.pytest.ini_options]
@@ -353,6 +381,15 @@ omit = [
 ]
 
 [tool.coverage.report]
+# Require 100% coverage minimum
+fail_under = 100
+# Show missing lines
+show_missing = true
+# Skip covered files in terminal output
+skip_covered = true
+# Precision for percentage
+precision = 2
+
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -361,4 +398,8 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "@abc.abstractmethod",
+    "class .*\\bProtocol\\):",
+    "\\.\\.\\.",  # Ellipsis for abstract methods
 ]

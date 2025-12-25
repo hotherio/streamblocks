@@ -97,11 +97,10 @@ class TestBlockSizeLimits:
     async def test_block_exceeds_size_limit(self, file_operations_registry: Registry) -> None:
         """Block exceeding max_block_size should be rejected."""
         # Create processor with small size limit
-        processor = StreamBlockProcessor(
-            file_operations_registry,
-            max_block_size=100,
-            emit_text_deltas=False,
-        )
+        from hother.streamblocks.core.processor import ProcessorConfig
+
+        config = ProcessorConfig(max_block_size=100, emit_text_deltas=False)
+        processor = StreamBlockProcessor(file_operations_registry, config=config)
 
         async def large_block_stream() -> AsyncIterator[str]:
             yield "!!id:files_operations\n"
@@ -119,11 +118,10 @@ class TestBlockSizeLimits:
     @pytest.mark.asyncio
     async def test_block_within_size_limit(self, file_operations_registry: Registry) -> None:
         """Block within max_block_size should be extracted successfully."""
-        processor = StreamBlockProcessor(
-            file_operations_registry,
-            max_block_size=1000,
-            emit_text_deltas=False,
-        )
+        from hother.streamblocks.core.processor import ProcessorConfig
+
+        config = ProcessorConfig(max_block_size=1000, emit_text_deltas=False)
+        processor = StreamBlockProcessor(file_operations_registry, config=config)
 
         async def normal_block_stream() -> AsyncIterator[str]:
             yield "!!id:files_operations\n"
@@ -159,11 +157,10 @@ class TestLineLengthLimits:
     @pytest.mark.asyncio
     async def test_very_long_line_truncated(self, file_operations_registry: Registry) -> None:
         """Very long lines should be truncated."""
-        processor = StreamBlockProcessor(
-            file_operations_registry,
-            max_line_length=50,
-            emit_text_deltas=False,
-        )
+        from hother.streamblocks.core.processor import ProcessorConfig
+
+        config = ProcessorConfig(max_line_length=50, emit_text_deltas=False)
+        processor = StreamBlockProcessor(file_operations_registry, config=config)
 
         long_line = "x" * 100
 

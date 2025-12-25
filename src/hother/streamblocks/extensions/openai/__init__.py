@@ -20,10 +20,17 @@ Example:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hother.streamblocks.adapters.categories import EventCategory
 from hother.streamblocks.adapters.detection import InputAdapterRegistry
+
+# Import OpenAI types - required for this extension
+try:
+    from openai.types.chat import ChatCompletionChunk
+except ImportError as _import_error:
+    _msg = 'Please install `openai` to use the OpenAI adapter, you can use the `openai` optional group — `pip install "streamblocks[openai]"`'
+    raise ImportError(_msg) from _import_error
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
@@ -59,7 +66,9 @@ class OpenAIInputAdapter:
         ...         print("Stream complete!")
     """
 
-    def categorize(self, event: Any) -> EventCategory:
+    native_module_prefix: ClassVar[str] = "openai.types"
+
+    def categorize(self, event: ChatCompletionChunk) -> EventCategory:
         """Categorize event - all OpenAI chunks are text content.
 
         Args:
@@ -70,7 +79,7 @@ class OpenAIInputAdapter:
         """
         return EventCategory.TEXT_CONTENT
 
-    def extract_text(self, event: Any) -> str | None:
+    def extract_text(self, event: ChatCompletionChunk) -> str | None:
         """Extract text from choices[0].delta.content.
 
         Args:
@@ -79,15 +88,12 @@ class OpenAIInputAdapter:
         Returns:
             Delta content text, or None if not present
         """
-        try:
-            if hasattr(event, "choices") and len(event.choices) > 0:
-                delta = event.choices[0].delta
-                return getattr(delta, "content", None)
-        except (AttributeError, IndexError):
-            pass
+        if event.choices:
+            delta = event.choices[0].delta
+            return delta.content if delta else None
         return None
 
-    def is_complete(self, event: Any) -> bool:
+    def is_complete(self, event: ChatCompletionChunk) -> bool:
         """Check if finish_reason is set.
 
         Args:
@@ -96,14 +102,11 @@ class OpenAIInputAdapter:
         Returns:
             True if this is the final chunk
         """
-        try:
-            if hasattr(event, "choices") and len(event.choices) > 0:
-                return event.choices[0].finish_reason is not None
-        except (AttributeError, IndexError):
-            pass
+        if event.choices:
+            return event.choices[0].finish_reason is not None
         return False
 
-    def get_metadata(self, event: Any) -> dict[str, Any] | None:
+    def get_metadata(self, event: ChatCompletionChunk) -> dict[str, Any] | None:
         """Extract model and finish reason.
 
         Args:
@@ -115,17 +118,14 @@ class OpenAIInputAdapter:
         metadata: dict[str, Any] = {}
 
         # Extract model name
-        if hasattr(event, "model"):
+        if event.model:
             metadata["model"] = event.model
 
         # Extract finish reason if present
-        try:
-            if hasattr(event, "choices") and len(event.choices) > 0:
-                choice = event.choices[0]
-                if choice.finish_reason:
-                    metadata["finish_reason"] = choice.finish_reason
-        except (AttributeError, IndexError):
-            pass
+        if event.choices:
+            choice = event.choices[0]
+            if choice.finish_reason:
+                metadata["finish_reason"] = choice.finish_reason
 
         return metadata if metadata else None
 

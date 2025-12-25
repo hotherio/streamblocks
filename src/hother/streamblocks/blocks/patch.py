@@ -37,8 +37,7 @@ class PatchContent(BaseContent):
 class PatchMetadata(BaseMetadata):
     """Metadata for patch blocks."""
 
-    # Override block_type with specific literal
-    block_type: Literal["patch"] = "patch"  # type: ignore[assignment]
+    block_type: Literal["patch"] = "patch"
     file: str
     start_line: int | None = None
     author: str | None = None

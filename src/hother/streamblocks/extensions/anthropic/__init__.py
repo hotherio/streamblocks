@@ -20,10 +20,25 @@ Example:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from hother.streamblocks.adapters.categories import EventCategory
 from hother.streamblocks.adapters.detection import InputAdapterRegistry
+
+# Import Anthropic types - required for this extension
+try:
+    from anthropic.types import (
+        ContentBlockDeltaEvent,
+        MessageDeltaEvent,
+        MessageStopEvent,
+        TextDelta,
+    )
+
+    # Union of all event types we handle
+    AnthropicEvent = ContentBlockDeltaEvent | MessageDeltaEvent | MessageStopEvent
+except ImportError as _import_error:
+    _msg = 'Please install `anthropic` to use the Anthropic adapter, you can use the `anthropic` optional group — `pip install "streamblocks[anthropic]"`'
+    raise ImportError(_msg) from _import_error
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
@@ -62,7 +77,9 @@ class AnthropicInputAdapter:
         ...             print("\\nDone!")
     """
 
-    def categorize(self, event: Any) -> EventCategory:
+    native_module_prefix: ClassVar[str] = "anthropic."
+
+    def categorize(self, event: AnthropicEvent) -> EventCategory:
         """Categorize event based on type.
 
         Args:
@@ -71,13 +88,12 @@ class AnthropicInputAdapter:
         Returns:
             TEXT_CONTENT for content_block_delta events, PASSTHROUGH for others
         """
-        event_type = getattr(event, "type", None)
-        if event_type == _TEXT_CONTENT_EVENT:
+        if isinstance(event, ContentBlockDeltaEvent):
             return EventCategory.TEXT_CONTENT
         # Other event types pass through
         return EventCategory.PASSTHROUGH
 
-    def extract_text(self, event: Any) -> str | None:
+    def extract_text(self, event: AnthropicEvent) -> str | None:
         """Extract text from content_block_delta events.
 
         Args:
@@ -86,13 +102,13 @@ class AnthropicInputAdapter:
         Returns:
             Delta text if present, None otherwise
         """
-        if getattr(event, "type", None) == _TEXT_CONTENT_EVENT:
-            delta = getattr(event, "delta", None)
-            if delta and hasattr(delta, "text"):
+        if isinstance(event, ContentBlockDeltaEvent):
+            delta = event.delta
+            if isinstance(delta, TextDelta):
                 return delta.text
         return None
 
-    def is_complete(self, event: Any) -> bool:
+    def is_complete(self, event: AnthropicEvent) -> bool:
         """Check for message_stop event.
 
         Args:
@@ -101,9 +117,9 @@ class AnthropicInputAdapter:
         Returns:
             True if this is the message_stop event
         """
-        return getattr(event, "type", None) == _MESSAGE_STOP_EVENT
+        return isinstance(event, MessageStopEvent)
 
-    def get_metadata(self, event: Any) -> dict[str, Any] | None:
+    def get_metadata(self, event: AnthropicEvent) -> dict[str, Any] | None:
         """Extract stop reason and usage information.
 
         Args:
@@ -112,16 +128,14 @@ class AnthropicInputAdapter:
         Returns:
             Dictionary with stop_reason or usage if present
         """
-        event_type = getattr(event, "type", None)
         metadata: dict[str, Any] = {}
 
-        if event_type == _MESSAGE_STOP_EVENT:
-            if hasattr(event, "stop_reason"):
-                metadata["stop_reason"] = event.stop_reason
-            return metadata if metadata else None
+        if isinstance(event, MessageStopEvent):
+            # MessageStopEvent doesn't have stop_reason, it's in MessageDeltaEvent
+            return None
 
-        if event_type == _MESSAGE_DELTA_EVENT:
-            if hasattr(event, "usage"):
+        if isinstance(event, MessageDeltaEvent):
+            if event.usage:
                 metadata["usage"] = event.usage
             return metadata if metadata else None
 

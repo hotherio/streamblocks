@@ -61,7 +61,6 @@ class EventType(StrEnum):
 
     # Block lifecycle events
     BLOCK_START = "BLOCK_START"
-    BLOCK_DELTA = "BLOCK_DELTA"  # Deprecated: use section-specific events
     BLOCK_HEADER_DELTA = "BLOCK_HEADER_DELTA"
     BLOCK_METADATA_DELTA = "BLOCK_METADATA_DELTA"
     BLOCK_CONTENT_DELTA = "BLOCK_CONTENT_DELTA"
@@ -191,24 +190,6 @@ class BlockStartEvent(BaseEvent):
     syntax: str
     start_line: int
     inline_metadata: dict[str, Any] | None = None
-
-
-class BlockDeltaEvent(BaseEvent):
-    """Incremental block content update.
-
-    Deprecated: Use section-specific events (BlockHeaderDeltaEvent,
-    BlockMetadataDeltaEvent, BlockContentDeltaEvent) for type-safe handling.
-
-    Emitted for each line/chunk added to an active block.
-    """
-
-    type: Literal[EventType.BLOCK_DELTA] = EventType.BLOCK_DELTA
-    block_id: str
-    delta: str
-    section: str  # "header", "metadata", "content"
-    syntax: str
-    current_line: int
-    accumulated_size: int
 
 
 # ============== Section-Specific Delta Events ==============
@@ -370,7 +351,6 @@ Event = Annotated[
     | TextContentEvent
     | TextDeltaEvent
     | BlockStartEvent
-    | BlockDeltaEvent
     | BlockHeaderDeltaEvent
     | BlockMetadataDeltaEvent
     | BlockContentDeltaEvent

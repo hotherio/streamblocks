@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from pydantic import ValidationError
 
@@ -14,7 +14,11 @@ from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
 
+# Minimum lines required for a block (header + closing delimiter)
+_MIN_BLOCK_LINES = 2
 
+
+@runtime_checkable
 class ContentParser(Protocol):
     """Protocol for content classes with a parse method."""
 
@@ -107,13 +111,8 @@ class DelimiterPreambleSyntax(BaseSyntax):
             return ParseResult(success=False, error="Missing metadata in preamble")
 
         try:
-            # Ensure id and block_type are in metadata dict
-            if "id" not in detection.metadata:
-                detection.metadata["id"] = str(detection.metadata.get("block_id", "unknown"))
-            if "block_type" not in detection.metadata:
-                detection.metadata["block_type"] = str(detection.metadata.get("type", "unknown"))
-
             # Convert all metadata values to strings for type safety
+            # Note: id and block_type are always set by detect_line()
             typed_metadata = {k: str(v) for k, v in detection.metadata.items()}
             metadata = metadata_class(**typed_metadata)
         except ValidationError as e:
@@ -158,11 +157,11 @@ class DelimiterPreambleSyntax(BaseSyntax):
 
         Returns raw content dict with the content text.
         """
-        if len(candidate.lines) < 2:
+        if len(candidate.lines) < _MIN_BLOCK_LINES:
             return None
 
         # Content is all lines except first (header) and last (closing)
-        content_lines = candidate.lines[1:-1] if len(candidate.lines) > 2 else candidate.lines[1:]
+        content_lines = candidate.lines[1:-1] if len(candidate.lines) > _MIN_BLOCK_LINES else candidate.lines[1:]
         raw_content = "\n".join(content_lines)
         return {"raw_content": raw_content}
 

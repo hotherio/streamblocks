@@ -11,8 +11,7 @@ from hother.streamblocks.core.types import BaseContent, BaseMetadata
 class MessageMetadata(BaseMetadata):
     """Metadata for message/communication blocks."""
 
-    # Override block_type with specific literal and default
-    block_type: Literal["message"] = "message"  # type: ignore[assignment]
+    block_type: Literal["message"] = "message"
 
     # message_type determines how the message is displayed
     message_type: Literal["info", "warning", "error", "success", "status", "explanation"]
