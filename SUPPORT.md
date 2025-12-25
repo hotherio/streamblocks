@@ -20,7 +20,7 @@ For questions, ideas, and community support:
 Use Discussions for:
 - Usage questions
 - Feature ideas
-- Sharing how you're using StreamBlocks
+- Sharing how you're using Streamblocks
 - General discussion
 
 ### Issue Tracker

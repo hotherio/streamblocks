@@ -1,8 +1,8 @@
-# StreamBlocks API Changes - Type-Specific Registry Design
+# Streamblocks API Changes - Type-Specific Registry Design
 
 ## Overview
 
-StreamBlocks has been redesigned to use type-specific registries that hold exactly one syntax instance. This change simplifies the architecture, improves type safety, and makes the mental model clearer.
+Streamblocks has been redesigned to use type-specific registries that hold exactly one syntax instance. This change simplifies the architecture, improves type safety, and makes the mental model clearer.
 
 ## Key Changes
 
@@ -184,4 +184,4 @@ However, note that the API has changed - `BlockRegistry()` now requires a syntax
 
 ## Summary
 
-The new design enforces a one-to-one relationship between registries and syntaxes, making StreamBlocks simpler, more type-safe, and easier to understand. Each processor handles exactly one syntax type efficiently.
+The new design enforces a one-to-one relationship between registries and syntaxes, making Streamblocks simpler, more type-safe, and easier to understand. Each processor handles exactly one syntax type efficiently.

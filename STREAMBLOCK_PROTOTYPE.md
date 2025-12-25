@@ -1,8 +1,8 @@
-# StreamBlocks: A Streaming Block Extraction Library
+# Streamblocks: A Streaming Block Extraction Library
 
 ## Overview
 
-StreamBlocks is a sophisticated Python library designed to extract structured blocks of data from streaming text sources. Built on top of an async cancellation framework, it provides a robust system for identifying, parsing, and processing structured content blocks in real-time from asynchronous streams.
+Streamblocks is a sophisticated Python library designed to extract structured blocks of data from streaming text sources. Built on top of an async cancellation framework, it provides a robust system for identifying, parsing, and processing structured content blocks in real-time from asynchronous streams.
 
 The library is particularly useful for:
 - Processing streaming API responses that contain structured data
@@ -417,7 +417,7 @@ Based on the prototype structure, potential enhancements could include:
 
 ## Conclusion
 
-StreamBlocks provides a robust foundation for processing structured content from streaming sources, with a focus on extensibility, type safety, and real-time processing capabilities. Its integration with the async cancellation framework ensures reliable operation in production environments, while the pluggable parser system allows for easy customization to domain-specific needs.
+Streamblocks provides a robust foundation for processing structured content from streaming sources, with a focus on extensibility, type safety, and real-time processing capabilities. Its integration with the async cancellation framework ensures reliable operation in production environments, while the pluggable parser system allows for easy customization to domain-specific needs.
 
 The library is particularly well-suited for:
 - Building AI agent systems that process structured LLM outputs
@@ -425,4 +425,4 @@ The library is particularly well-suited for:
 - Implementing real-time log analysis systems
 - Developing streaming data transformation pipelines
 
-With its comprehensive error handling, progress tracking, and cancellation support, StreamBlocks offers a production-ready solution for streaming block extraction challenges.
+With its comprehensive error handling, progress tracking, and cancellation support, Streamblocks offers a production-ready solution for streaming block extraction challenges.

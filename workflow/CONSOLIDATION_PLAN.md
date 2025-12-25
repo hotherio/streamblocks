@@ -1,10 +1,10 @@
-# StreamBlocks Consolidation Plan
+# Streamblocks Consolidation Plan
 
 This document outlines the gaps between the `cancelable` library (reference) and `streamblocks`, with a plan to align streamblocks with the same mature project structure.
 
 ## Executive Summary
 
-The `cancelable` library represents a mature, production-ready Python project. StreamBlocks needs to be consolidated to match this standard across CI/CD, documentation, examples, and configuration.
+The `cancelable` library represents a mature, production-ready Python project. Streamblocks needs to be consolidated to match this standard across CI/CD, documentation, examples, and configuration.
 
 ---
 
@@ -68,7 +68,7 @@ examples/
 ```
 examples/
 ├── 00_basics/                                # Foundational examples
-│   ├── 01_basic_usage.py                     # Basic StreamBlocks usage
+│   ├── 01_basic_usage.py                     # Basic Streamblocks usage
 │   ├── 02_minimal_api.py                     # Minimal API example
 │   ├── 03_error_handling.py                  # Error handling patterns
 │   └── 04_structured_output.py               # Structured output handling
@@ -223,7 +223,7 @@ docs/
 
 ### Gap Analysis
 
-| Feature | Cancelable | StreamBlocks |
+| Feature | Cancelable | Streamblocks |
 |---------|------------|--------------|
 | Navigation structure | Comprehensive | Minimal (2 pages) |
 | Snippets with base_path | Yes | No |
@@ -256,7 +256,7 @@ docs/
 
 ### Gap Analysis
 
-| Feature | Cancelable | StreamBlocks |
+| Feature | Cancelable | Streamblocks |
 |---------|------------|--------------|
 | Versioning | hatch-vcs (dynamic) | Static (0.1.0) |
 | Build backend | hatchling | uv_build |
@@ -327,7 +327,7 @@ tests/
 
 ### Gap Analysis
 
-| File | Cancelable | StreamBlocks |
+| File | Cancelable | Streamblocks |
 |------|------------|--------------|
 | `.secrets.baseline` | Yes | Yes |
 | `.editorconfig` | Yes | Yes |

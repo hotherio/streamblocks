@@ -1,6 +1,6 @@
-# StreamBlocks Examples
+# Streamblocks Examples
 
-This directory contains example scripts demonstrating various features of StreamBlocks, organized in a progressive learning path.
+This directory contains example scripts demonstrating various features of Streamblocks, organized in a progressive learning path.
 
 ## Directory Structure
 
@@ -34,7 +34,7 @@ examples/
 
 ## Key Concepts
 
-Before diving into examples, understand these core StreamBlocks concepts:
+Before diving into examples, understand these core Streamblocks concepts:
 
 | Concept | Description |
 |---------|-------------|
@@ -169,9 +169,9 @@ Ultra-minimal examples (~40-50 lines each) to get started quickly:
 
 ### 01_basics - Getting Started
 
-Foundational examples to understand core StreamBlocks concepts:
+Foundational examples to understand core Streamblocks concepts:
 
-- `01_basic_usage.py` - Basic StreamBlocks usage and core concepts
+- `01_basic_usage.py` - Basic Streamblocks usage and core concepts
 - `02_minimal_api.py` - Minimal API example for quick reference
 - `03_error_handling.py` - Error handling patterns and best practices
 - `04_structured_output.py` - Working with structured output

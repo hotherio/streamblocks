@@ -1,12 +1,12 @@
-# StreamBlocks: Introduction to Blocks and Reactive Agents
+# Streamblocks: Introduction to Blocks and Reactive Agents
 
-StreamBlocks is a Python library for real-time extraction of structured blocks from LLM text streams. This document introduces the core concepts and demonstrates how to build reactive agents with feedback loops.
+Streamblocks is a Python library for real-time extraction of structured blocks from LLM text streams. This document introduces the core concepts and demonstrates how to build reactive agents with feedback loops.
 
 ## The Problem
 
 When LLMs generate text, they often include structured actions (create files, run commands, update configs). Traditional approaches wait for the complete response before parsing and executing.
 
-**StreamBlocks** detects and extracts structured blocks *while the LLM streams*, enabling immediate execution and real-time feedback to the LLM.
+**Streamblocks** detects and extracts structured blocks *while the LLM streams*, enabling immediate execution and real-time feedback to the LLM.
 
 ---
 
@@ -79,21 +79,21 @@ sequenceDiagram
 
 ### Reactive Streaming Mode
 
-StreamBlocks enables multiple actions within a single LLM response, with feedback available during generation.
+Streamblocks enables multiple actions within a single LLM response, with feedback available during generation.
 
 ```mermaid
 sequenceDiagram
     participant User
     participant LLM
-    participant StreamBlocks
+    participant Streamblocks
     participant Executor
 
     User->>LLM: Request
     loop Streaming
-        LLM->>StreamBlocks: Text chunk
-        StreamBlocks->>StreamBlocks: Detect block
+        LLM->>Streamblocks: Text chunk
+        Streamblocks->>Streamblocks: Detect block
         alt Block detected
-            StreamBlocks->>Executor: Execute block
+            Streamblocks->>Executor: Execute block
             Executor->>LLM: Result (feedback)
         end
     end
@@ -116,7 +116,7 @@ sequenceDiagram
 sequenceDiagram
     participant User
     participant LLM as LLM Agent
-    participant SB as StreamBlocks
+    participant SB as Streamblocks
     participant UI as User Interface
     participant Executor as Action Executor
 
@@ -169,7 +169,7 @@ The LLM receives this feedback and can use it to inform subsequent responses.
 
 ```mermaid
 flowchart LR
-    LLM[LLM<br/>Stream] --> SB[StreamBlocks<br/>Processor]
+    LLM[LLM<br/>Stream] --> SB[Streamblocks<br/>Processor]
     SB --> Events[Events]
     Events --> UI[UI<br/>Display]
     Events --> Exec[Executor<br/>Actions]
@@ -179,7 +179,7 @@ flowchart LR
 
 **Components:**
 - **LLM Stream**: Text chunks from any LLM provider (Gemini, OpenAI, Anthropic)
-- **StreamBlocks Processor**: Detects and extracts blocks in real-time
+- **Streamblocks Processor**: Detects and extracts blocks in real-time
 - **Events**: Typed events for text, block lifecycle, and errors
 - **UI/Display**: Shows streaming text and block progress
 - **Executor**: Runs block actions (file ops, commands, etc.)
@@ -308,7 +308,7 @@ async def streaming_ui(llm_stream):
 
 ## Summary
 
-StreamBlocks enables **reactive agents** by:
+Streamblocks enables **reactive agents** by:
 
 1. **Real-time detection**: Blocks are detected during streaming
 2. **Immediate execution**: Actions run as soon as blocks complete

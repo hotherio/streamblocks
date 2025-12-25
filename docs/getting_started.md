@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide will help you get up and running with StreamBlocks in just a few minutes.
+This guide will help you get up and running with Streamblocks in just a few minutes.
 
 ## Quick Example
 
@@ -46,7 +46,7 @@ A **block** is a structured unit of content extracted from a text stream. Blocks
 
 ### Syntaxes
 
-**Syntaxes** define how blocks are detected and parsed from text streams. StreamBlocks provides several built-in syntaxes:
+**Syntaxes** define how blocks are detected and parsed from text streams. Streamblocks provides several built-in syntaxes:
 
 - `MarkdownFrontmatterSyntax`: Blocks with YAML frontmatter
 - `DelimiterFrontmatterSyntax`: Blocks with custom delimiters

@@ -1,6 +1,6 @@
-# Gemini + StreamBlocks Examples
+# Gemini + Streamblocks Examples
 
-This directory contains examples showing how to use StreamBlocks with Google's Gemini AI.
+This directory contains examples showing how to use Streamblocks with Google's Gemini AI.
 
 ## Prerequisites
 
@@ -97,7 +97,7 @@ Try these prompts with the demos:
 
 1. **System Prompt**: The examples teach Gemini about available block syntaxes
 2. **Streaming**: Responses are streamed in real-time from Gemini
-3. **Block Extraction**: StreamBlocks processes the stream and extracts structured blocks
+3. **Block Extraction**: Streamblocks processes the stream and extracts structured blocks
 4. **Execution**: Extracted blocks are processed (files listed, tools executed, etc.)
 
 ## Block Syntax Reference
@@ -143,7 +143,7 @@ description: Adding feature
    - Check the key is valid at https://makersuite.google.com
 
 2. **Import Errors**
-   - Ensure StreamBlocks is installed: `pip install -e .` from project root
+   - Ensure Streamblocks is installed: `pip install -e .` from project root
    - Check you have google-genai installed: `pip install google-genai`
 
 3. **Block Parsing Issues**

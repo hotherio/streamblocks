@@ -1,6 +1,6 @@
 # Installation
 
-StreamBlocks can be installed using pip or uv.
+Streamblocks can be installed using pip or uv.
 
 ## Basic Installation
 
@@ -57,5 +57,5 @@ uv sync --all-extras
 ```python
 from hother.streamblocks import StreamBlockProcessor
 
-print("StreamBlocks installed successfully!")
+print("Streamblocks installed successfully!")
 ```

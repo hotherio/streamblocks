@@ -1,6 +1,6 @@
 # Integrations
 
-StreamBlocks integrates with popular frameworks and libraries.
+Streamblocks integrates with popular frameworks and libraries.
 
 ## Available Integrations
 
@@ -20,7 +20,7 @@ Integration with PydanticAI for building AI agents with structured responses.
 
 ## Creating Custom Integrations
 
-StreamBlocks is designed to be easily integrated with other tools. The core `StreamBlockProcessor` can wrap any async iterator:
+Streamblocks is designed to be easily integrated with other tools. The core `StreamBlockProcessor` can wrap any async iterator:
 
 ```python
 from hother.streamblocks import StreamBlockProcessor

@@ -1,6 +1,6 @@
 # API Reference
 
-Complete API documentation for StreamBlocks.
+Complete API documentation for Streamblocks.
 
 ## Modules
 

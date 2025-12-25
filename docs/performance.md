@@ -1,6 +1,6 @@
 # Performance
 
-This guide covers performance optimization for StreamBlocks.
+This guide covers performance optimization for Streamblocks.
 
 ## Event Filtering
 
@@ -55,7 +55,7 @@ async for event in processor.process_stream(stream):
 
 ## Profiling
 
-Profile your StreamBlocks usage:
+Profile your Streamblocks usage:
 
 ```python
 import cProfile

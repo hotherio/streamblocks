@@ -1,6 +1,6 @@
 # Core Components
 
-Core StreamBlocks components and the main processor.
+Core Streamblocks components and the main processor.
 
 ## StreamBlockProcessor
 

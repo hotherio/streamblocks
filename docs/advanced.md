@@ -1,10 +1,10 @@
 # Advanced Usage
 
-This guide covers advanced StreamBlocks features and patterns.
+This guide covers advanced Streamblocks features and patterns.
 
 ## Stream Adapters
 
-Adapters convert provider-specific stream formats into text chunks that StreamBlocks can process.
+Adapters convert provider-specific stream formats into text chunks that Streamblocks can process.
 
 ### Built-in Adapters
 
@@ -65,7 +65,7 @@ with client.messages.stream(...) as stream:
 
 ### Auto-Detection
 
-StreamBlocks can automatically detect the appropriate adapter:
+Streamblocks can automatically detect the appropriate adapter:
 
 ```python
 from hother.streamblocks.adapters import auto_detect_adapter
@@ -128,7 +128,7 @@ class ToolCallBlock:
 
 ## Logging Integration
 
-StreamBlocks supports multiple logging backends:
+Streamblocks supports multiple logging backends:
 
 ### stdlib logging
 

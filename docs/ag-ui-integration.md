@@ -1,6 +1,6 @@
-# StreamBlocks and AG-UI Integration Analysis
+# Streamblocks and AG-UI Integration Analysis
 
-This document analyzes the relationship between StreamBlocks and the [AG-UI (Agent-User Interaction) Protocol](https://docs.ag-ui.com), exploring integration scenarios and strategic recommendations.
+This document analyzes the relationship between Streamblocks and the [AG-UI (Agent-User Interaction) Protocol](https://docs.ag-ui.com), exploring integration scenarios and strategic recommendations.
 
 ## Overview
 
@@ -16,9 +16,9 @@ AG-UI is an open, lightweight, event-based protocol that standardizes how AI age
 
 AG-UI complements MCP (agent-to-tools) and A2A (agent-to-agent) protocols in the AI ecosystem.
 
-### What is StreamBlocks?
+### What is Streamblocks?
 
-StreamBlocks is a Python library for real-time extraction and processing of structured blocks from text streams. It provides:
+Streamblocks is a Python library for real-time extraction and processing of structured blocks from text streams. It provides:
 
 - **Custom syntax parsing** (delimiter, frontmatter, markdown formats)
 - **Type-safe Pydantic models** with generics (`Block[TMetadata, TContent]`)
@@ -30,7 +30,7 @@ StreamBlocks is a Python library for real-time extraction and processing of stru
 
 ### Scope and Purpose
 
-| Aspect | StreamBlocks | AG-UI |
+| Aspect | Streamblocks | AG-UI |
 |--------|-------------|-------|
 | **Type** | Python library | Protocol specification |
 | **Focus** | Parse structured blocks from text | Agent-UI communication |
@@ -39,7 +39,7 @@ StreamBlocks is a Python library for real-time extraction and processing of stru
 
 ### Event Models
 
-**StreamBlocks** has 6 events focused on block extraction:
+**Streamblocks** has 6 events focused on block extraction:
 
 | Event | Purpose |
 |-------|---------|
@@ -63,7 +63,7 @@ StreamBlocks is a Python library for real-time extraction and processing of stru
 
 ### Feature Comparison
 
-| Concern | StreamBlocks | AG-UI |
+| Concern | Streamblocks | AG-UI |
 |---------|-------------|-------|
 | Syntax parsing | Custom grammars, boundary detection | Not addressed |
 | Partial block handling | Built-in state machine | Not addressed |
@@ -84,27 +84,27 @@ These systems operate at different layers:
 │              AG-UI Protocol Layer               │
 │   (TextMessage, ToolCall, State, Control)       │
 ├─────────────────────────────────────────────────┤
-│            StreamBlocks (optional)              │
+│            Streamblocks (optional)              │
 │   (Parse embedded blocks from text content)     │
 ├─────────────────────────────────────────────────┤
 │           LLM / Agent Backend                   │
 └─────────────────────────────────────────────────┘
 ```
 
-StreamBlocks is **complementary**, not competing with AG-UI.
+Streamblocks is **complementary**, not competing with AG-UI.
 
 ## Integration Scenarios
 
-### Scenario 1: StreamBlocks as AG-UI Content Parser
+### Scenario 1: Streamblocks as AG-UI Content Parser
 
-**Use case**: AG-UI streams raw LLM text; StreamBlocks extracts structured blocks and emits them as AG-UI tool calls.
+**Use case**: AG-UI streams raw LLM text; Streamblocks extracts structured blocks and emits them as AG-UI tool calls.
 
 ```python
 from ag_ui import BaseEvent, ToolCallStart, ToolCallArgs, ToolCallEnd
 from streamblocks import StreamBlockProcessor, BlockExtractedEvent
 
-class StreamBlocksAGUIBridge:
-    """Transforms StreamBlocks events into AG-UI events."""
+class StreamblocksAGUIBridge:
+    """Transforms Streamblocks events into AG-UI events."""
 
     def __init__(self, processor: StreamBlockProcessor):
         self.processor = processor
@@ -136,9 +136,9 @@ class StreamBlocksAGUIBridge:
 
 **Benefit**: Frontend receives typed tool calls instead of raw text with embedded blocks.
 
-### Scenario 2: AG-UI Adapter for StreamBlocks
+### Scenario 2: AG-UI Adapter for Streamblocks
 
-**Use case**: StreamBlocks consumes AG-UI event streams directly via a dedicated adapter.
+**Use case**: Streamblocks consumes AG-UI event streams directly via a dedicated adapter.
 
 ```python
 from streamblocks.adapters.base import StreamAdapter
@@ -170,7 +170,7 @@ async for event in processor.process_stream(agui_event_stream, adapter=AGUIAdapt
         pass
 ```
 
-### Scenario 3: StreamBlocks Blocks as AG-UI State Deltas
+### Scenario 3: Streamblocks Blocks as AG-UI State Deltas
 
 **Use case**: Extracted blocks automatically sync to AG-UI shared state using RFC 6902 JSON Patch.
 
@@ -206,7 +206,7 @@ def block_to_state_delta(event: BlockExtractedEvent) -> StateDelta:
 **Use case**: Use AG-UI's control events to approve/reject blocks before execution.
 
 ```
-LLM generates block → StreamBlocks extracts → AG-UI ActivitySnapshot
+LLM generates block → Streamblocks extracts → AG-UI ActivitySnapshot
                                                       ↓
                                               User approves/rejects
                                                       ↓
@@ -258,9 +258,9 @@ class InteractiveBlockProcessor:
         return "medium"
 ```
 
-### Scenario 5: AG-UI Agent Wrapping StreamBlocks
+### Scenario 5: AG-UI Agent Wrapping Streamblocks
 
-**Use case**: Implement an AG-UI-compliant agent that uses StreamBlocks internally.
+**Use case**: Implement an AG-UI-compliant agent that uses Streamblocks internally.
 
 ```python
 from uuid import uuid4
@@ -275,7 +275,7 @@ from streamblocks import (
     TextDeltaEvent, BlockExtractedEvent, BlockRejectedEvent,
 )
 
-class StreamBlocksAgent(AbstractAgent):
+class StreamblocksAgent(AbstractAgent):
     """AG-UI agent that parses blocks from any LLM backend."""
 
     def __init__(self, registry: Registry, llm_client):
@@ -288,7 +288,7 @@ class StreamBlocksAgent(AbstractAgent):
         message_id = str(uuid4())
         yield TextMessageStart(message_id=message_id, role="assistant")
 
-        # Stream from LLM through StreamBlocks
+        # Stream from LLM through Streamblocks
         llm_stream = self.llm.stream(input.messages)
 
         async for event in self.processor.process_stream(llm_stream):
@@ -321,14 +321,14 @@ class StreamBlocksAgent(AbstractAgent):
 
 ### Scenario 6: Bidirectional State Sync
 
-**Use case**: AG-UI state changes trigger StreamBlocks reprocessing for validation.
+**Use case**: AG-UI state changes trigger Streamblocks reprocessing for validation.
 
 ```python
 from ag_ui import StateDelta
 from streamblocks import StreamBlockProcessor
 
 class BidirectionalBlockSync:
-    """Sync blocks between StreamBlocks and AG-UI state."""
+    """Sync blocks between Streamblocks and AG-UI state."""
 
     def __init__(self, processor: StreamBlockProcessor):
         self.processor = processor
@@ -345,7 +345,7 @@ class BidirectionalBlockSync:
                 block_id = op["path"].split("/")[2]
                 new_content = op["value"]["raw_content"]
 
-                # Re-parse with StreamBlocks for validation
+                # Re-parse with Streamblocks for validation
                 reparse_events = self.processor.process_chunk(new_content)
                 for event in self.processor.finalize():
                     if isinstance(event, BlockExtractedEvent):
@@ -359,7 +359,7 @@ class BidirectionalBlockSync:
 
 ## Scenarios Summary
 
-| Scenario | Direction | StreamBlocks Role | AG-UI Role |
+| Scenario | Direction | Streamblocks Role | AG-UI Role |
 |----------|-----------|-------------------|------------|
 | **1. Content Parser** | SB → AG-UI | Parse text | Emit tool calls |
 | **2. AG-UI Adapter** | AG-UI → SB | Consume events | Provide stream |
@@ -372,7 +372,7 @@ class BidirectionalBlockSync:
 
 ### Value Proposition
 
-StreamBlocks has unique value in scenarios where:
+Streamblocks has unique value in scenarios where:
 
 1. **Custom syntax parsing** is needed (not just JSON tool calls)
 2. **Streaming validation** is required (reject bad blocks immediately)
@@ -381,10 +381,10 @@ StreamBlocks has unique value in scenarios where:
 
 ### Positioning
 
-StreamBlocks should be positioned as **AG-UI compatible**, not as a subset or competitor:
+Streamblocks should be positioned as **AG-UI compatible**, not as a subset or competitor:
 
 - AG-UI is a **protocol** (defines what events flow)
-- StreamBlocks is an **implementation library** (defines how to extract structured content)
+- Streamblocks is an **implementation library** (defines how to extract structured content)
 - They operate at **different layers** and are complementary
 
 ### When to Use Each
@@ -392,9 +392,9 @@ StreamBlocks should be positioned as **AG-UI compatible**, not as a subset or co
 | Situation | Recommendation |
 |-----------|----------------|
 | LLM supports native tool calling | AG-UI tool events directly |
-| LLM outputs structured text (markdown, custom formats) | StreamBlocks + AG-UI |
-| Need custom syntax (patches, file ops, domain-specific) | StreamBlocks |
-| Want validated Pydantic models from text | StreamBlocks |
+| LLM outputs structured text (markdown, custom formats) | Streamblocks + AG-UI |
+| Need custom syntax (patches, file ops, domain-specific) | Streamblocks |
+| Want validated Pydantic models from text | Streamblocks |
 | Just need chat + standard tools | AG-UI alone |
 | Human-in-the-loop without structured extraction | AG-UI alone |
 
@@ -413,12 +413,12 @@ class AGUIAdapter(StreamAdapter[BaseEvent]):
 
 #### Phase 2: AG-UI Emitter
 
-Add `AGUIEmitter` to convert StreamBlocks events to AG-UI events:
+Add `AGUIEmitter` to convert Streamblocks events to AG-UI events:
 
 ```python
 # streamblocks/integrations/agui/emitter.py
 class AGUIEmitter:
-    """Convert StreamBlocks events to AG-UI protocol events."""
+    """Convert Streamblocks events to AG-UI protocol events."""
 
     def emit(self, event: StreamEvent) -> list[BaseEvent]:
         pass
@@ -426,20 +426,20 @@ class AGUIEmitter:
 
 #### Phase 3: AG-UI Agent Base Class
 
-Provide a base class for AG-UI-compliant agents using StreamBlocks:
+Provide a base class for AG-UI-compliant agents using Streamblocks:
 
 ```python
 # streamblocks/integrations/agui/agent.py
-class StreamBlocksAGUIAgent(AbstractAgent):
-    """Base class for AG-UI agents with StreamBlocks parsing."""
+class StreamblocksAGUIAgent(AbstractAgent):
+    """Base class for AG-UI agents with Streamblocks parsing."""
     pass
 ```
 
 #### Phase 4: Documentation and Examples
 
-- Add "Using StreamBlocks with AG-UI" guide
+- Add "Using Streamblocks with AG-UI" guide
 - Provide example implementations for common scenarios
-- Document event mapping between StreamBlocks and AG-UI
+- Document event mapping between Streamblocks and AG-UI
 
 ## References
 

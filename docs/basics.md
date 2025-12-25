@@ -1,6 +1,6 @@
 # Core Concepts
 
-This guide covers the fundamental concepts of StreamBlocks.
+This guide covers the fundamental concepts of Streamblocks.
 
 ## Block Model
 
@@ -91,7 +91,7 @@ async for event in processor.process_stream(stream):
 
 ## Event Types
 
-StreamBlocks emits these event types:
+Streamblocks emits these event types:
 
 | Event | Description |
 |-------|-------------|
