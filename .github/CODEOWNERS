@@ -1,6 +1,5 @@
 # CODEOWNERS for StreamBlocks
 # These owners will be requested for review when someone opens a pull request.
-# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owners for everything in the repo
 * @aquemy
