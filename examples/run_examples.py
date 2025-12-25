@@ -257,9 +257,9 @@ class ExampleRunner:
 
 
 def get_display_path(example: ExampleInfo, examples_dir: Path) -> str:
-    """Get display path including 'examples/' prefix."""
+    """Get display path including 'streamblocks_examples/' prefix."""
     rel_path = example.path.relative_to(examples_dir)
-    return f"examples/{rel_path}"
+    return f"streamblocks_examples/{rel_path}"
 
 
 def print_colored(text: str, color: str = "") -> None:
@@ -293,7 +293,7 @@ async def main_async(
     """Main async entry point."""
 
     # Discover examples
-    examples_dir = Path(__file__).parent
+    examples_dir = Path(__file__).parent / "streamblocks_examples"
     runner = ExampleRunner(examples_dir)
 
     if output == OutputFormat.TEXT:

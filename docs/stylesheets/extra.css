@@ -1,6 +1,14 @@
+/* Hide annotation numbers while keeping tooltip functionality */
 .md-typeset .md-annotation__index > ::before {
-  content: attr(data-md-annotation-id);
+  content: "" !important;
 }
+
+/* Keep annotation icon visible and clickable */
+.md-typeset .md-annotation__index::after {
+  opacity: 1;
+}
+
+/* Ensure hover/focus states still work */
 .md-typeset :focus-within > .md-annotation__index > ::before {
   transform: none;
 }

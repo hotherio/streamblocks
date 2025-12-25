@@ -10,12 +10,12 @@ from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.syntaxes.factory import get_syntax_instance
+from hother.streamblocks.syntaxes.models import Syntax
 
 if TYPE_CHECKING:
     from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.models import Block, ExtractedBlock
     from hother.streamblocks.syntaxes.base import BaseSyntax
-    from hother.streamblocks.syntaxes.models import Syntax
 
 
 type BlockType = str
@@ -80,7 +80,7 @@ class Registry:
     def __init__(
         self,
         *,
-        syntax: Syntax | BaseSyntax,
+        syntax: Syntax | BaseSyntax = Syntax.DELIMITER_PREAMBLE,
         logger: Logger | None = None,
         blocks: dict[str, type[Block[Any, Any]]] | None = None,
         metadata_failure_mode: MetadataValidationFailureMode = MetadataValidationFailureMode.ABORT_BLOCK,
@@ -88,7 +88,8 @@ class Registry:
         """Initialize registry with a single syntax instance.
 
         Args:
-            syntax: The syntax instance for this registry
+            syntax: The syntax instance for this registry.
+                   Defaults to Syntax.DELIMITER_PREAMBLE.
             logger: Optional logger (any object with debug/info/warning/error/exception methods).
                    Defaults to stdlib logging.getLogger(__name__)
             blocks: Optional dict of block_type -> block_class for bulk registration

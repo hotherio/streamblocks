@@ -1,82 +1,120 @@
 # Streamblocks
 
-## What is Streamblocks?
+**Real-time extraction of structured blocks from AI text streams**
 
-Streamblocks is a Python library that helps you defining and extracting semantic blocks from a stream. It is primarily intended to be used to build AI agents differently, completely independent from any LLM model or model provider capabilities (e.g. OpenAPI specification support for function calling). It does not replace LLM frameworks and can be easily integrated to your framework such as LangGraph, Agno, Autogen or Pydantic AI.
+Streamblocks is a Python library for detecting and extracting structured content blocks from streaming text. Extract semantic blocks as they stream—not after completion—enabling reactive AI agents and real-time processing.
 
-##
+<div class="grid cards" markdown>
 
-- Better semantic
-- LLM agnostic
-- Easier Prompt management
-- Less tokens
-- Better reactivity
-- Better planning capabilities
-- RL and fine-tuning at a better granularity level
-- Self-evolving Agents
+-   :material-lightning-bolt:{ .lg .middle } **Stream Processing**
 
-## TEST
+    ---
 
-$$
-\operatorname{ker} f=\{g\in G:f(g)=e_{H}\}{\mbox{.}}
-$$
+    Extract blocks in real-time as text streams, enabling immediate reactions and feedback loops with LLMs.
 
-The `#!python range()` function is used to generate a sequence of numbers.
-``` py title="bubble_sort.py" linenums="1" hl_lines="2 3"
-def bubble_sort(items):
-    for i in range(len(items)):
-        for j in range(len(items) - 1 - i):
-            if items[j] > items[j + 1]:
-                items[j], items[j + 1] = items[j + 1], items[j] # (1)
+    [:octicons-arrow-right-24: Getting Started](getting_started.md)
+
+-   :material-puzzle:{ .lg .middle } **Multiple Syntaxes**
+
+    ---
+
+    Choose from delimiter-based, Markdown frontmatter, or create custom syntaxes for your use case.
+
+    [:octicons-arrow-right-24: Syntaxes Guide](syntaxes.md)
+
+-   :material-connection:{ .lg .middle } **Provider Adapters**
+
+    ---
+
+    Works with Gemini, OpenAI, Anthropic out of the box. Easy to add custom adapters.
+
+    [:octicons-arrow-right-24: Adapters Guide](adapters.md)
+
+-   :material-shield-check:{ .lg .middle } **Type Safe**
+
+    ---
+
+    Full Pydantic model support with validation. Define your block metadata and content with type safety.
+
+    [:octicons-arrow-right-24: Block Types](blocks.md)
+
+</div>
+
+## Quick Example
+
+```python
+import asyncio
+from streamblocks import StreamBlockProcessor, BlockRegistry, Syntax
+
+async def main():
+    # Create registry and processor
+    registry = BlockRegistry()
+    processor = StreamBlockProcessor(registry, syntax=Syntax.DELIMITER_PREAMBLE)
+
+    # Simulate a text stream
+    async def text_stream():
+        chunks = [
+            "Here's the file operations:\n",
+            "!!file01:files_operations\n",
+            "src/main.py:C\n",
+            "src/utils.py:E\n",
+            "!!end\n",
+            "Done!"
+        ]
+        for chunk in chunks:
+            yield chunk
+
+    # Process and react to blocks in real-time
+    async for event in processor.process_stream(text_stream()):
+        if event.type.name == "BLOCK_EXTRACTED":
+            print(f"Extracted: {event.block.metadata.id}")
+
+asyncio.run(main())
 ```
 
-1. :A lot of loops!
+## Why Streamblocks?
 
-``` yaml
-theme:
-  features:
-    - content.code.annotate # (1)
-```
-
-1. :man_raising_hand: I'm a code annotation! I can contain `code`, __formatted
-    text__, images, ... basically anything that can be expressed in Markdown[^1].
-
-[^1]: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+| Feature | Benefit |
+|---------|---------|
+| **LLM Agnostic** | Works with any text stream—no vendor lock-in |
+| **Real-time Processing** | React to blocks as they stream, don't wait for completion |
+| **Type Safety** | Pydantic models for metadata and content validation |
+| **Extensible** | Custom syntaxes, adapters, and block types |
+| **Framework Compatible** | Integrates with LangGraph, Pydantic AI, and others |
 
 ## Installation
 
-=== "Windows"
+=== "uv"
 
-    For Windows
+    ```bash
+    uv add streamblocks
+    ```
 
-=== "Linux"
+=== "pip"
 
-    For Linux
+    ```bash
+    pip install streamblocks
+    ```
 
+With provider support:
 
-| Method      | Description                          |
-| ----------- | ------------------------------------ |
-| `GET`       | :material-check:     Fetch resource  |
-| `PUT`       | :material-check-all: Update resource |
-| `DELETE`    | :material-close:     Delete resource |
+=== "uv"
 
-## Test
+    ```bash
+    uv add streamblocks[gemini]      # Google Gemini
+    uv add streamblocks[openai]      # OpenAI
+    uv add streamblocks[anthropic]   # Anthropic Claude
+    uv add streamblocks[all-providers]  # All providers
+    ```
 
-``` mermaid
-sequenceDiagram
-  Alice->>John: Hello John, how are you?
-  loop Healthcheck
-      John->>John: Fight against hypochondria
-  end
-  Note right of John: Rational thoughts!
-  John-->>Alice: Great!
-  John->>Bob: How about you?
-  Bob-->>John: Jolly good!
-```
+=== "pip"
 
+    ```bash
+    pip install streamblocks[gemini]
+    pip install streamblocks[openai]
+    pip install streamblocks[anthropic]
+    pip install streamblocks[all-providers]
+    ```
 
-
-<figure markdown>
-  ![Image title](https://dummyimage.com/600x400/){ width="300" loading=lazy }
-  <figcaption>Image caption</figcaption>
-</figure>
+[Get Started :material-arrow-right:](getting_started.md){ .md-button .md-button--primary }
+[View Examples](examples/index.md){ .md-button }

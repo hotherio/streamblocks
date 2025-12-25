@@ -1,4 +1,4 @@
-"""MkDocs lifecycle hooks for StreamBlocks documentation.
+"""MkDocs lifecycle hooks for Streamblocks documentation.
 
 This module provides hooks that run during MkDocs build process to:
 - Inject example code files

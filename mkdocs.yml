@@ -5,12 +5,55 @@ edit_uri: ""
 dev_addr: 0.0.0.0:1234
 site_dir: "static/docs"
 nav:
-  - 'index.md'
-  - About: 'about.md'
+  - Streamblocks: index.md
+  - Installation: installation.md
+  - Getting Started: getting_started.md
+  - Documentation:
+    - Basics: basics.md
+    - Stream Processing: processing.md
+    - Syntaxes: syntaxes.md
+    - Adapters: adapters.md
+    - Block Types: blocks.md
+    - Validation: validation.md
+    - Events: events.md
+    - Error Handling: errors.md
+    - Common Patterns: patterns.md
+    - Performance: performance.md
+  - Architecture:
+    - Overview: architecture/index.md
+    - Extension System: architecture/extensions.md
+    - State Machine: architecture/state-machine.md
+    - Adapter Protocol: architecture/adapters.md
+  - Examples:
+    - Setup: examples/setup.md
+    - Overview: examples/index.md
+    - Basic Patterns: examples/basic.md
+    - Syntaxes: examples/syntaxes.md
+    - Adapters: examples/adapters.md
+    - Provider Examples: examples/providers.md
+    - Integrations: examples/integrations.md
+  - Integrations:
+    - Overview: integrations/index.md
+    - PydanticAI: integrations/pydantic_ai.md
+    - AG-UI Protocol: integrations/agui.md
+  - Reference:
+    - Overview: reference/index.md
+    - Core: reference/core.md
+    - Syntaxes: reference/syntaxes.md
+    - Adapters: reference/adapters.md
+    - Blocks: reference/blocks.md
+    - Events: reference/events.md
+    - Extensions: reference/extensions.md
+  - Help:
+    - Troubleshooting: troubleshooting.md
+    - FAQ: faq.md
+    - Community: community.md
+    - Contributing: contributing.md
 theme:
   name: material
   language: en
   logo: assets/logo.png
+  annotation: material/arrow-right-circle
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -33,12 +76,12 @@ theme:
     - navigation.tracking
     - navigation.top
     - header.autohide
-    - navigation.tabs
-    - navigation.tabs.sticky
     - navigation.sections
     - navigation.indexes
     - toc.follow
-    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - search.share
   icon:
     admonition:
       note: octicons/tag-16
@@ -64,7 +107,9 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: ['.', 'examples']
+      check_paths: true
   - pymdownx.critic
   - pymdownx.caret
   - pymdownx.keys
@@ -80,12 +125,13 @@ markdown_extensions:
       custom_fences:
         - name: mermaid
           class: mermaid
-          format: "!!python/name:pymdownx.superfences.fence_code_format"
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.arithmatex:
       generic: true
   - tables
+  - sane_lists
 extra_css:
   - stylesheets/extra.css
 extra_javascript:
@@ -94,26 +140,53 @@ extra_javascript:
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - javascripts/mermaid.js
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
 extra:
   version:
     provider: mike
   generator: false
 watch:
   - src
+  - examples
+  - docs
+  - docs/.hooks
+hooks:
+  - docs/.hooks/main.py
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
 plugins:
   - search:
-        lang: en
+      lang: en
   - autorefs
+  - glightbox
   - mkdocstrings:
-      #custom_templates: templates
       default_handler: python
       handlers:
         python:
+          options:
+            show_root_heading: true
+            show_source: true
+            show_bases: true
+            inherited_members: true
+            show_docstring_attributes: true
+            show_docstring_functions: true
+            show_docstring_classes: true
+            show_docstring_modules: true
+            show_if_no_docstring: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            filters: ["!^_"]
           selection:
             filters: ["!^_", "!^__"]
-          import:
+          inventories:
           - https://docs.python.org/3/objects.inv
           - http://pandas.pydata.org/pandas-docs/stable/objects.inv
+          - https://docs.pydantic.dev/latest/objects.inv
           setup_commands:
             - import sys
             - sys.path.append('../src')
