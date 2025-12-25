@@ -70,10 +70,10 @@ jobs:
     - name: Lint
       run: |
         source .venv/bin/activate
-        lefthook run pre-commit --all-files || exit 0
+        lefthook run pre-commit --all-files
 
     - name: Tests
-      run: uv run -m pytest || exit 0
+      run: uv run -m pytest
 
   validate-docs:
     name: Validate Docs
