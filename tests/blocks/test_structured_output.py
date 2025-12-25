@@ -8,7 +8,7 @@ from typing import ClassVar
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
-from hother.streamblocks.blocks.structured_output import (
+from examples.blocks.agent.structured_output import (
     StructuredOutputMetadata,
     create_structured_output_block,
 )

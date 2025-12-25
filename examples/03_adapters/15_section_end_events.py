@@ -14,6 +14,7 @@ Section end events are emitted when sections complete:
 
 import asyncio
 
+from examples.blocks.agent import FileOperations
 from hother.streamblocks import (
     BlockContentEndEvent,
     BlockEndEvent,
@@ -26,7 +27,6 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     ValidationResult,
 )
-from hother.streamblocks.blocks import FileOperations
 from hother.streamblocks.core.processor import ProcessorConfig
 
 

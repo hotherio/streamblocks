@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from hother.streamblocks.blocks.files import (
+from examples.blocks.agent.files import (
     FileContentContent,
     FileOperation,
     FileOperationsContent,

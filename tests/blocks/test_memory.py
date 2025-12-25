@@ -7,7 +7,7 @@ from typing import Literal
 import pytest
 from pydantic import ValidationError
 
-from hother.streamblocks.blocks.memory import Memory, MemoryContent, MemoryMetadata
+from examples.blocks.agent.memory import Memory, MemoryContent, MemoryMetadata
 
 
 class TestMemoryMetadata:

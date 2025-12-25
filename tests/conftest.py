@@ -7,13 +7,13 @@ from typing import Any
 
 import pytest
 
+from examples.blocks.agent import FileOperations
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks import FileOperations
 from hother.streamblocks.core.processor import ProcessorConfig
 
 # =============================================================================

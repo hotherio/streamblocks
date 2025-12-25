@@ -9,8 +9,8 @@
 import asyncio
 from textwrap import dedent
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry
-from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core.types import BlockEndEvent
 
 # --8<-- [end:imports]

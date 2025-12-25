@@ -5,8 +5,8 @@ from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
+from examples.blocks.agent.patch import Patch
 from hother.streamblocks import MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.patch import Patch
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
     BlockEndEvent,
@@ -138,7 +138,7 @@ async def main() -> None:
             current_partial = None
 
             # Type narrowing for patch blocks
-            from hother.streamblocks.blocks.patch import PatchContent, PatchMetadata
+            from examples.blocks.agent.patch import PatchContent, PatchMetadata
 
             if not isinstance(block.metadata, PatchMetadata):
                 continue
@@ -179,7 +179,7 @@ async def main() -> None:
     print("\nBlock summary:")
     for i, block in enumerate(blocks_extracted, 1):
         # Type narrowing for summary
-        from hother.streamblocks.blocks.patch import PatchMetadata
+        from examples.blocks.agent.patch import PatchMetadata
 
         if isinstance(block.metadata, PatchMetadata):
             syntax_display = block.syntax_name.replace("markdown_frontmatter_", "")

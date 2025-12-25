@@ -7,8 +7,8 @@ import re
 from textwrap import dedent
 from typing import Any
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core.models import BlockCandidate, extract_block_types
 from hother.streamblocks.core.types import (
     BaseContent,

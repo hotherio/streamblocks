@@ -188,6 +188,12 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
+            # Add project root to PYTHONPATH so examples can import from examples.blocks
+            project_root = str(self.examples_dir.parent)
+            env = os.environ.copy()
+            existing_pythonpath = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+
             result = await asyncio.wait_for(
                 asyncio.create_subprocess_exec(
                     sys.executable,
@@ -195,6 +201,7 @@ class ExampleRunner:
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     stdin=asyncio.subprocess.DEVNULL,
+                    env=env,
                 ),
                 timeout=timeout,
             )
@@ -223,6 +230,12 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
+            # Add project root to PYTHONPATH so examples can import from examples.blocks
+            project_root = str(self.examples_dir.parent)
+            env = os.environ.copy()
+            existing_pythonpath = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+
             result = subprocess.run(
                 [sys.executable, str(example.path)],
                 check=False,
@@ -230,6 +243,7 @@ class ExampleRunner:
                 text=True,
                 timeout=timeout,
                 stdin=subprocess.DEVNULL,
+                env=env,
             )
 
             success = result.returncode == 0 and "Traceback" not in result.stderr
