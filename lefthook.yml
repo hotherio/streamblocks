@@ -25,7 +25,10 @@ pre-commit:
     end-of-file:
       run: |
         for file in {staged_files}; do
-          if [[ "$file" != *.py ]] && [[ -f "$file" ]] && [[ -s "$file" ]]; then
+          case "$file" in
+            *.py) continue ;;
+          esac
+          if [ -f "$file" ] && [ -s "$file" ]; then
             if [ -n "$(tail -c 1 "$file")" ]; then
               echo >> "$file"
             fi
