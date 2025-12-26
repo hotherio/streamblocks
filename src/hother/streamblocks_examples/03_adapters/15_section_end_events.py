@@ -71,7 +71,7 @@ async def example_basic_section_events() -> None:
             block = event.get_block()
             if block:
                 print(f"  [BlockEnd] Block extracted: {event.block_type}")
-                print(f"    - Operations: {len(block.content.operations)}")
+                print(block.model_dump_json(indent=2))
 
     print()
 

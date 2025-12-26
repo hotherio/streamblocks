@@ -85,9 +85,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"✅ BlockExtracted: {block.metadata.id}")
-            for op in block.content.operations:
-                print(f"   - {op.path}")
+            print("✅ BlockExtracted:")
+            print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             streamblocks_count += 1

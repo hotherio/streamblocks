@@ -88,10 +88,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print("\n✅ BlockExtracted!")
-            print(f"   {len(block.content.operations)} operations:")
-            for op in block.content.operations:
-                print(f"   - {op.path}")
+            print("\n✅ BlockExtracted:")
+            print(block.model_dump_json(indent=2))
 
             # Clean up
             active_blocks.clear()

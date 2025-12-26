@@ -82,9 +82,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\nBlock: {block.metadata.id}")
-            for op in block.content.operations:
-                print(f"   - {op.path}")
+            print("\nBlock Extracted:")
+            print(block.model_dump_json(indent=2))
             print()
 
     print()

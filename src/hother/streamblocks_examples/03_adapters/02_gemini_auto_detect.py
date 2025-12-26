@@ -114,9 +114,8 @@ IMPORTANT:
                 block = event.get_block()
                 if block is None:
                     continue
-                print(f"\n✅ Block Extracted: {block.metadata.id}")
-                for op in block.content.operations:
-                    print(f"   - {op.action}: {op.path}")
+                print("\n✅ Block Extracted:")
+                print(block.model_dump_json(indent=2))
                 print()
 
     except ValueError as e:
