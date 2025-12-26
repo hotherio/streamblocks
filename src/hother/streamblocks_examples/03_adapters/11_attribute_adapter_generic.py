@@ -8,7 +8,6 @@ with a text-like attribute, without writing custom adapter code.
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -16,6 +15,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.adapters.input import AttributeInputAdapter
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Generic chunk classes

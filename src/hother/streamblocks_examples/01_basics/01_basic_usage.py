@@ -1,11 +1,9 @@
 """Basic usage example for StreamBlocks."""
 
 import asyncio
-from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-from examples.blocks.agent.files import FileOperations, FileOperationsContent, FileOperationsMetadata
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import ExtractedBlock
 from hother.streamblocks.core.types import (
@@ -16,39 +14,15 @@ from hother.streamblocks.core.types import (
     BlockMetadataDeltaEvent,
     TextContentEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import (
+    FileOperations,
+    FileOperationsContent,
+    FileOperationsMetadata,
+)
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
-
-
-async def example_stream() -> AsyncIterator[str]:
-    """Example stream with multiple blocks."""
-    text = dedent("""
-        This is some introductory text that will be passed through as raw text.
-
-        !!file01:files_operations
-        src/main.py:C
-        src/utils.py:C
-        tests/test_main.py:C
-        !!end
-
-        Here's some text between blocks.
-
-        !!file02:files_operations:urgent
-        config.yaml:C
-        README.md:C
-        old_file.py:D
-        !!end
-
-        And some final text after all blocks.
-    """)
-
-    # Simulate chunk-based streaming (more realistic than line-by-line)
-    chunk_size = 50
-    for i in range(0, len(text), chunk_size):
-        chunk = text[i : i + chunk_size]
-        yield chunk
-        await asyncio.sleep(0.01)  # Simulate network delay
 
 
 async def main() -> None:
@@ -72,13 +46,34 @@ async def main() -> None:
     config = ProcessorConfig(lines_buffer=5)
     processor = StreamBlockProcessor(registry, config=config)
 
+    # Example text with multiple blocks
+    text = dedent("""
+        This is some introductory text that will be passed through as raw text.
+
+        !!file01:files_operations
+        src/main.py:C
+        src/utils.py:C
+        tests/test_main.py:C
+        !!end
+
+        Here's some text between blocks.
+
+        !!file02:files_operations:urgent
+        config.yaml:C
+        README.md:C
+        old_file.py:D
+        !!end
+
+        And some final text after all blocks.
+    """)
+
     # Process stream
     print("Processing stream...")
     print("-" * 60)
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
-    async for event in processor.process_stream(example_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Raw text passed through
             if event.content.strip():  # Skip empty lines for cleaner output

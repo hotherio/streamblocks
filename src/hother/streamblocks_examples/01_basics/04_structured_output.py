@@ -6,7 +6,6 @@ to create type-safe blocks for any Pydantic model.
 """
 
 import asyncio
-from collections.abc import AsyncIterator
 from datetime import date
 from enum import StrEnum
 from textwrap import dedent
@@ -14,7 +13,6 @@ from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
-from examples.blocks.agent.structured_output import create_structured_output_block
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     Registry,
@@ -27,6 +25,8 @@ from hother.streamblocks.core.types import (
     BlockMetadataDeltaEvent,
     TextContentEvent,
 )
+from hother.streamblocks_examples.blocks.agent.structured_output import create_structured_output_block
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 # ============================================================================
 # EXAMPLE 1: Basic Person Schema
@@ -65,35 +65,31 @@ async def example_1_basic_person() -> None:
     # Create processor
     processor = StreamBlockProcessor(registry)
 
-    # Example stream with person data
-    async def person_stream() -> AsyncIterator[str]:
-        text = dedent("""
-            Here's a person's profile:
+    # Example text with person data
+    text = dedent("""
+        Here's a person's profile:
 
-            !!start
-            ---
-            id: person_001
-            block_type: person
-            schema_name: person
-            format: json
-            description: User profile from registration
-            ---
-            {
-              "name": "Alice Johnson",
-              "age": 28,
-              "email": "alice@example.com",
-              "city": "San Francisco"
-            }
-            !!end
+        !!start
+        ---
+        id: person_001
+        block_type: person
+        schema_name: person
+        format: json
+        description: User profile from registration
+        ---
+        {
+          "name": "Alice Johnson",
+          "age": 28,
+          "email": "alice@example.com",
+          "city": "San Francisco"
+        }
+        !!end
 
-            That's the profile data.
-        """)
-        for line in text.split("\n"):
-            yield line + "\n"
-            await asyncio.sleep(0.001)
+        That's the profile data.
+    """)
 
     # Process the stream
-    async for event in processor.process_stream(person_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is None:
@@ -168,64 +164,60 @@ async def example_2_task_list() -> None:
     registry.register("task", TaskBlock)
     processor = StreamBlockProcessor(registry)
 
-    # Stream with multiple tasks
-    async def task_stream() -> AsyncIterator[str]:
-        text = dedent("""
-            Here are your tasks for today:
+    # Text with multiple tasks
+    text = dedent("""
+        Here are your tasks for today:
 
-            !!start
-            ---
-            id: task_001
-            block_type: task
-            schema_name: task
-            ---
-            {
-              "title": "Fix critical bug in payment system",
-              "description": "Users are reporting failed transactions",
-              "priority": "urgent",
-              "due_date": "2024-12-15",
-              "tags": ["bug", "payments", "urgent"]
-            }
-            !!end
+        !!start
+        ---
+        id: task_001
+        block_type: task
+        schema_name: task
+        ---
+        {
+          "title": "Fix critical bug in payment system",
+          "description": "Users are reporting failed transactions",
+          "priority": "urgent",
+          "due_date": "2024-12-15",
+          "tags": ["bug", "payments", "urgent"]
+        }
+        !!end
 
-            !!start
-            ---
-            id: task_002
-            block_type: task
-            schema_name: task
-            ---
-            {
-              "title": "Update documentation",
-              "description": "Add examples for new API endpoints",
-              "priority": "low",
-              "tags": ["docs", "api"]
-            }
-            !!end
+        !!start
+        ---
+        id: task_002
+        block_type: task
+        schema_name: task
+        ---
+        {
+          "title": "Update documentation",
+          "description": "Add examples for new API endpoints",
+          "priority": "low",
+          "tags": ["docs", "api"]
+        }
+        !!end
 
-            !!start
-            ---
-            id: task_003
-            block_type: task
-            schema_name: task
-            ---
-            {
-              "title": "Implement dark mode",
-              "priority": "medium",
-              "due_date": "2024-12-20",
-              "completed": false,
-              "tags": ["feature", "ui"]
-            }
-            !!end
+        !!start
+        ---
+        id: task_003
+        block_type: task
+        schema_name: task
+        ---
+        {
+          "title": "Implement dark mode",
+          "priority": "medium",
+          "due_date": "2024-12-20",
+          "completed": false,
+          "tags": ["feature", "ui"]
+        }
+        !!end
 
-            All tasks loaded!
-        """)
-        for line in text.split("\n"):
-            yield line + "\n"
-            await asyncio.sleep(0.001)
+        All tasks loaded!
+    """)
 
     # Process
     tasks: list[Any] = []
-    async for event in processor.process_stream(task_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is None:
@@ -318,45 +310,41 @@ async def example_3_nested_schema() -> None:
     registry.register("detailed_person", DetailedPersonBlock)
     processor = StreamBlockProcessor(registry)
 
-    # Stream
-    async def person_stream() -> AsyncIterator[str]:
-        text = dedent("""
-            Employee profile:
+    # Employee profile text
+    text = dedent("""
+        Employee profile:
 
-            !!start
-            ---
-            id: emp_001
-            block_type: detailed_person
-            schema_name: detailed_person
-            ---
-            {
-              "name": "Bob Smith",
-              "age": 35,
-              "email": "bob@techcorp.com",
-              "address": {
-                "street": "123 Tech Avenue",
-                "city": "Seattle",
-                "state": "WA",
-                "zip_code": "98101",
-                "country": "USA"
-              },
-              "company": {
-                "name": "TechCorp Inc",
-                "industry": "Software",
-                "employee_count": 500
-              },
-              "skills": ["Python", "Rust", "Go", "Kubernetes"]
-            }
-            !!end
+        !!start
+        ---
+        id: emp_001
+        block_type: detailed_person
+        schema_name: detailed_person
+        ---
+        {
+          "name": "Bob Smith",
+          "age": 35,
+          "email": "bob@techcorp.com",
+          "address": {
+            "street": "123 Tech Avenue",
+            "city": "Seattle",
+            "state": "WA",
+            "zip_code": "98101",
+            "country": "USA"
+          },
+          "company": {
+            "name": "TechCorp Inc",
+            "industry": "Software",
+            "employee_count": 500
+          },
+          "skills": ["Python", "Rust", "Go", "Kubernetes"]
+        }
+        !!end
 
-            Profile loaded.
-        """)
-        for line in text.split("\n"):
-            yield line + "\n"
-            await asyncio.sleep(0.001)
+        Profile loaded.
+    """)
 
     # Process
-    async for event in processor.process_stream(person_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is None:
@@ -415,39 +403,35 @@ async def example_4_yaml_format() -> None:
     registry.register("config", ConfigBlock)
     processor = StreamBlockProcessor(registry)
 
-    # Stream with YAML content
-    async def config_stream() -> AsyncIterator[str]:
-        text = dedent("""
-            Application configuration:
+    # Text with YAML content
+    text = dedent("""
+        Application configuration:
 
-            !!start
-            ---
-            id: config_001
-            block_type: config
-            schema_name: config
-            format: yaml
-            ---
-            app_name: MyAwesomeApp
-            version: 2.5.0
-            debug: true
-            features:
-              authentication: true
-              dark_mode: true
-              api_v2: false
-            allowed_hosts:
-              - localhost
-              - example.com
-              - "*.myapp.com"
-            !!end
+        !!start
+        ---
+        id: config_001
+        block_type: config
+        schema_name: config
+        format: yaml
+        ---
+        app_name: MyAwesomeApp
+        version: 2.5.0
+        debug: true
+        features:
+          authentication: true
+          dark_mode: true
+          api_v2: false
+        allowed_hosts:
+          - localhost
+          - example.com
+          - "*.myapp.com"
+        !!end
 
-            Configuration loaded successfully.
-        """)
-        for line in text.split("\n"):
-            yield line + "\n"
-            await asyncio.sleep(0.001)
+        Configuration loaded successfully.
+    """)
 
     # Process
-    async for event in processor.process_stream(config_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is None:
@@ -509,51 +493,43 @@ async def example_5_llm_simulation() -> None:
     processor = StreamBlockProcessor(registry)
 
     # Simulate streaming LLM response
-    async def llm_stream() -> AsyncIterator[str]:
-        response = dedent("""
-            Let me analyze this text for you.
+    text = dedent("""
+        Let me analyze this text for you.
 
-            I'll provide a structured analysis:
+        I'll provide a structured analysis:
 
-            !!start
-            ---
-            id: analysis_001
-            block_type: analysis
-            schema_name: analysis
-            description: Sentiment analysis of customer feedback
-            ---
-            {
-              "summary": "Overall positive customer feedback with minor concerns about pricing.",
-              "sentiment": "positive",
-              "confidence": 0.85,
-              "key_points": [
-                "Customers love the user interface",
-                "Performance improvements are well received",
-                "Some concerns about subscription costs",
-                "Excellent customer support mentioned multiple times"
-              ],
-              "entities": {
-                "products": ["mobile app", "web dashboard", "API"],
-                "features": ["dark mode", "real-time sync", "offline mode"],
-                "concerns": ["pricing", "storage limits"]
-              }
-            }
-            !!end
+        !!start
+        ---
+        id: analysis_001
+        block_type: analysis
+        schema_name: analysis
+        description: Sentiment analysis of customer feedback
+        ---
+        {
+          "summary": "Overall positive customer feedback with minor concerns about pricing.",
+          "sentiment": "positive",
+          "confidence": 0.85,
+          "key_points": [
+            "Customers love the user interface",
+            "Performance improvements are well received",
+            "Some concerns about subscription costs",
+            "Excellent customer support mentioned multiple times"
+          ],
+          "entities": {
+            "products": ["mobile app", "web dashboard", "API"],
+            "features": ["dark mode", "real-time sync", "offline mode"],
+            "concerns": ["pricing", "storage limits"]
+          }
+        }
+        !!end
 
-            The analysis is complete. The data shows strong positive sentiment overall.
-        """)
-
-        # Simulate character-by-character streaming (like a real LLM)
-        chunk_size = 50
-        for i in range(0, len(response), chunk_size):
-            chunk = response[i : i + chunk_size]
-            yield chunk
-            await asyncio.sleep(0.05)  # Simulate network delay
+        The analysis is complete. The data shows strong positive sentiment overall.
+    """)
 
     # Process with real-time feedback
     print("\n[Streaming LLM response...]")
 
-    async for event in processor.process_stream(llm_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Stream text as it arrives
             if event.content.strip():

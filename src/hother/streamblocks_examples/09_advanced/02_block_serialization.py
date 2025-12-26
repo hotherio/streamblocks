@@ -6,9 +6,9 @@ import asyncio
 import json
 from textwrap import dedent
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 # --8<-- [end:imports]
 

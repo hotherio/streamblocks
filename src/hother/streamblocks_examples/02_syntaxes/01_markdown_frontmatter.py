@@ -1,11 +1,9 @@
 """Example demonstrating MarkdownFrontmatterSyntax with YAML frontmatter."""
 
 import asyncio
-from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-from examples.blocks.agent.patch import Patch
 from hother.streamblocks import MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
@@ -15,14 +13,36 @@ from hother.streamblocks.core.types import (
     BlockMetadataDeltaEvent,
     TextContentEvent,
 )
+from hother.streamblocks_examples.blocks.agent.patch import Patch
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
-async def example_stream() -> AsyncIterator[str]:
-    """Example stream with markdown frontmatter blocks."""
+async def main() -> None:
+    """Main example function."""
+    # Create markdown frontmatter syntax for patch blocks
+    # Note: In the new API, each Registry holds exactly one syntax.
+    # To handle multiple info strings (patch/yaml/diff), you would need separate processors
+    # or a custom syntax that handles multiple patterns internally.
+    syntax = MarkdownFrontmatterSyntax(
+        fence="```",
+        info_string="patch",  # Will match ```patch blocks
+    )
+
+    # Create type-specific registry and register block
+    registry = Registry(syntax=syntax)
+    registry.register("patch", Patch)
+
+    # Create processor with config
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(lines_buffer=10)
+    processor = StreamBlockProcessor(registry, config=config)
+
+    # Example text with markdown frontmatter blocks
     text = dedent("""
         Here's a document with some patches using markdown-style blocks with YAML frontmatter.
 
@@ -79,35 +99,6 @@ async def example_stream() -> AsyncIterator[str]:
         That's all for the patches!
     """)
 
-    # Chunk-based streaming (simulating real network transfer)
-    chunk_size = 80  # Larger chunks for markdown blocks
-    for i in range(0, len(text), chunk_size):
-        chunk = text[i : i + chunk_size]
-        yield chunk
-        await asyncio.sleep(0.01)
-
-
-async def main() -> None:
-    """Main example function."""
-    # Create markdown frontmatter syntax for patch blocks
-    # Note: In the new API, each Registry holds exactly one syntax.
-    # To handle multiple info strings (patch/yaml/diff), you would need separate processors
-    # or a custom syntax that handles multiple patterns internally.
-    syntax = MarkdownFrontmatterSyntax(
-        fence="```",
-        info_string="patch",  # Will match ```patch blocks
-    )
-
-    # Create type-specific registry and register block
-    registry = Registry(syntax=syntax)
-    registry.register("patch", Patch)
-
-    # Create processor with config
-    from hother.streamblocks.core.processor import ProcessorConfig
-
-    config = ProcessorConfig(lines_buffer=10)
-    processor = StreamBlockProcessor(registry, config=config)
-
     # Process stream
     print("Processing markdown frontmatter blocks...")
     print("-" * 70)
@@ -115,7 +106,7 @@ async def main() -> None:
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
     current_partial = None
 
-    async for event in processor.process_stream(example_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Raw text passed through
             if event.content.strip():
@@ -138,7 +129,7 @@ async def main() -> None:
             current_partial = None
 
             # Type narrowing for patch blocks
-            from examples.blocks.agent.patch import PatchContent, PatchMetadata
+            from hother.streamblocks_examples.blocks.agent.patch import PatchContent, PatchMetadata
 
             if not isinstance(block.metadata, PatchMetadata):
                 continue
@@ -179,7 +170,7 @@ async def main() -> None:
     print("\nBlock summary:")
     for i, block in enumerate(blocks_extracted, 1):
         # Type narrowing for summary
-        from examples.blocks.agent.patch import PatchMetadata
+        from hother.streamblocks_examples.blocks.agent.patch import PatchMetadata
 
         if isinstance(block.metadata, PatchMetadata):
             syntax_display = block.syntax_name.replace("markdown_frontmatter_", "")

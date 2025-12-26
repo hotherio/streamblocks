@@ -10,7 +10,6 @@ This example demonstrates all processor configuration options using ProcessorCon
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -20,6 +19,7 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks.extensions.gemini import GeminiInputAdapter
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Mock Gemini chunk

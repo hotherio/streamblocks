@@ -5,7 +5,6 @@ single-syntax design. Each processor handles one syntax type.
 """
 
 import asyncio
-from collections.abc import AsyncIterator
 from textwrap import dedent
 
 from pydantic import Field
@@ -22,6 +21,7 @@ from hother.streamblocks.core.types import (
     BlockMetadataDeltaEvent,
     TextContentEvent,
 )
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 
 # Custom content models for this example
@@ -66,8 +66,35 @@ class TaskContent(BaseContent):
 TaskBlock = Block[TaskMetadata, TaskContent]
 
 
-async def example_stream() -> AsyncIterator[str]:
-    """Example stream with delimiter frontmatter blocks."""
+async def main() -> None:
+    """Main example function."""
+    print("=== DelimiterFrontmatterSyntax Example ===\n")
+
+    # Create delimiter frontmatter syntax for tasks
+    # Using standard !!start/!!end delimiters
+    task_syntax = DelimiterFrontmatterSyntax(
+        start_delimiter="!!start",
+        end_delimiter="!!end",
+    )
+
+    # Create type-specific registry and register block
+    registry = Registry(syntax=task_syntax)
+    registry.register("task", TaskBlock)
+
+    # Add validators
+    def validate_task_priority(block: ExtractedBlock[TaskMetadata, TaskContent]) -> bool:
+        """Ensure high priority tasks have assignees."""
+        return not (block.metadata.priority in ["high", "urgent"] and not block.metadata.assignee)
+
+    registry.add_validator("task", validate_task_priority)
+
+    # Create processor with config
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(lines_buffer=10)
+    processor = StreamBlockProcessor(registry, config=config)
+
+    # Example text with delimiter frontmatter blocks
     text = dedent("""
         Let's manage some tasks using delimiter+frontmatter syntax.
 
@@ -139,48 +166,13 @@ async def example_stream() -> AsyncIterator[str]:
 
         That's all for now!
     """)
-    # Simulate streaming
-    chunk_size = 50
-    for i in range(0, len(text), chunk_size):
-        chunk = text[i : i + chunk_size]
-        yield chunk
-        await asyncio.sleep(0.01)
-
-
-async def main() -> None:
-    """Main example function."""
-    print("=== DelimiterFrontmatterSyntax Example ===\n")
-
-    # Create delimiter frontmatter syntax for tasks
-    # Using standard !!start/!!end delimiters
-    task_syntax = DelimiterFrontmatterSyntax(
-        start_delimiter="!!start",
-        end_delimiter="!!end",
-    )
-
-    # Create type-specific registry and register block
-    registry = Registry(syntax=task_syntax)
-    registry.register("task", TaskBlock)
-
-    # Add validators
-    def validate_task_priority(block: ExtractedBlock[TaskMetadata, TaskContent]) -> bool:
-        """Ensure high priority tasks have assignees."""
-        return not (block.metadata.priority in ["high", "urgent"] and not block.metadata.assignee)
-
-    registry.add_validator("task", validate_task_priority)
-
-    # Create processor with config
-    from hother.streamblocks.core.processor import ProcessorConfig
-
-    config = ProcessorConfig(lines_buffer=10)
-    processor = StreamBlockProcessor(registry, config=config)
 
     # Process stream
     print("Processing task blocks...\n")
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
-    async for event in processor.process_stream(example_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Raw text passed through
             if event.content.strip():

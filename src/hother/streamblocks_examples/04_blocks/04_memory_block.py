@@ -5,9 +5,9 @@
 import asyncio
 from textwrap import dedent
 
-from examples.blocks.agent.memory import Memory
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.memory import Memory
 
 # --8<-- [end:imports]
 

@@ -7,7 +7,6 @@ import re
 from textwrap import dedent
 from typing import Any
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import BlockCandidate, extract_block_types
 from hother.streamblocks.core.types import (
@@ -18,6 +17,7 @@ from hother.streamblocks.core.types import (
     ParseResult,
 )
 from hother.streamblocks.syntaxes.base import BaseSyntax
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 # --8<-- [end:imports]
 

@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 from hother.streamblocks.syntaxes.models import Syntax
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -72,12 +73,6 @@ async def main() -> None:
         Some more text at the end.
     """).strip()
 
-    async def mock_stream():
-        """Yield lines from test stream."""
-        for line in test_stream.split("\n"):
-            yield line + "\n"
-            await asyncio.sleep(0.001)
-
     # Process stream and handle errors with structured information
     print("=" * 60)
     print("STRUCTURED ERROR HANDLING DEMONSTRATION")
@@ -86,7 +81,7 @@ async def main() -> None:
     extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
     rejected_blocks: list[BlockErrorEvent[BaseMetadata, BaseContent]] = []
 
-    async for event in processor.process_stream(mock_stream()):
+    async for event in processor.process_stream(simulated_stream(test_stream)):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is not None:

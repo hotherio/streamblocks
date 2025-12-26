@@ -8,7 +8,6 @@ original chunks and StreamBlocks events. Shows type checking patterns.
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     BlockStartEvent,
@@ -18,6 +17,7 @@ from hother.streamblocks import (
     TextContentEvent,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Custom chunk type

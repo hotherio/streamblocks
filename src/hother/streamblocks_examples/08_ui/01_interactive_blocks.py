@@ -5,7 +5,9 @@ from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
-from examples.blocks.agent.interactive import (
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
+from hother.streamblocks_examples.blocks.agent.interactive import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -23,8 +25,6 @@ from examples.blocks.agent.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock

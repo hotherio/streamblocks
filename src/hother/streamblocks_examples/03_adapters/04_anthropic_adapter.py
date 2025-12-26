@@ -22,7 +22,6 @@ except ImportError:
     print("Or: pip install anthropic")
     sys.exit(1)
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     AnthropicAdapter,
     BlockEndEvent,
@@ -31,6 +30,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def main() -> None:

@@ -6,7 +6,6 @@ import asyncio
 from textwrap import dedent
 from typing import Any
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry
 from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
 from hother.streamblocks.core.types import (
@@ -15,6 +14,7 @@ from hother.streamblocks.core.types import (
     BlockStartEvent,
     TextContentEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 # --8<-- [end:imports]
 

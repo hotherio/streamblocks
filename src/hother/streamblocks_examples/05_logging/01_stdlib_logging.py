@@ -10,10 +10,10 @@ import logging
 from collections.abc import AsyncIterator
 from textwrap import dedent
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def example_stream() -> AsyncIterator[str]:

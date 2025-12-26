@@ -8,7 +8,6 @@ No adapter needed - it just works!
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -17,6 +16,7 @@ from hother.streamblocks import (
     TextContentEvent,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def plain_text_stream() -> AsyncGenerator[str]:

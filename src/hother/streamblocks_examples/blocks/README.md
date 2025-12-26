@@ -29,7 +29,7 @@ Blocks for AI agent applications:
 ## Usage
 
 ```python
-from examples.blocks.agent import FileOperations, Message, ToolCall
+from hother.streamblocks_examples.blocks.agent import FileOperations, Message, ToolCall
 
 # Register blocks with your registry
 registry.register("files_operations", FileOperations)
@@ -65,11 +65,11 @@ class MyBlock(Block[MyMetadata, MyContent]):
 
 ## Copying to Your Project
 
-For production use, we recommend copying the blocks you need into your own project rather than importing from `examples/`:
+For production use, we recommend copying the blocks you need into your own project rather than importing from `hother.streamblocks_examples`:
 
 ```bash
 # Copy the agent blocks to your project
-cp -r examples/blocks/agent/ myproject/blocks/
+cp -r src/hother/streamblocks_examples/blocks/agent/ myproject/blocks/
 ```
 
 Then update imports to your local path.

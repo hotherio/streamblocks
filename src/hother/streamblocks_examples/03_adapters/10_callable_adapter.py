@@ -8,7 +8,6 @@ for quick custom extraction without a full adapter class.
 import asyncio
 from typing import Any
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -16,6 +15,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Simple dict-based chunks

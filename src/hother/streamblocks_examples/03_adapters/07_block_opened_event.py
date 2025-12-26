@@ -8,7 +8,6 @@ or resources BEFORE block content arrives.
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     BlockStartEvent,
@@ -17,6 +16,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def delayed_stream() -> AsyncGenerator[str]:

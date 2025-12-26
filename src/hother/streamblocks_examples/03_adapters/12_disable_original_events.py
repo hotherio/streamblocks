@@ -8,7 +8,6 @@ maximum performance and minimal overhead.
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -18,6 +17,7 @@ from hother.streamblocks import (
     TextDeltaEvent,
 )
 from hother.streamblocks.core.processor import ProcessorConfig
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Mock Gemini chunk

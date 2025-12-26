@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """Runner script for StreamBlocks examples.
 
-This script discovers and runs all example scripts in the examples/ directory,
+This script discovers and runs all example scripts in the streamblocks_examples package,
 with smart handling of TUI examples and API-dependent examples.
 
 Usage:
-    python examples/run_examples.py                    # Run all runnable examples
-    python examples/run_examples.py --category adapters # Run only adapter examples
-    python examples/run_examples.py --skip-api         # Skip API-dependent examples
-    python examples/run_examples.py --include-ui       # Include TUI examples (will likely fail)
-    python examples/run_examples.py --dry-run          # Show what would be executed
-    python examples/run_examples.py --parallel         # Run examples in parallel
-    python examples/run_examples.py --timeout 60       # Set custom timeout (seconds)
+    uv run python -m hother.streamblocks_examples.run_examples                    # Run all runnable examples
+    uv run python -m hother.streamblocks_examples.run_examples --category 03_adapters # Run only adapter examples
+    uv run python -m hother.streamblocks_examples.run_examples --skip-api         # Skip API-dependent examples
+    uv run python -m hother.streamblocks_examples.run_examples --include-ui       # Include TUI examples (will likely fail)
+    uv run python -m hother.streamblocks_examples.run_examples --dry-run          # Show what would be executed
+    uv run python -m hother.streamblocks_examples.run_examples --parallel         # Run examples in parallel
+    uv run python -m hother.streamblocks_examples.run_examples --timeout 60       # Set custom timeout (seconds)
 """
 
 import asyncio
@@ -92,39 +92,32 @@ class ExampleRunner:
         """Discover all example scripts."""
         examples = []
 
-        # Search in both examples/ and workspace src/hother/streamblocks_examples/
-        search_paths = [
-            self.examples_dir,  # examples/ directory
-            self.examples_dir.parent / "src" / "hother" / "streamblocks_examples",  # workspace package
-        ]
-
-        for search_dir in search_paths:
-            if not search_dir.exists():
+        for path in self.examples_dir.rglob("*.py"):
+            # Skip __init__.py, this script, and helper modules
+            if path.stem.startswith("_") or path.name == "run_examples.py":
+                continue
+            # Skip helper and tools directories
+            rel_path = path.relative_to(self.examples_dir)
+            if rel_path.parts[0] in ("helpers", "tools", "blocks"):
                 continue
 
-            for path in search_dir.rglob("*.py"):
-                # Skip __init__.py and this script
-                if path.stem.startswith("_") or path.name == "run_examples.py":
-                    continue
+            # Determine category from folder structure
+            category = rel_path.parts[0] if len(rel_path.parts) > 1 else "root"
 
-                # Determine category from folder structure
-                rel_path = path.relative_to(search_dir)
-                category = rel_path.parts[0] if len(rel_path.parts) > 1 else "root"
+            # Detect TUI examples
+            is_tui = self._is_tui_example(path)
 
-                # Detect TUI examples
-                is_tui = self._is_tui_example(path)
+            # Detect API requirements
+            api_keys = self._detect_api_requirements(path)
 
-                # Detect API requirements
-                api_keys = self._detect_api_requirements(path)
-
-                examples.append(
-                    ExampleInfo(
-                        path=path,
-                        category=category,
-                        requires_api_keys=api_keys,
-                        is_tui=is_tui,
-                    )
+            examples.append(
+                ExampleInfo(
+                    path=path,
+                    category=category,
+                    requires_api_keys=api_keys,
+                    is_tui=is_tui,
                 )
+            )
 
         self.examples = sorted(examples, key=lambda e: str(e.path))
         return self.examples
@@ -198,14 +191,12 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Add project root and workspace src to PYTHONPATH
-            # - project_root for examples.blocks.agent imports
-            # - workspace_src for hother.streamblocks_examples imports
-            project_root = str(self.examples_dir.parent)
-            workspace_src = str(self.examples_dir.parent / "src")
+            # Add src directory to PYTHONPATH for hother.streamblocks_examples imports
+            # examples_dir is src/hother/streamblocks_examples, so we need src/
+            src_dir = str(self.examples_dir.parent.parent)
             env = os.environ.copy()
             existing_pythonpath = env.get("PYTHONPATH", "")
-            paths = [project_root, workspace_src]
+            paths = [src_dir]
             if existing_pythonpath:
                 paths.append(existing_pythonpath)
             env["PYTHONPATH"] = ":".join(paths)
@@ -246,14 +237,12 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Add project root and workspace src to PYTHONPATH
-            # - project_root for examples.blocks.agent imports
-            # - workspace_src for hother.streamblocks_examples imports
-            project_root = str(self.examples_dir.parent)
-            workspace_src = str(self.examples_dir.parent / "src")
+            # Add src directory to PYTHONPATH for hother.streamblocks_examples imports
+            # examples_dir is src/hother/streamblocks_examples, so we need src/
+            src_dir = str(self.examples_dir.parent.parent)
             env = os.environ.copy()
             existing_pythonpath = env.get("PYTHONPATH", "")
-            paths = [project_root, workspace_src]
+            paths = [src_dir]
             if existing_pythonpath:
                 paths.append(existing_pythonpath)
             env["PYTHONPATH"] = ":".join(paths)
@@ -279,20 +268,13 @@ class ExampleRunner:
 
 
 def get_display_path(example: ExampleInfo, examples_dir: Path) -> str:
-    """Get display path including 'examples/' or 'src/' prefix."""
-    # Try to make path relative to examples_dir first
+    """Get display path relative to examples directory."""
     try:
         rel_path = example.path.relative_to(examples_dir)
-        return f"examples/{rel_path}"
+        return str(rel_path)
     except ValueError:
-        # Path is in workspace src, try that
-        workspace_root = examples_dir.parent
-        try:
-            rel_path = example.path.relative_to(workspace_root)
-            return str(rel_path)
-        except ValueError:
-            # Fallback to absolute path
-            return str(example.path)
+        # Fallback to absolute path
+        return str(example.path)
 
 
 def print_colored(text: str, color: str = "") -> None:

@@ -6,9 +6,9 @@ import asyncio
 import time
 from textwrap import dedent
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.processor import ProcessorConfig
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 from hother.streamblocks_examples.helpers.simulator import StreamConfig, simulated_stream
 
 # --8<-- [end:imports]

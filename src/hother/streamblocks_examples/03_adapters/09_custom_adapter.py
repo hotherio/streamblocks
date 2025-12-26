@@ -9,7 +9,6 @@ import asyncio
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -18,6 +17,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Custom streaming format

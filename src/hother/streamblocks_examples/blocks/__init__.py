@@ -8,7 +8,7 @@ Available block collections:
 - agent: Blocks for AI agent applications (messages, tool calls, memory, etc.)
 
 Usage:
-    from examples.blocks.agent import FileOperations, Message, ToolCall
+    from hother.streamblocks_examples.blocks.agent import FileOperations, Message, ToolCall
 """
 
 __all__: list[str] = []

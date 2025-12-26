@@ -4,7 +4,7 @@ This module provides block definitions for AI agent applications,
 including communication, tool calling, memory, and interactive blocks.
 """
 
-from examples.blocks.agent.files import (
+from hother.streamblocks_examples.blocks.agent.files import (
     ACTION_MAP,
     ActionLiteral,
     FileContent,
@@ -15,7 +15,7 @@ from examples.blocks.agent.files import (
     FileOperationsContent,
     FileOperationsMetadata,
 )
-from examples.blocks.agent.interactive import (
+from hother.streamblocks_examples.blocks.agent.interactive import (
     Choice,
     ChoiceContent,
     ChoiceMetadata,
@@ -44,15 +44,15 @@ from examples.blocks.agent.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
-from examples.blocks.agent.memory import Memory, MemoryContent, MemoryMetadata
-from examples.blocks.agent.message import Message, MessageContent, MessageMetadata
-from examples.blocks.agent.patch import Patch, PatchContent, PatchMetadata
-from examples.blocks.agent.structured_output import (
+from hother.streamblocks_examples.blocks.agent.memory import Memory, MemoryContent, MemoryMetadata
+from hother.streamblocks_examples.blocks.agent.message import Message, MessageContent, MessageMetadata
+from hother.streamblocks_examples.blocks.agent.patch import Patch, PatchContent, PatchMetadata
+from hother.streamblocks_examples.blocks.agent.structured_output import (
     StructuredOutputMetadata,
     create_structured_output_block,
 )
-from examples.blocks.agent.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
-from examples.blocks.agent.visualization import (
+from hother.streamblocks_examples.blocks.agent.toolcall import ToolCall, ToolCallContent, ToolCallMetadata
+from hother.streamblocks_examples.blocks.agent.visualization import (
     Visualization,
     VisualizationContent,
     VisualizationMetadata,

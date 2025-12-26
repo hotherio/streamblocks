@@ -1,7 +1,6 @@
 """Example demonstrating the minimal API with no custom models."""
 
 import asyncio
-from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -11,14 +10,28 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
-async def example_stream() -> AsyncIterator[str]:
-    """Example stream with simple blocks."""
+async def main() -> None:
+    """Main example function."""
+    # Create syntax with NO custom models - uses BaseMetadata and BaseContent
+    syntax = DelimiterPreambleSyntax()
+
+    # Create type-specific registry
+    registry = Registry(syntax=syntax)
+
+    # Create processor with the registry
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(lines_buffer=5)
+    processor = StreamBlockProcessor(registry, config=config)
+
+    # Example text with simple blocks
     text = dedent("""
         This is a document with some blocks using the minimal API.
 
@@ -44,35 +57,13 @@ async def example_stream() -> AsyncIterator[str]:
         That's all folks!
     """)
 
-    # Chunk-based streaming
-    chunk_size = 50
-    for i in range(0, len(text), chunk_size):
-        chunk = text[i : i + chunk_size]
-        yield chunk
-        await asyncio.sleep(0.01)
-
-
-async def main() -> None:
-    """Main example function."""
-    # Create syntax with NO custom models - uses BaseMetadata and BaseContent
-    syntax = DelimiterPreambleSyntax()
-
-    # Create type-specific registry
-    registry = Registry(syntax=syntax)
-
-    # Create processor with the registry
-    from hother.streamblocks.core.processor import ProcessorConfig
-
-    config = ProcessorConfig(lines_buffer=5)
-    processor = StreamBlockProcessor(registry, config=config)
-
     # Process stream
     print("Processing with minimal API...")
     print("-" * 60)
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
-    async for event in processor.process_stream(example_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Raw text passed through
             if event.content.strip():

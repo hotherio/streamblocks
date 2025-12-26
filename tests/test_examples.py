@@ -1,6 +1,6 @@
 """Pytest integration for StreamBlocks examples.
 
-This module provides pytest-based testing for all examples in the examples/ directory.
+This module provides pytest-based testing for all examples in the streamblocks_examples package.
 It's primarily intended for CI/CD pipelines.
 
 Usage:
@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 
 # Get examples directory
-EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
+EXAMPLES_DIR = Path(__file__).parent.parent / "src" / "hother" / "streamblocks_examples"
 
 
 def discover_examples() -> list[Path]:
@@ -28,6 +28,10 @@ def discover_examples() -> list[Path]:
     examples = []
     for path in EXAMPLES_DIR.rglob("*.py"):
         if path.stem.startswith("_") or path.name == "run_examples.py":
+            continue
+        # Skip helper directories
+        rel_path = path.relative_to(EXAMPLES_DIR)
+        if rel_path.parts[0] in ("helpers", "tools", "blocks"):
             continue
         examples.append(path)
     return sorted(examples)
@@ -105,11 +109,11 @@ def test_example(example_path: Path) -> None:
         if missing_keys:
             pytest.skip(f"Missing API keys: {', '.join(missing_keys)}")
 
-    # Run the example with project root in PYTHONPATH so examples can import from examples.blocks
-    project_root = str(EXAMPLES_DIR.parent)
+    # Run the example with src directory in PYTHONPATH for hother.streamblocks imports
+    src_dir = str(EXAMPLES_DIR.parent.parent)  # src/hother/streamblocks_examples -> src/
     env = os.environ.copy()
     existing_pythonpath = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+    env["PYTHONPATH"] = f"{src_dir}:{existing_pythonpath}" if existing_pythonpath else src_dir
 
     result = subprocess.run(
         [sys.executable, str(example_path)],

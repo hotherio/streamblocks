@@ -28,15 +28,6 @@ except ImportError:
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from examples.blocks.agent.files import (
-    FileContent,
-    FileContentContent,
-    FileContentMetadata,
-    FileOperations,
-    FileOperationsContent,
-    FileOperationsMetadata,
-)
-from examples.blocks.agent.message import Message, MessageContent, MessageMetadata
 from hother.streamblocks import (
     BlockContentDeltaEvent,
     BlockEndEvent,
@@ -48,6 +39,15 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextContentEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import (
+    FileContent,
+    FileContentContent,
+    FileContentMetadata,
+    FileOperations,
+    FileOperationsContent,
+    FileOperationsMetadata,
+)
+from hother.streamblocks_examples.blocks.agent.message import Message, MessageContent, MessageMetadata
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
