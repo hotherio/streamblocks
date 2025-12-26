@@ -1,7 +1,6 @@
 """Example demonstrating DelimiterFrontmatterSyntax with YAML frontmatter.
 
-This example shows how to use the delimiter+frontmatter syntax with the new
-single-syntax design. Each processor handles one syntax type.
+This example shows how to use the delimiter+frontmatter syntax.
 """
 
 import asyncio

@@ -58,9 +58,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Tool: {block.metadata.tool_name}")
-                print(f"Async: {block.metadata.async_call}")
-                print(f"Parameters: {block.content.parameters}")
+                print("Extracted tool call block:")
+                print(block.model_dump_json(indent=2))
                 result = execute_tool(block.metadata.tool_name, block.content.parameters)
                 print(f"Result: {result}")
     # --8<-- [end:process]

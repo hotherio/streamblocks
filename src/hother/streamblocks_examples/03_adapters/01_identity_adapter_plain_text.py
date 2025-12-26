@@ -8,14 +8,7 @@ No adapter needed - it just works!
 import asyncio
 from collections.abc import AsyncGenerator
 
-from hother.streamblocks import (
-    BlockEndEvent,
-    DelimiterPreambleSyntax,
-    Registry,
-    StreamBlockProcessor,
-    TextContentEvent,
-    TextDeltaEvent,
-)
+from hother.streamblocks import BlockEndEvent, Registry, StreamBlockProcessor, TextContentEvent, TextDeltaEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
@@ -43,8 +36,7 @@ async def main() -> None:
     print()
 
     # Setup
-    syntax = DelimiterPreambleSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 

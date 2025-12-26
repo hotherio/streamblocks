@@ -29,13 +29,7 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
-from hother.streamblocks.core.types import (
-    BaseContent,
-    BaseMetadata,
-    BlockEndEvent,
-    BlockErrorEvent,
-    TextContentEvent,
-)
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockEndEvent, BlockErrorEvent, TextContentEvent
 
 # ============================================================================
 # EXAMPLE 1: Basic YAML Parsing (Permissive Mode)
@@ -649,14 +643,11 @@ async def main() -> None:
     await example_5_error_handling()
 
     print("\n" + "=" * 70)
-    print("✅ All examples completed!")
-    print("\nKey Takeaways:")
     print("  - Use @parse_as_yaml() for automatic YAML parsing")
     print("  - Use @parse_as_json() for automatic JSON parsing")
     print("  - PERMISSIVE: falls back to raw_content on errors")
     print("  - STRICT: raises exceptions on parsing errors")
     print("  - handle_non_dict: wraps scalar values in {'value': ...}")
-    print("  - Zero boilerplate - just add the decorator!")
     print("  - Works with any syntax (delimiter, markdown, etc.)")
 
 

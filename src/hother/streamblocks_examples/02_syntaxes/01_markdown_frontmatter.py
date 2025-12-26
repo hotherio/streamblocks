@@ -5,6 +5,7 @@ from textwrap import dedent
 from typing import TYPE_CHECKING
 
 from hother.streamblocks import MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
     BlockEndEvent,
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 async def main() -> None:
     """Main example function."""
     # Create markdown frontmatter syntax for patch blocks
-    # Note: In the new API, each Registry holds exactly one syntax.
+    # Each Registry holds exactly one syntax.
     # To handle multiple info strings (patch/yaml/diff), you would need separate processors
     # or a custom syntax that handles multiple patterns internally.
     syntax = MarkdownFrontmatterSyntax(
@@ -37,8 +38,6 @@ async def main() -> None:
     registry.register("patch", Patch)
 
     # Create processor with config
-    from hother.streamblocks.core.processor import ProcessorConfig
-
     config = ProcessorConfig(lines_buffer=10)
     processor = StreamBlockProcessor(registry, config=config)
 

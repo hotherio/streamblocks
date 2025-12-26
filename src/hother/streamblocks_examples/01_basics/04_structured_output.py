@@ -9,15 +9,11 @@ import asyncio
 from datetime import date
 from enum import StrEnum
 from textwrap import dedent
-from typing import Any, cast
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks import (
-    DelimiterFrontmatterSyntax,
-    Registry,
-    StreamBlockProcessor,
-)
+from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
     BlockEndEvent,
@@ -44,10 +40,6 @@ class PersonSchema(BaseModel):
 
 async def example_1_basic_person() -> None:
     """Basic example with a simple person schema."""
-    print("\n" + "=" * 70)
-    print("EXAMPLE 1: Basic Person Schema (JSON)")
-    print("=" * 70)
-
     # Create the specialized block type
     PersonBlock = create_structured_output_block(  # noqa: N806
         schema_model=PersonSchema,
@@ -58,8 +50,7 @@ async def example_1_basic_person() -> None:
 
     # Create syntax and registry
     # The syntax will extract metadata and content classes from the block automatically
-    syntax = DelimiterFrontmatterSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("person", PersonBlock)
 
     # Create processor
@@ -94,7 +85,7 @@ async def example_1_basic_person() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print("\n✅ Extracted Person Block:")
+            print("\nExtracted Person Block:")
             print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
@@ -129,10 +120,6 @@ class TaskSchema(BaseModel):
 
 async def example_2_task_list() -> None:
     """Task list example with validation."""
-    print("\n" + "=" * 70)
-    print("EXAMPLE 2: Task List with Validation (JSON)")
-    print("=" * 70)
-
     # Create the task block
     TaskBlock = create_structured_output_block(  # noqa: N806
         schema_model=TaskSchema,
@@ -142,8 +129,7 @@ async def example_2_task_list() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("task", TaskBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -253,10 +239,6 @@ class DetailedPersonSchema(BaseModel):
 
 async def example_3_nested_schema() -> None:
     """Example with nested Pydantic models."""
-    print("\n" + "=" * 70)
-    print("EXAMPLE 3: Nested Schema (JSON)")
-    print("=" * 70)
-
     # Create the block
     DetailedPersonBlock = create_structured_output_block(  # noqa: N806
         schema_model=DetailedPersonSchema,
@@ -266,8 +248,7 @@ async def example_3_nested_schema() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("detailed_person", DetailedPersonBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -331,9 +312,6 @@ class ConfigSchema(BaseModel):
 
 async def example_4_yaml_format() -> None:
     """Example using YAML format instead of JSON."""
-    print("\n" + "=" * 70)
-    print("EXAMPLE 4: YAML Format")
-    print("=" * 70)
 
     # Create the block with YAML parsing
     ConfigBlock = create_structured_output_block(  # noqa: N806
@@ -344,8 +322,7 @@ async def example_4_yaml_format() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("config", ConfigBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -407,9 +384,6 @@ class AnalysisResult(BaseModel):
 
 async def example_5_llm_simulation() -> None:
     """Simulate LLM generating structured output."""
-    print("\n" + "=" * 70)
-    print("EXAMPLE 5: Simulated LLM Structured Output")
-    print("=" * 70)
 
     # Create the block
     AnalysisBlock = create_structured_output_block(  # noqa: N806
@@ -420,8 +394,7 @@ async def example_5_llm_simulation() -> None:
     )
 
     # Setup
-    syntax = DelimiterFrontmatterSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("analysis", AnalysisBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -488,23 +461,11 @@ async def example_5_llm_simulation() -> None:
 
 async def main() -> None:
     """Run all examples."""
-    print("🎯 Structured Output Blocks Examples")
-    print("Demonstrating type-safe blocks with custom Pydantic schemas")
-
     await example_1_basic_person()
     await example_2_task_list()
     await example_3_nested_schema()
     await example_4_yaml_format()
     await example_5_llm_simulation()
-
-    print("\n" + "=" * 70)
-    print("✅ All examples completed!")
-    print("\nKey Takeaways:")
-    print("  - Use create_structured_output_block() with any Pydantic model")
-    print("  - Get type-safe access to structured data from streams")
-    print("  - Support both JSON and YAML formats")
-    print("  - Perfect for LLM structured outputs")
-    print("  - Automatic validation with Pydantic")
 
 
 if __name__ == "__main__":

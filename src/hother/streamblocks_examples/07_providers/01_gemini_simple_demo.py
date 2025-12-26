@@ -231,86 +231,9 @@ async def main() -> None:
                 extracted_blocks.append(block)
 
                 # Handle different block types with proper type narrowing
-                if block.metadata.block_type == "files_operations":
-                    # Type narrow to FileOperations block
-                    if not isinstance(block.metadata, FileOperationsMetadata):
-                        continue
-                    if not isinstance(block.content, FileOperationsContent):
-                        continue
-
-                    metadata = block.metadata
-                    content = block.content
-
-                    print(f"\nBlock: {metadata.id} (files_operations)")
-                    if metadata.description:
-                        print(f"   Description: {metadata.description}")
-
-                    # Use the structured operations from the parsed content
-                    operations: dict[str, list[str]] = {"create": [], "edit": [], "delete": []}
-                    for op in content.operations:
-                        operations[op.action].append(op.path)
-
-                    if operations["create"]:
-                        print(f"   Create: {', '.join(operations['create'])}")
-                    if operations["edit"]:
-                        print(f"   Edit: {', '.join(operations['edit'])}")
-                    if operations["delete"]:
-                        print(f"   Delete: {', '.join(operations['delete'])}")
-
-                elif block.metadata.block_type == "file_content":
-                    # Type narrow to FileContent block
-                    if not isinstance(block.metadata, FileContentMetadata):
-                        continue
-                    if not isinstance(block.content, FileContentContent):
-                        continue
-
-                    metadata = block.metadata
-                    content = block.content
-
-                    print(f"\nBlock: {metadata.id} (file_content)")
-                    print(f"   File: {metadata.file}")
-                    if metadata.description:
-                        print(f"   Description: {metadata.description}")
-
-                    # Show preview of content
-                    lines = content.raw_content.split("\n")
-                    preview_lines = 3
-                    for i, line in enumerate(lines[:preview_lines]):
-                        print(f"      {line}")
-                    if len(lines) > preview_lines:
-                        print(f"      ... ({len(lines) - preview_lines} more lines)")
-
-                elif block.metadata.block_type == "message":
-                    # Type narrow to Message block
-                    if not isinstance(block.metadata, MessageMetadata):
-                        continue
-                    if not isinstance(block.content, MessageContent):
-                        continue
-
-                    metadata = block.metadata
-                    content = block.content
-
-                    print(f"\nBlock: {metadata.id} (message)")
-                    icons = {
-                        "info": "i",
-                        "warning": "!",
-                        "error": "x",
-                        "success": "ok",
-                        "status": "s",
-                        "explanation": "?",
-                    }
-                    icon = icons.get(metadata.message_type, "-")
-                    if metadata.title:
-                        print(f"   [{icon}] {metadata.title} ({metadata.message_type}):")
-                    else:
-                        print(f"   [{icon}] {metadata.message_type}:")
-
-                    # Show first few lines of message
-                    lines = content.raw_content.split("\n")
-                    for line in lines[:5]:
-                        print(f"      {line}")
-                    if len(lines) > 5:
-                        print(f"      ... ({len(lines) - 5} more lines)")
+                if block.metadata.block_type in ("files_operations", "file_content", "message"):
+                    print(f"\nBlock extracted: {block.metadata.id}")
+                    print(block.model_dump_json(indent=2))
 
             elif isinstance(event, (BlockHeaderDeltaEvent, BlockMetadataDeltaEvent, BlockContentDeltaEvent)):
                 # Show progress

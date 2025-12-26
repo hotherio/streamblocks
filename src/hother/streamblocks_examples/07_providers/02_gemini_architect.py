@@ -283,197 +283,37 @@ def setup_processor() -> StreamBlockProcessor:
 
 async def process_file_operations(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a file operations block."""
-    # Type narrow with isinstance checks
-    if not isinstance(block.metadata, FileOperationsMetadata):
-        return
-    if not isinstance(block.content, FileOperationsContent):
-        return
-
-    metadata = block.metadata
-    content = block.content
-
-    print(f"\nFile Operations: {metadata.id}")
-    if metadata.description:
-        print(f"  {metadata.description}")
-
-    # Group operations by type
-    ops_by_type: dict[str, list[str]] = {"create": [], "edit": [], "delete": []}
-    for op in content.operations:
-        ops_by_type[op.action].append(op.path)
-
-    print(f"  Total operations: {len(content.operations)}")
-
-    if ops_by_type["create"]:
-        print(f"\n  CREATE ({len(ops_by_type['create'])} files):")
-        for path in ops_by_type["create"][:5]:
-            print(f"   + {path}")
-
-    if ops_by_type["edit"]:
-        print(f"\n  EDIT ({len(ops_by_type['edit'])} files):")
-        for path in ops_by_type["edit"][:5]:
-            print(f"   ~ {path}")
-
-    if ops_by_type["delete"]:
-        print(f"\n  DELETE ({len(ops_by_type['delete'])} files):")
-        for path in ops_by_type["delete"][:5]:
-            print(f"   - {path}")
+    print(block.model_dump_json(indent=2))
 
 
 async def process_patch(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a patch block."""
-    # Type narrow with isinstance checks
-    if not isinstance(block.metadata, PatchMetadata):
-        return
-    if not isinstance(block.content, PatchContent):
-        return
-
-    metadata = block.metadata
-    content = block.content
-
-    print(f"\nPatch: {metadata.id}")
-    print(f"  File: {metadata.file}")
-    if metadata.description:
-        print(f"  {metadata.description}")
-
-    # Show preview of diff
-    diff_lines = content.diff.split("\n")[:10]
-    print("\nDiff preview:")
-    for line in diff_lines:
-        if line.startswith(("+", "-")):
-            print(f"  {line}")
-        else:
-            print(f"  {line}")
+    print(block.model_dump_json(indent=2))
 
 
 async def process_tool_call(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a tool call block."""
-    # Type narrow with isinstance checks
-    if not isinstance(block.metadata, ToolCallMetadata):
-        return
-    if not isinstance(block.content, ToolCallContent):
-        return
-
-    metadata = block.metadata
-    content = block.content
-
-    print(f"\nTool Call: {metadata.id}")
-    print(f"  Tool: {metadata.tool_name}")
-    if metadata.description:
-        print(f"  {metadata.description}")
-
-    print("  Parameters:")
-    for key, value in content.parameters.items():
-        print(f"   - {key}: {value}")
+    print(block.model_dump_json(indent=2))
 
 
 async def process_memory(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a memory block."""
-    # Type narrow with isinstance checks
-    if not isinstance(block.metadata, MemoryMetadata):
-        return
-    if not isinstance(block.content, MemoryContent):
-        return
-
-    metadata = block.metadata
-    content = block.content
-
-    print(f"\nMemory: {metadata.id}")
-    print(f"  Type: {metadata.memory_type}")
-    print(f"  Key: {metadata.key}")
-    print(f"  Namespace: {metadata.namespace}")
-
-    if metadata.memory_type == "store":
-        print(f"  Storing value: {content.value}")
-    elif metadata.memory_type == "recall":
-        print("  Recalling value")
-    elif metadata.memory_type == "list":
-        print("  Listing keys")
+    print(block.model_dump_json(indent=2))
 
 
 async def process_visualization(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a visualization block."""
-    # Type narrow with isinstance checks
-    if not isinstance(block.metadata, VisualizationMetadata):
-        return
-    if not isinstance(block.content, VisualizationContent):
-        return
-
-    metadata = block.metadata
-    content = block.content
-
-    print(f"\nVisualization: {metadata.id}")
-    print(f"  Type: {metadata.viz_type}")
-    print(f"  Title: {metadata.title}")
-    print(f"  Format: {metadata.format}")
-
-    # Show data preview
-    if metadata.viz_type == "diagram":
-        nodes = content.data.get("nodes", [])
-        edges = content.data.get("edges", [])
-        print(f"\n  Nodes: {', '.join(str(n) for n in nodes[:5])}")
-        if len(nodes) > 5:
-            print(f"   ... and {len(nodes) - 5} more")
-        print(f"  Edges: {len(edges)}")
-    else:
-        print(f"\n  Data keys: {list(content.data.keys())}")
+    print(block.model_dump_json(indent=2))
 
 
 async def process_file_content(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a file content block."""
-    # Type narrow with isinstance checks
-    if not isinstance(block.metadata, FileContentMetadata):
-        return
-    if not isinstance(block.content, FileContentContent):
-        return
-
-    metadata = block.metadata
-    content = block.content
-
-    print(f"\nFile Content: {metadata.id}")
-    print(f"  File: {metadata.file}")
-    if metadata.description:
-        print(f"  {metadata.description}")
-
-    # Show content preview
-    lines = content.raw_content.strip().split("\n")
-    print(f"\n  Content preview ({len(lines)} lines):")
-    for i, line in enumerate(lines[:10]):
-        print(f"   {i + 1}: {line}")
-    if len(lines) > 10:
-        print(f"   ... and {len(lines) - 10} more lines")
+    print(block.model_dump_json(indent=2))
 
 
 async def process_message(block: ExtractedBlock[BaseMetadata, BaseContent]) -> None:
     """Process a message block."""
-    # Type narrow with isinstance checks
-    if not isinstance(block.metadata, MessageMetadata):
-        return
-    if not isinstance(block.content, MessageContent):
-        return
-
-    metadata = block.metadata
-    content = block.content
-
-    # Choose indicator based on message type
-    indicator_map = {
-        "info": "[i]",
-        "warning": "[!]",
-        "error": "[x]",
-        "success": "[ok]",
-        "status": "[s]",
-        "explanation": "[?]",
-    }
-    indicator = indicator_map.get(metadata.message_type, "[-]")
-
-    print(f"\n{indicator} Message: {metadata.id}")
-    if metadata.title:
-        print(f"  {metadata.title}")
-    print(f"  Type: {metadata.message_type} | Priority: {metadata.priority}")
-
-    # Display the message content
-    print("\n" + "-" * 60)
-    print(content.raw_content.strip())
-    print("-" * 60)
+    print(block.model_dump_json(indent=2))
 
 
 async def get_gemini_response(prompt: str) -> AsyncIterator[Any]:

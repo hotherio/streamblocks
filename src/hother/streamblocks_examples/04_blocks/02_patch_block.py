@@ -48,10 +48,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"File: {block.metadata.file}")
-                print(f"Line: {block.metadata.start_line}")
-                print(f"Author: {block.metadata.author}")
-                print(f"Diff:\n{block.content.diff}")
+                print("Extracted patch block:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:process]
 
 

@@ -286,21 +286,21 @@ class TestMarkdownFrontmatterSyntaxParseBlock:
         assert result.metadata.id == "test-1"
         assert result.metadata.block_type == "test"
 
-    def test_parse_block_generates_id_when_missing(self) -> None:
-        """Test that ID is generated when missing in BaseMetadata."""
+    def test_parse_block_fails_when_id_missing(self) -> None:
+        """Test that parse fails when id is missing in BaseMetadata."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.metadata_lines = ["block_type: test"]
+        candidate.metadata_lines = ["block_type: test"]  # Missing id
         candidate.content_lines = ["content"]
 
         result = syntax.parse_block(candidate)
 
-        assert result.success is True
-        assert result.metadata is not None
-        assert result.metadata.id.startswith("block_")
+        assert result.success is False
+        assert "validation error" in result.error.lower()
+        assert "id" in result.error.lower()
 
-    def test_parse_block_uses_info_string_for_block_type(self) -> None:
-        """Test that info_string is used as block_type default."""
+    def test_parse_block_fails_when_block_type_missing(self) -> None:
+        """Test that parse fails when block_type is missing."""
         syntax = MarkdownFrontmatterSyntax(info_string="python")
         candidate = BlockCandidate(syntax=syntax, start_line=1)
         candidate.metadata_lines = ["id: test-1"]  # No block_type
@@ -308,25 +308,22 @@ class TestMarkdownFrontmatterSyntaxParseBlock:
 
         result = syntax.parse_block(candidate)
 
-        assert result.success is True
-        assert result.metadata is not None
-        assert result.metadata.block_type == "python"
+        # info_string does not auto-fill block_type for BaseMetadata
+        assert result.success is False
+        assert "validation error" in result.error.lower()
+        assert "block_type" in result.error.lower()
 
-    def test_parse_block_uses_default_block_type_when_no_info_string(self) -> None:
-        """Test default block_type when no info_string.
-
-        This covers line 132.
-        """
+    def test_parse_block_fails_when_both_fields_missing(self) -> None:
+        """Test parse fails when both id and block_type are missing."""
         syntax = MarkdownFrontmatterSyntax()  # No info_string
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.metadata_lines = ["id: test-1"]  # No block_type
+        candidate.metadata_lines = ["author: test"]  # No id or block_type
         candidate.content_lines = ["content"]
 
         result = syntax.parse_block(candidate)
 
-        assert result.success is True
-        assert result.metadata is not None
-        assert result.metadata.block_type == "markdown"
+        assert result.success is False
+        assert "validation error" in result.error.lower()
 
     def test_parse_block_with_yaml_error(self) -> None:
         """Test parse returns error on invalid YAML.
@@ -539,8 +536,8 @@ class TestMarkdownFrontmatterSyntaxIntegration:
         assert parse_result.content is not None
         assert "def hello():" in parse_result.content.raw_content
 
-    def test_full_block_workflow_without_frontmatter(self) -> None:
-        """Test complete parsing workflow without frontmatter (direct content)."""
+    def test_full_block_workflow_without_frontmatter_fails(self) -> None:
+        """Test that parsing without frontmatter fails due to missing required fields."""
         syntax = MarkdownFrontmatterSyntax(info_string="javascript")
         candidate = BlockCandidate(syntax=syntax, start_line=1)
 
@@ -560,12 +557,11 @@ class TestMarkdownFrontmatterSyntaxIntegration:
         assert candidate.current_section == SectionType.CONTENT
         assert len(candidate.content_lines) == 2
 
-        # Parse the complete block
+        # Parse the complete block - should fail because id and block_type are required
         parse_result = syntax.parse_block(candidate)
 
-        assert parse_result.success is True
-        assert parse_result.metadata is not None
-        assert parse_result.metadata.block_type == "javascript"
+        assert parse_result.success is False
+        assert "validation error" in parse_result.error.lower()
 
     def test_fence_pattern_matches_info_string_prefix(self) -> None:
         """Test that fence pattern matches info string as prefix."""

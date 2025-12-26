@@ -109,6 +109,7 @@ async def main() -> None:
 
                 elif isinstance(event.exception, ValidationError):
                     print("   → Pydantic validation error detected")
+                    print(event.exception)
                     print("   → Missing/invalid fields:")
                     for error in event.exception.errors():
                         field = ".".join(str(loc) for loc in error["loc"])

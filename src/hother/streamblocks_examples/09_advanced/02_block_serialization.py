@@ -51,11 +51,10 @@ async def main() -> None:
     # --8<-- [start:serialize]
     # Serialize block to JSON
     for block in blocks:
-        # Use model_dump() for Pydantic serialization
-        block_dict = block.model_dump(mode="json")
+        # Use model_dump_json() for Pydantic serialization
+        json_str = block.model_dump_json(indent=2)
 
         # Pretty print
-        json_str = json.dumps(block_dict, indent=2)
         print("=== Serialized Block ===")
         print(json_str[:500] + "..." if len(json_str) > 500 else json_str)
         print()

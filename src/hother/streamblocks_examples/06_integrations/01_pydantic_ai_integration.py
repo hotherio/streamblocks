@@ -162,20 +162,8 @@ Make sure to include proper project structure with an app module and a simple Fa
             if block.metadata.block_type == "files_operations":
                 extracted_blocks.append(block)
 
-                # Type narrowing for FileOperationsContent
-                from hother.streamblocks_examples.blocks.agent.files import FileOperationsContent
-
-                if not isinstance(block.content, FileOperationsContent):
-                    continue
-
-                content = block.content
-
-                print(f"\n📦 EXTRACTED BLOCK: {block.metadata.id}")
-                print(f"   Type: {block.metadata.block_type}")
-                print("   Operations:")
-                for op in content.operations:
-                    icon = {"create": "✅", "edit": "📝", "delete": "❌"}.get(op.action, "❓")
-                    print(f"     {icon} {op.action}: {op.path}")
+                print("\n📦 EXTRACTED BLOCK:")
+                print(block.model_dump_json(indent=2))
 
     # Process same stream for file content blocks
     print("\n📄 Processing for file content blocks...")
@@ -288,9 +276,8 @@ Mix explanatory text with structured blocks.
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\n📦 BLOCK: {block.metadata.id}")
-            for op in block.content.operations:
-                print(f"   - {op.action}: {op.path}")
+            print("\n📦 BLOCK:")
+            print(block.model_dump_json(indent=2))
 
 
 async def main() -> None:

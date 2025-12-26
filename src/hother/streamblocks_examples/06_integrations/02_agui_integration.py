@@ -63,7 +63,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Block extracted: {block.metadata.id}")
+                print("Block extracted:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:unidirectional]
 
     # --8<-- [start:bidirectional]

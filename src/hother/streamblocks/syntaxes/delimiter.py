@@ -326,9 +326,6 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         if yaml_error:
             return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
-        # Set default id and block_type if using BaseMetadata
-        self._set_default_metadata_fields(metadata_dict, candidate, metadata_class, default_type="unknown")
-
         # Parse metadata using helper
         metadata = self._safe_parse_metadata(metadata_class, metadata_dict)
         if isinstance(metadata, ParseResult):
