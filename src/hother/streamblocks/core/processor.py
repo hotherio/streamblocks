@@ -29,6 +29,7 @@ from hother.streamblocks.core.types import (
     TextContentEvent,
     TextDeltaEvent,
 )
+from hother.streamblocks.core.utils import get_syntax_name
 
 
 @dataclass
@@ -68,11 +69,6 @@ if TYPE_CHECKING:
 
 # Type variable for chunk types
 TChunk = TypeVar("TChunk")
-
-
-def _get_syntax_name(syntax: object) -> str:
-    """Get the name of a syntax from its class name."""
-    return type(syntax).__name__
 
 
 class StreamBlockProcessor:
@@ -183,7 +179,7 @@ class StreamBlockProcessor:
         if self._line_accumulator.line_number == 0 and not self._line_accumulator.has_pending_text:
             self.logger.debug(
                 "stream_processing_started",
-                syntax=_get_syntax_name(self.syntax),
+                syntax=get_syntax_name(self.syntax),
                 lines_buffer=self.config.lines_buffer,
                 max_block_size=self.config.max_block_size,
             )
@@ -359,7 +355,7 @@ class StreamBlockProcessor:
             if self._line_accumulator.line_number == 0 and not self._line_accumulator.has_pending_text:
                 self.logger.debug(
                     "stream_processing_started",
-                    syntax=_get_syntax_name(self.syntax),
+                    syntax=get_syntax_name(self.syntax),
                     lines_buffer=self.config.lines_buffer,
                     max_block_size=self.config.max_block_size,
                 )

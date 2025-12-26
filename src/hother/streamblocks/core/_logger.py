@@ -58,51 +58,46 @@ class StdlibLoggerAdapter:
         fields = " ".join(f"{k}={v}" for k, v in sorted(kwargs.items()))
         return f"{msg} | {fields}"
 
+    def _log(self, log_level: str, msg: str, *args: Any, **kwargs: Any) -> None:
+        """Internal unified logging method.
+
+        Args:
+            log_level: Log level name (debug, info, warning, error, exception)
+            msg: Log message
+            *args: Positional arguments for message formatting
+            **kwargs: Structured data as keyword arguments
+        """
+        # exception() sets exc_info=True by default, others default to None
+        default_exc_info = True if log_level == "exception" else None
+        exc_info = kwargs.pop("exc_info", default_exc_info)
+
+        formatted_msg = self._format_message(msg, **kwargs)
+        log_func = getattr(self._logger, log_level)
+
+        if kwargs:
+            log_func(formatted_msg, *args, extra=kwargs, exc_info=exc_info)
+        else:
+            log_func(formatted_msg, *args, exc_info=exc_info)
+
     def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log debug message with kwargs converted to extra dict."""
-        exc_info = kwargs.pop("exc_info", None)
-        formatted_msg = self._format_message(msg, **kwargs)
-        if kwargs:
-            self._logger.debug(formatted_msg, *args, extra=kwargs, exc_info=exc_info)
-        else:
-            self._logger.debug(formatted_msg, *args, exc_info=exc_info)
+        self._log("debug", msg, *args, **kwargs)
 
     def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log info message with kwargs converted to extra dict."""
-        exc_info = kwargs.pop("exc_info", None)
-        formatted_msg = self._format_message(msg, **kwargs)
-        if kwargs:
-            self._logger.info(formatted_msg, *args, extra=kwargs, exc_info=exc_info)
-        else:
-            self._logger.info(formatted_msg, *args, exc_info=exc_info)
+        self._log("info", msg, *args, **kwargs)
 
     def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log warning message with kwargs converted to extra dict."""
-        exc_info = kwargs.pop("exc_info", None)
-        formatted_msg = self._format_message(msg, **kwargs)
-        if kwargs:
-            self._logger.warning(formatted_msg, *args, extra=kwargs, exc_info=exc_info)
-        else:
-            self._logger.warning(formatted_msg, *args, exc_info=exc_info)
+        self._log("warning", msg, *args, **kwargs)
 
     def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log error message with kwargs converted to extra dict."""
-        exc_info = kwargs.pop("exc_info", None)
-        formatted_msg = self._format_message(msg, **kwargs)
-        if kwargs:
-            self._logger.error(formatted_msg, *args, extra=kwargs, exc_info=exc_info)
-        else:
-            self._logger.error(formatted_msg, *args, exc_info=exc_info)
+        self._log("error", msg, *args, **kwargs)
 
     def exception(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Log exception with traceback and kwargs converted to extra dict."""
-        # exception() always sets exc_info=True by default, but allow override
-        exc_info = kwargs.pop("exc_info", True)
-        formatted_msg = self._format_message(msg, **kwargs)
-        if kwargs:
-            self._logger.exception(formatted_msg, *args, extra=kwargs, exc_info=exc_info)
-        else:
-            self._logger.exception(formatted_msg, *args, exc_info=exc_info)
+        self._log("exception", msg, *args, **kwargs)
 
 
 @runtime_checkable

@@ -18,7 +18,11 @@ if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
 
 
+# Type aliases for better documentation
+# Note: Using type aliases instead of NewType to avoid requiring explicit wrapping
+# throughout the codebase where plain strings are used as block types
 type BlockType = str
+type SyntaxName = str
 type ValidatorFunc = Callable[[ExtractedBlock[Any, Any]], bool]
 type MetadataValidatorFunc = Callable[[str, dict[str, Any] | None], ValidationResult]
 type ContentValidatorFunc = Callable[[str, dict[str, Any] | None], ValidationResult]
