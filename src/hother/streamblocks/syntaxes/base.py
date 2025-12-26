@@ -9,13 +9,12 @@ from typing import TYPE_CHECKING, Any
 import yaml
 from pydantic import ValidationError
 
+# Import BaseMetadata at module level for runtime isinstance checks
+from hother.streamblocks.core.types import BaseMetadata, ParseResult
+
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult
-
-# Import ParseResult at module level to avoid circular import issues
-# This is safe because it's only used for return types
-from hother.streamblocks.core.types import ParseResult
+    from hother.streamblocks.core.types import BaseContent, DetectionResult
 
 # Module-level logger for debugging YAML parsing failures
 _logger = logging.getLogger(__name__)
@@ -175,7 +174,34 @@ class BaseSyntax(ABC):
         """
         ...
 
-    # Helper methods for validation
+    # Helper methods for metadata and validation
+
+    def _set_default_metadata_fields(
+        self,
+        metadata_dict: dict[str, Any],
+        candidate: BlockCandidate,
+        metadata_class: type[BaseMetadata],
+        default_type: str = "unknown",
+    ) -> None:
+        """Set default id and block_type if using BaseMetadata.
+
+        This helper method consolidates the common pattern of setting default
+        values for id and block_type when using the base metadata class.
+        Custom metadata classes should provide their own defaults.
+
+        Args:
+            metadata_dict: Metadata dictionary to update with defaults
+            candidate: The block candidate (used for hash-based ID generation)
+            metadata_class: The metadata class being used
+            default_type: Default block_type value if not present (default: "unknown")
+        """
+        if metadata_class is not BaseMetadata:
+            return
+
+        if "id" not in metadata_dict:
+            metadata_dict["id"] = f"block_{candidate.compute_hash()}"
+        if "block_type" not in metadata_dict:
+            metadata_dict["block_type"] = default_type
 
     def _safe_parse_metadata(
         self,

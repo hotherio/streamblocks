@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from hother.streamblocks.core.models import extract_block_types
-from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult, SectionType
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
@@ -29,7 +29,45 @@ class ContentParser(Protocol):
 class DelimiterPreambleSyntax(BaseSyntax):
     """Syntax: !! delimiter with inline metadata.
 
-    Format: !!<id>:<type>[:param1:param2...]
+    This syntax uses delimiter markers with inline metadata in the opening line.
+    Metadata is extracted from the delimiter preamble, and all lines between
+    opening and closing delimiters become the content.
+
+    Format:
+        !!<id>:<type>[:param1:param2:...]
+        Content lines here
+        !!end
+
+    The opening delimiter must include:
+        - Block ID (alphanumeric, required)
+        - Block type (alphanumeric, required)
+        - Additional parameters (optional, colon-separated)
+
+    Additional parameters are stored as param_0, param_1, etc. in metadata.
+
+    Examples:
+        >>> # Simple block with just ID and type
+        >>> '''
+        ... !!patch001:patch
+        ... Fix the login bug
+        ... !!end
+        ... '''
+        >>>
+        >>> # Block with parameters
+        >>> '''
+        ... !!file123:operation:create:urgent
+        ... Create new config file
+        ... !!end
+        ... '''
+        >>> # Metadata will be: {
+        >>> #     "id": "file123",
+        >>> #     "block_type": "operation",
+        >>> #     "param_0": "create",
+        >>> #     "param_1": "urgent"
+        >>> # }
+
+    Args:
+        delimiter: Opening delimiter string (default: "!!")
     """
 
     def __init__(
@@ -163,13 +201,54 @@ class DelimiterPreambleSyntax(BaseSyntax):
 class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     """Syntax: Delimiter markers with YAML frontmatter.
 
+    This syntax uses simple delimiter markers with YAML frontmatter for metadata.
+    The frontmatter section is delimited by --- markers and must be valid YAML.
+
     Format:
-    !!start
-    ---
-    key: value
-    ---
-    content
-    !!end
+        !!start
+        ---
+        id: block_001
+        block_type: example
+        custom_field: value
+        ---
+        Content lines here
+        !!end
+
+    The YAML frontmatter should include:
+        - id: Block identifier (required if using BaseMetadata)
+        - block_type: Block type (required if using BaseMetadata)
+        - Any additional custom fields defined in your metadata class
+
+    Examples:
+        >>> # Simple block with minimal metadata
+        >>> '''
+        ... !!start
+        ... ---
+        ... id: msg001
+        ... block_type: message
+        ... ---
+        ... Hello, world!
+        ... !!end
+        ... '''
+        >>>
+        >>> # Block with nested YAML metadata
+        >>> '''
+        ... !!start
+        ... ---
+        ... id: task001
+        ... block_type: task
+        ... priority: high
+        ... tags:
+        ...   - urgent
+        ...   - backend
+        ... ---
+        ... Implement user authentication
+        ... !!end
+        ... '''
+
+    Args:
+        start_delimiter: Opening delimiter string (default: "!!start")
+        end_delimiter: Closing delimiter string (default: "!!end")
     """
 
     def __init__(
@@ -194,23 +273,23 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
             if line.strip() == self.start_delimiter:
                 return DetectionResult(is_opening=True)
         # Inside a block
-        elif candidate.current_section == "header":
+        elif candidate.current_section == SectionType.HEADER:
             # Should be frontmatter start
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "metadata"
+                candidate.transition_to_metadata()
                 return DetectionResult(is_metadata_boundary=True)
             # Skip empty lines in header - frontmatter might follow
             if line.strip() == "":
                 return DetectionResult()
             # Move directly to content if no frontmatter
-            candidate.current_section = "content"
+            candidate.transition_to_content()
             candidate.content_lines.append(line)
-        elif candidate.current_section == "metadata":
+        elif candidate.current_section == SectionType.METADATA:
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "content"
+                candidate.transition_to_content()
                 return DetectionResult(is_metadata_boundary=True)
             candidate.metadata_lines.append(line)
-        elif candidate.current_section == "content":
+        elif candidate.current_section == SectionType.CONTENT:
             if line.strip() == self.end_delimiter:
                 return DetectionResult(is_closing=True)
             candidate.content_lines.append(line)
@@ -219,7 +298,7 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
 
     def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
         """Check if we're still in metadata section."""
-        return candidate.current_section in ["header", "metadata"]
+        return candidate.current_section in {SectionType.HEADER, SectionType.METADATA}
 
     def extract_block_type(self, candidate: BlockCandidate) -> str | None:
         """Extract block_type from YAML frontmatter."""
@@ -247,14 +326,8 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         if yaml_error:
             return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
-        # Ensure id and block_type have defaults
-        # Only fill in defaults if using BaseMetadata (no custom class provided)
-        if metadata_class is BaseMetadata:
-            if "id" not in metadata_dict:
-                # Generate an ID based on hash of content
-                metadata_dict["id"] = f"block_{candidate.compute_hash()}"
-            if "block_type" not in metadata_dict:
-                metadata_dict["block_type"] = "unknown"
+        # Set default id and block_type if using BaseMetadata
+        self._set_default_metadata_fields(metadata_dict, candidate, metadata_class, default_type="unknown")
 
         # Parse metadata using helper
         metadata = self._safe_parse_metadata(metadata_class, metadata_dict)

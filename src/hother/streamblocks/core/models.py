@@ -7,13 +7,11 @@ from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState
+from hother.streamblocks.core.constants import EXPECTED_BLOCK_TYPE_PARAMS, LIMITS
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState, SectionType
 
 if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
-
-# Expected number of type parameters for Block[TMetadata, TContent]
-_EXPECTED_BLOCK_TYPE_PARAMS = 2
 
 
 def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], type[BaseContent]]:
@@ -33,7 +31,7 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
         origin = get_origin(base)
         if origin is not None and origin.__name__ == "Block":
             args = get_args(base)
-            if len(args) == _EXPECTED_BLOCK_TYPE_PARAMS:
+            if len(args) == EXPECTED_BLOCK_TYPE_PARAMS:
                 return args
 
     # Fallback: extract from Pydantic field annotations (for non-generic subclasses)
@@ -85,7 +83,7 @@ class BlockCandidate:
         self.state = BlockState.HEADER_DETECTED
         self.metadata_lines: list[str] = []
         self.content_lines: list[str] = []
-        self.current_section: str = "header"  # "header", "metadata", "content"
+        self.current_section: SectionType = SectionType.HEADER
 
         # Cache fields for early parsing results
         self.parsed_metadata: dict[str, Any] | None = None
@@ -101,14 +99,56 @@ class BlockCandidate:
         """Add a line to the candidate."""
         self.lines.append(line)
 
+    def transition_to_metadata(self) -> None:
+        """Transition from header to metadata section.
+
+        This method encapsulates the section state transition logic,
+        making the state change explicit and centralized.
+        """
+        self.current_section = SectionType.METADATA
+
+    def transition_to_content(self) -> None:
+        """Transition from metadata/header to content section.
+
+        This method encapsulates the section state transition logic,
+        making the state change explicit and centralized.
+        """
+        self.current_section = SectionType.CONTENT
+
+    def cache_metadata_validation(self, passed: bool, error: str | None) -> None:
+        """Cache metadata validation result.
+
+        This method encapsulates validation result storage, providing
+        a clear interface for the state machine to cache validation state.
+
+        Args:
+            passed: Whether metadata validation passed
+            error: Error message if validation failed, None otherwise
+        """
+        self.metadata_validation_passed = passed
+        self.metadata_validation_error = error
+
+    def cache_content_validation(self, passed: bool, error: str | None) -> None:
+        """Cache content validation result.
+
+        This method encapsulates validation result storage, providing
+        a clear interface for the state machine to cache validation state.
+
+        Args:
+            passed: Whether content validation passed
+            error: Error message if validation failed, None otherwise
+        """
+        self.content_validation_passed = passed
+        self.content_validation_error = error
+
     @property
     def raw_text(self) -> str:
         """Get the raw text of all accumulated lines."""
         return "\n".join(self.lines)
 
     def compute_hash(self) -> str:
-        """Compute hash of first 64 chars for ID."""
-        text_slice = self.raw_text[:64]
+        """Compute hash of first N chars for ID (N defined in constants)."""
+        text_slice = self.raw_text[: LIMITS.HASH_PREFIX_LENGTH]
         return hashlib.sha256(text_slice.encode()).hexdigest()[:8]
 
     def __repr__(self) -> str:

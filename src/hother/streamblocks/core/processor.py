@@ -13,6 +13,7 @@ from hother.streamblocks.adapters.input import IdentityInputAdapter
 from hother.streamblocks.adapters.protocols import HasNativeModulePrefix
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.block_state_machine import BlockStateMachine
+from hother.streamblocks.core.constants import LIMITS
 from hother.streamblocks.core.line_accumulator import LineAccumulator
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
@@ -49,11 +50,44 @@ class StreamState:
 
 @dataclass(frozen=True, slots=True)
 class ProcessorConfig:
-    """Configuration for StreamBlockProcessor."""
+    """Configuration for StreamBlockProcessor.
 
-    lines_buffer: int = 5
-    max_line_length: int = 16_384
-    max_block_size: int = 1_048_576  # 1MB
+    Attributes:
+        lines_buffer: Number of recent lines to keep in buffer for context (default: 5).
+            Used for debugging and error messages.
+        max_line_length: Maximum line length in bytes before truncation (default: 16,384).
+            Lines exceeding this limit are truncated to prevent memory issues.
+        max_block_size: Maximum block size in bytes before rejection (default: 1,048,576 = 1MB).
+            Blocks exceeding this limit are rejected with SIZE_EXCEEDED error.
+        emit_original_events: Whether to pass through original provider events (default: True).
+            When False, only StreamBlocks events are emitted. Set to False when using
+            IdentityInputAdapter to avoid duplicate events.
+        emit_text_deltas: Whether to emit TextDeltaEvent for real-time streaming (default: True).
+            Enables character-level streaming for live UIs. Disable to reduce event volume.
+        emit_section_end_events: Whether to emit section end events (default: True).
+            Controls BlockMetadataEndEvent and BlockContentEndEvent emission for early validation.
+        auto_detect_adapter: Whether to auto-detect input adapter from first chunk (default: True).
+            When False, uses IdentityInputAdapter. Disable for performance with known adapter.
+
+    Example:
+        >>> # Custom configuration for large blocks
+        >>> config = ProcessorConfig(
+        ...     max_block_size=2_097_152,  # 2MB
+        ...     emit_original_events=False,
+        ...     emit_text_deltas=False,
+        ... )
+        >>> processor = StreamBlockProcessor(registry, config=config)
+        >>>
+        >>> # Minimal configuration for performance
+        >>> config = ProcessorConfig(
+        ...     emit_section_end_events=False,
+        ...     auto_detect_adapter=False,
+        ... )
+    """
+
+    lines_buffer: int = LIMITS.LINES_BUFFER
+    max_line_length: int = LIMITS.MAX_LINE_LENGTH
+    max_block_size: int = LIMITS.MAX_BLOCK_SIZE
     emit_original_events: bool = True
     emit_text_deltas: bool = True
     emit_section_end_events: bool = True
@@ -141,6 +175,10 @@ class StreamBlockProcessor:
         Returns:
             List of events generated from this chunk. May be empty if chunk only
             accumulates text without completing any lines.
+
+        Raises:
+            RuntimeError: If adapter is not set after first chunk processing
+                (internal state error, should not occur in normal usage).
 
         Example:
             >>> processor = StreamBlockProcessor(registry)
@@ -315,6 +353,10 @@ class StreamBlockProcessor:
             - Original chunks (if emit_original_events=True)
             - TextDeltaEvent (if emit_text_deltas=True)
             - TextContentEvent, BlockStartEvent, BlockEndEvent, BlockErrorEvent, and section delta events
+
+        Raises:
+            RuntimeError: If adapter is not set after first chunk processing
+                (internal state error, should not occur in normal usage).
 
         Example:
             >>> # Plain text

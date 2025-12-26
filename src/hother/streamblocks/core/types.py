@@ -19,7 +19,26 @@ if TYPE_CHECKING:
 class BaseMetadata(BaseModel):
     """Base metadata model with standard fields.
 
-    All custom metadata models should inherit from this class.
+    All custom metadata models should inherit from this class and add
+    their domain-specific fields.
+
+    Example:
+        >>> # Define custom metadata for a patch block
+        >>> class PatchMetadata(BaseMetadata):
+        ...     file_path: str
+        ...     operation: Literal["create", "update", "delete"]
+        ...
+        >>> # Create instance with required base fields
+        >>> metadata = PatchMetadata(
+        ...     id="patch_001",
+        ...     block_type="patch",
+        ...     file_path="src/main.py",
+        ...     operation="update"
+        ... )
+        >>> metadata.id
+        'patch_001'
+        >>> metadata.file_path
+        'src/main.py'
     """
 
     id: str = Field(..., description="Block identifier")
@@ -29,8 +48,33 @@ class BaseMetadata(BaseModel):
 class BaseContent(BaseModel):
     """Base content model with raw content field.
 
-    All custom content models should inherit from this class.
-    The raw_content field always contains the unparsed block content.
+    All custom content models should inherit from this class and optionally
+    override the parse() method to add custom parsing logic. The raw_content
+    field always preserves the original unparsed text.
+
+    Example:
+        >>> # Simple content model that just stores raw text
+        >>> class SimpleContent(BaseContent):
+        ...     pass
+        ...
+        >>> content = SimpleContent.parse("Hello, world!")
+        >>> content.raw_content
+        'Hello, world!'
+        >>>
+        >>> # Content model with custom parsing
+        >>> class ItemsContent(BaseContent):
+        ...     items: list[str] = []
+        ...
+        ...     @classmethod
+        ...     def parse(cls, raw_text: str) -> Self:
+        ...         items = [line.strip() for line in raw_text.split("\\n") if line.strip()]
+        ...         return cls(raw_content=raw_text, items=items)
+        ...
+        >>> content = ItemsContent.parse("apple\\nbanana\\norange")
+        >>> content.items
+        ['apple', 'banana', 'orange']
+        >>> content.raw_content  # Original text preserved
+        'apple\\nbanana\\norange'
     """
 
     raw_content: str = Field(..., description="Raw unparsed content from the block")
@@ -86,7 +130,40 @@ class BlockState(StrEnum):
 
 
 class BlockErrorCode(StrEnum):
-    """Standard error codes for BlockErrorEvent."""
+    """Standard error codes for BlockErrorEvent.
+
+    These codes categorize why a block extraction failed, enabling
+    appropriate error handling and recovery strategies.
+
+    Values:
+        VALIDATION_FAILED: Block failed validator function checks (syntax or registry validation).
+            Indicates the block structure is valid but business rules were violated.
+        SIZE_EXCEEDED: Block exceeded max_block_size limit.
+            Prevents memory exhaustion from maliciously large blocks.
+        UNCLOSED_BLOCK: Block opened but never closed (stream ended).
+            Indicates incomplete block at end of stream.
+        UNKNOWN_TYPE: block_type not registered in registry.
+            The syntax extracted a type that hasn't been registered.
+        PARSE_FAILED: Block parsing failed (malformed YAML, invalid structure).
+            The syntax couldn't parse the block content into metadata/content.
+        MISSING_METADATA: Required metadata section missing.
+            Parse succeeded but returned None for metadata.
+        MISSING_CONTENT: Required content section missing.
+            Parse succeeded but returned None for content.
+        SYNTAX_ERROR: Syntax-specific error (custom validation).
+            Used for syntax-specific validation failures.
+
+    Example:
+        >>> # Handle different error codes appropriately
+        >>> async for event in processor.process_stream(stream):
+        ...     if isinstance(event, BlockErrorEvent):
+        ...         if event.error_code == BlockErrorCode.SIZE_EXCEEDED:
+        ...             logger.warning(f"Block too large: {event.reason}")
+        ...         elif event.error_code == BlockErrorCode.VALIDATION_FAILED:
+        ...             logger.error(f"Validation failed: {event.reason}")
+        ...         elif event.error_code == BlockErrorCode.UNCLOSED_BLOCK:
+        ...             logger.info(f"Incomplete block at stream end: {event.reason}")
+    """
 
     VALIDATION_FAILED = "VALIDATION_FAILED"
     SIZE_EXCEEDED = "SIZE_EXCEEDED"
@@ -96,6 +173,18 @@ class BlockErrorCode(StrEnum):
     MISSING_METADATA = "MISSING_METADATA"
     MISSING_CONTENT = "MISSING_CONTENT"
     SYNTAX_ERROR = "SYNTAX_ERROR"
+
+
+class SectionType(StrEnum):
+    """Block section types during accumulation.
+
+    These represent the different phases of block parsing as content
+    is accumulated line by line.
+    """
+
+    HEADER = "header"  # Block opening line(s) with inline metadata
+    METADATA = "metadata"  # Dedicated metadata section (e.g., YAML frontmatter)
+    CONTENT = "content"  # Main block content
 
 
 # ============== Base Event ==============

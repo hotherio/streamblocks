@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 from pydantic import ValidationError
 
 from hother.streamblocks.core.models import Block, BlockCandidate
-from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, SectionType
 from hother.streamblocks.syntaxes.delimiter import (
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
@@ -338,18 +338,18 @@ class TestDelimiterFrontmatterSyntaxDetectLine:
         """Test detecting frontmatter start in header section."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         result = syntax.detect_line("---", candidate)
 
         assert result.is_metadata_boundary is True
-        assert candidate.current_section == "metadata"
+        candidate.transition_to_metadata.assert_called_once()
 
     def test_detect_empty_line_in_header(self) -> None:
         """Test skipping empty lines in header section."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         result = syntax.detect_line("", candidate)
 
@@ -360,30 +360,30 @@ class TestDelimiterFrontmatterSyntaxDetectLine:
         """Test moving to content when no frontmatter in header (lines 213-214)."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
         candidate.content_lines = []
 
         syntax.detect_line("content line", candidate)
 
-        assert candidate.current_section == "content"
+        candidate.transition_to_content.assert_called_once()
         assert "content line" in candidate.content_lines
 
     def test_detect_frontmatter_end_in_metadata(self) -> None:
         """Test detecting frontmatter end in metadata section."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "metadata"
+        candidate.current_section = SectionType.METADATA
 
         result = syntax.detect_line("---", candidate)
 
         assert result.is_metadata_boundary is True
-        assert candidate.current_section == "content"
+        candidate.transition_to_content.assert_called_once()
 
     def test_detect_metadata_line(self) -> None:
         """Test accumulating metadata lines."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "metadata"
+        candidate.current_section = SectionType.METADATA
         candidate.metadata_lines = []
 
         syntax.detect_line("key: value", candidate)
@@ -394,7 +394,7 @@ class TestDelimiterFrontmatterSyntaxDetectLine:
         """Test detecting closing delimiter in content section."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "content"
+        candidate.current_section = SectionType.CONTENT
 
         result = syntax.detect_line("!!end", candidate)
 
@@ -404,7 +404,7 @@ class TestDelimiterFrontmatterSyntaxDetectLine:
         """Test accumulating content lines and return value (branch 220->225)."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "content"
+        candidate.current_section = SectionType.CONTENT
         candidate.content_lines = []
 
         result = syntax.detect_line("some content", candidate)
@@ -421,8 +421,8 @@ class TestDelimiterFrontmatterSyntaxDetectLine:
 
         syntax = DelimiterFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        # Set to an unexpected section value
-        candidate.current_section = "unknown"
+        # Set to an unexpected section value (bypassing type safety for testing)
+        candidate.current_section = "unknown"  # type: ignore[assignment]
 
         result = syntax.detect_line("some line", candidate)
 
@@ -439,7 +439,7 @@ class TestDelimiterFrontmatterSyntaxShouldAccumulateMetadata:
         """Test should_accumulate_metadata returns True in header section."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         result = syntax.should_accumulate_metadata(candidate)
 
@@ -449,7 +449,7 @@ class TestDelimiterFrontmatterSyntaxShouldAccumulateMetadata:
         """Test should_accumulate_metadata returns True in metadata section."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "metadata"
+        candidate.current_section = SectionType.METADATA
 
         result = syntax.should_accumulate_metadata(candidate)
 
@@ -459,7 +459,7 @@ class TestDelimiterFrontmatterSyntaxShouldAccumulateMetadata:
         """Test should_accumulate_metadata returns False in content section (line 229)."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.current_section = "content"
+        candidate.current_section = SectionType.CONTENT
 
         result = syntax.should_accumulate_metadata(candidate)
 

@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core.models import extract_block_types
-from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult, SectionType
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
@@ -14,15 +14,67 @@ if TYPE_CHECKING:
 
 
 class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
-    """Syntax: Markdown-style with YAML frontmatter.
+    """Syntax: Markdown fenced code blocks with YAML frontmatter.
+
+    This syntax uses Markdown-style fenced code blocks with optional YAML frontmatter
+    for metadata. The info_string after the opening fence can be used as a fallback
+    block_type when no frontmatter is present.
 
     Format:
-    ```[info]
-    ---
-    key: value
-    ---
-    content
-    ```
+        ```[info_string]
+        ---
+        id: block_001
+        block_type: example
+        custom_field: value
+        ---
+        Content lines here
+        ```
+
+    The info_string is optional. When provided, it's used as the block_type if
+    no YAML frontmatter is present. The YAML frontmatter is also optional - if
+    omitted, all content becomes the block content.
+
+    Examples:
+        >>> # Block with frontmatter
+        >>> '''
+        ... ```python
+        ... ---
+        ... id: code001
+        ... block_type: code
+        ... language: python
+        ... ---
+        ... def hello():
+        ...     print("Hello, world!")
+        ... ```
+        ... '''
+        >>>
+        >>> # Block without frontmatter (info_string becomes block_type)
+        >>> '''
+        ... ```patch
+        ... diff --git a/file.py b/file.py
+        ... - old line
+        ... + new line
+        ... ```
+        ... '''
+        >>> # block_type will be "patch" from info_string
+        >>>
+        >>> # Block with nested YAML
+        >>> '''
+        ... ```task
+        ... ---
+        ... id: task001
+        ... block_type: task
+        ... assignees:
+        ...   - alice
+        ...   - bob
+        ... ---
+        ... Implement user authentication
+        ... ```
+        ... '''
+
+    Args:
+        fence: Fence string (default: "```")
+        info_string: Optional info string used as fallback block_type
     """
 
     def __init__(
@@ -55,24 +107,24 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
             if self._fence_pattern.match(line):
                 return DetectionResult(is_opening=True)
         # Inside a block
-        elif candidate.current_section == "header":
+        elif candidate.current_section == SectionType.HEADER:
             # Check if this is frontmatter start
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "metadata"
+                candidate.transition_to_metadata()
                 return DetectionResult(is_metadata_boundary=True)
             # Skip empty lines in header - frontmatter might follow
             if line.strip() == "":
                 return DetectionResult()
             # Non-empty, non-frontmatter line - move to content
-            candidate.current_section = "content"
+            candidate.transition_to_content()
             candidate.content_lines.append(line)
-        elif candidate.current_section == "metadata":
+        elif candidate.current_section == SectionType.METADATA:
             # Check for metadata end
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "content"
+                candidate.transition_to_content()
                 return DetectionResult(is_metadata_boundary=True)
             candidate.metadata_lines.append(line)
-        elif candidate.current_section == "content":
+        elif candidate.current_section == SectionType.CONTENT:
             # Check for closing fence
             if line.strip() == self.fence:
                 return DetectionResult(is_closing=True)
@@ -82,7 +134,7 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
 
     def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
         """Check if we're still in metadata section."""
-        return candidate.current_section in ["header", "metadata"]
+        return candidate.current_section in {SectionType.HEADER, SectionType.METADATA}
 
     def extract_block_type(self, candidate: BlockCandidate) -> str | None:
         """Extract block_type from YAML frontmatter."""
@@ -96,22 +148,6 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
             return str(metadata_dict["block_type"])
         # No block_type found in metadata or parse failed, return info_string
         return self.info_string
-
-    def _set_metadata_defaults(
-        self,
-        metadata_dict: dict[str, Any],
-        candidate: BlockCandidate,
-        metadata_class: type[BaseMetadata],
-    ) -> None:
-        """Set default values for id and block_type if using BaseMetadata."""
-        if metadata_class is not BaseMetadata:
-            return
-
-        if "id" not in metadata_dict:
-            metadata_dict["id"] = f"block_{candidate.compute_hash()}"
-
-        if "block_type" not in metadata_dict:
-            metadata_dict["block_type"] = self.info_string or "markdown"
 
     def _parse_metadata_instance(
         self,
@@ -147,8 +183,10 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         if yaml_error:
             return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
-        # Set defaults for BaseMetadata
-        self._set_metadata_defaults(metadata_dict, candidate, metadata_class)
+        # Set default id and block_type if using BaseMetadata
+        self._set_default_metadata_fields(
+            metadata_dict, candidate, metadata_class, default_type=self.info_string or "markdown"
+        )
 
         # Parse metadata instance
         metadata_result = self._parse_metadata_instance(metadata_class, metadata_dict)
