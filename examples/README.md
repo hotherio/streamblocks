@@ -4,32 +4,38 @@ This directory contains example scripts demonstrating various features of Stream
 
 ## Directory Structure
 
+The examples are organized as a separate workspace package (`streamblocks-examples`):
+
 ```
 examples/
-├── 00_quickstart/          # Ultra-minimal examples (start here!)
-│   ├── 01_hello_world.py
-│   ├── 02_basic_stream.py
-│   └── 03_custom_block.py
-├── 01_basics/              # Core concepts and getting started
-│   ├── 01_basic_usage.py
-│   ├── 02_minimal_api.py
-│   ├── 03_error_handling.py
-│   └── 04_structured_output.py
-├── 02_syntaxes/            # Block syntax formats
-│   ├── 01_markdown_frontmatter.py
-│   ├── 02_delimiter_frontmatter.py
-│   └── 03_parsing_decorators.py
-├── 03_adapters/            # Stream adapters for AI providers
-│   ├── 01_identity_adapter_plain_text.py
-│   ├── 02_gemini_auto_detect.py      # Requires API key
-│   └── ...
-├── 04_content/             # Content processing
-├── 05_logging/             # Logging integration
-├── 06_integrations/        # Framework integrations
-├── 07_providers/           # AI provider demos
-├── 08_ui/                  # User interface examples
-├── helpers/                # Reusable stream generators and handlers
-└── run_examples.py         # Example runner script
+├── pyproject.toml               # Examples package configuration
+├── streamblocks_examples/       # Examples package directory
+│   ├── 00_quickstart/          # Ultra-minimal examples (start here!)
+│   │   ├── 01_hello_world.py
+│   │   ├── 02_basic_stream.py
+│   │   └── 03_custom_block.py
+│   ├── 01_basics/              # Core concepts and getting started
+│   │   ├── 01_basic_usage.py
+│   │   ├── 02_minimal_api.py
+│   │   ├── 03_error_handling.py
+│   │   └── 04_structured_output.py
+│   ├── 02_syntaxes/            # Block syntax formats
+│   │   ├── 01_markdown_frontmatter.py
+│   │   ├── 02_delimiter_frontmatter.py
+│   │   └── 03_parsing_decorators.py
+│   ├── 03_adapters/            # Stream adapters for AI providers
+│   │   ├── 01_identity_adapter_plain_text.py
+│   │   ├── 02_gemini_auto_detect.py      # Requires API key
+│   │   └── ...
+│   ├── 04_blocks/              # Block type examples
+│   ├── 05_logging/             # Logging integration
+│   ├── 06_integrations/        # Framework integrations
+│   ├── 07_providers/           # AI provider demos
+│   ├── 08_ui/                  # User interface examples
+│   ├── 09_advanced/            # Advanced features
+│   ├── helpers/                # Reusable stream generators and handlers
+│   └── tools/                  # Tool implementations
+└── run_examples.py             # Example runner script
 ```
 
 ## Key Concepts
@@ -125,7 +131,7 @@ JSON output format:
   ],
   "skipped": [
     {
-      "path": "examples/08_ui/02_interactive_ui_demo.py",
+      "path": "streamblocks_examples/08_ui/02_interactive_ui_demo.py",
       "reason": "TUI example (requires user interaction)",
       "category": "08_ui"
     }
@@ -300,11 +306,14 @@ You can always run examples directly:
 
 ```bash
 # Simple example (no API key)
-uv run python examples/01_basics/01_basic_usage.py
+uv run python examples/streamblocks_examples/01_basics/01_basic_usage.py
 
 # API example (requires key)
 export GEMINI_API_KEY="your-key-here"
-uv run python examples/07_providers/01_gemini_simple_demo.py
+uv run python examples/streamblocks_examples/07_providers/01_gemini_simple_demo.py
+
+# Or using the module syntax
+uv run python -m streamblocks_examples.01_basics.01_basic_usage
 ```
 
 ## Configuration

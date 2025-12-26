@@ -197,9 +197,8 @@ Task content here.
     assert block.metadata.param_1 == "backend"
 
 
-@pytest.mark.asyncio
-async def test_custom_content_inherits_base() -> None:
-    """Test custom content class that inherits from BaseContent."""
+def create_todo_block_setup() -> StreamBlockProcessor:
+    """Create TodoBlock class and registry for testing."""
 
     class TodoItem(BaseModel):
         text: str
@@ -219,7 +218,6 @@ async def test_custom_content_inherits_base() -> None:
                     items.append(TodoItem(text=line[6:], done=True))
                 elif line.startswith("- "):
                     items.append(TodoItem(text=line[2:], done=False))
-
             return cls(raw_content=raw_text, items=items)
 
     class TodoBlock(Block[BaseMetadata, TodoContent]):
@@ -229,7 +227,13 @@ async def test_custom_content_inherits_base() -> None:
     registry = Registry(syntax=syntax)
     registry.register("todos", TodoBlock)
 
-    processor = StreamBlockProcessor(registry)
+    return StreamBlockProcessor(registry)
+
+
+@pytest.mark.asyncio
+async def test_custom_content_inherits_base_extraction() -> None:
+    """Test that custom TodoContent blocks can be extracted."""
+    processor = create_todo_block_setup()
 
     async def mock_stream() -> Any:
         text = """!!todo01:todos
@@ -237,7 +241,6 @@ async def test_custom_content_inherits_base() -> None:
 - [x] Call mom
 - Finish report
 !!end"""
-
         for line in text.split("\n"):
             yield line + "\n"
 
@@ -250,20 +253,62 @@ async def test_custom_content_inherits_base() -> None:
                 extracted_blocks.append(block)
 
     assert len(extracted_blocks) == 1
+    assert hasattr(extracted_blocks[0].content, "items")
+
+
+@pytest.mark.asyncio
+async def test_custom_content_preserves_raw_content() -> None:
+    """Test that custom content preserves raw_content field."""
+    processor = create_todo_block_setup()
+
+    async def mock_stream() -> Any:
+        text = """!!todo01:todos
+- [ ] Buy groceries
+- [x] Call mom
+- Finish report
+!!end"""
+        for line in text.split("\n"):
+            yield line + "\n"
+
+    extracted_blocks = []
+    async for event in processor.process_stream(mock_stream()):
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
+
     block = extracted_blocks[0]
-
-    # Check content has items from TodoContent
-    assert hasattr(block.content, "items")  # Custom field from TodoContent
-
-    # Check raw_content is preserved (with extra newlines from stream processing)
-    # The exact content depends on how lines are processed
     lines = block.content.raw_content.strip().split("\n")
-    assert len(lines) == 5  # 3 todo items + 2 empty lines between them
+    assert len(lines) == 5
     assert lines[0] == "- [ ] Buy groceries"
     assert lines[2] == "- [x] Call mom"
     assert lines[4] == "- Finish report"
 
-    # Check parsed items from TodoContent
+
+@pytest.mark.asyncio
+async def test_custom_content_parses_items() -> None:
+    """Test that TodoContent correctly parses todo items."""
+    processor = create_todo_block_setup()
+
+    async def mock_stream() -> Any:
+        text = """!!todo01:todos
+- [ ] Buy groceries
+- [x] Call mom
+- Finish report
+!!end"""
+        for line in text.split("\n"):
+            yield line + "\n"
+
+    extracted_blocks = []
+    async for event in processor.process_stream(mock_stream()):
+        if event.type == EventType.BLOCK_END:
+            assert isinstance(event, BlockEndEvent)
+            block = event.get_block()
+            if block:
+                extracted_blocks.append(block)
+
+    block = extracted_blocks[0]
     assert len(block.content.items) == 3
     assert block.content.items[0].text == "Buy groceries"
     assert block.content.items[0].done is False

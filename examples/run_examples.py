@@ -92,29 +92,39 @@ class ExampleRunner:
         """Discover all example scripts."""
         examples = []
 
-        for path in self.examples_dir.rglob("*.py"):
-            # Skip __init__.py and this script
-            if path.stem.startswith("_") or path.name == "run_examples.py":
+        # Search in both examples/ and workspace src/hother/streamblocks_examples/
+        search_paths = [
+            self.examples_dir,  # examples/ directory
+            self.examples_dir.parent / "src" / "hother" / "streamblocks_examples",  # workspace package
+        ]
+
+        for search_dir in search_paths:
+            if not search_dir.exists():
                 continue
 
-            # Determine category from folder structure
-            rel_path = path.relative_to(self.examples_dir)
-            category = rel_path.parts[0] if len(rel_path.parts) > 1 else "root"
+            for path in search_dir.rglob("*.py"):
+                # Skip __init__.py and this script
+                if path.stem.startswith("_") or path.name == "run_examples.py":
+                    continue
 
-            # Detect TUI examples
-            is_tui = self._is_tui_example(path)
+                # Determine category from folder structure
+                rel_path = path.relative_to(search_dir)
+                category = rel_path.parts[0] if len(rel_path.parts) > 1 else "root"
 
-            # Detect API requirements
-            api_keys = self._detect_api_requirements(path)
+                # Detect TUI examples
+                is_tui = self._is_tui_example(path)
 
-            examples.append(
-                ExampleInfo(
-                    path=path,
-                    category=category,
-                    requires_api_keys=api_keys,
-                    is_tui=is_tui,
+                # Detect API requirements
+                api_keys = self._detect_api_requirements(path)
+
+                examples.append(
+                    ExampleInfo(
+                        path=path,
+                        category=category,
+                        requires_api_keys=api_keys,
+                        is_tui=is_tui,
+                    )
                 )
-            )
 
         self.examples = sorted(examples, key=lambda e: str(e.path))
         return self.examples
@@ -188,11 +198,17 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Add project root to PYTHONPATH so examples can import from examples.blocks
+            # Add project root and workspace src to PYTHONPATH
+            # - project_root for examples.blocks.agent imports
+            # - workspace_src for hother.streamblocks_examples imports
             project_root = str(self.examples_dir.parent)
+            workspace_src = str(self.examples_dir.parent / "src")
             env = os.environ.copy()
             existing_pythonpath = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+            paths = [project_root, workspace_src]
+            if existing_pythonpath:
+                paths.append(existing_pythonpath)
+            env["PYTHONPATH"] = ":".join(paths)
 
             result = await asyncio.wait_for(
                 asyncio.create_subprocess_exec(
@@ -230,11 +246,17 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Add project root to PYTHONPATH so examples can import from examples.blocks
+            # Add project root and workspace src to PYTHONPATH
+            # - project_root for examples.blocks.agent imports
+            # - workspace_src for hother.streamblocks_examples imports
             project_root = str(self.examples_dir.parent)
+            workspace_src = str(self.examples_dir.parent / "src")
             env = os.environ.copy()
             existing_pythonpath = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+            paths = [project_root, workspace_src]
+            if existing_pythonpath:
+                paths.append(existing_pythonpath)
+            env["PYTHONPATH"] = ":".join(paths)
 
             result = subprocess.run(
                 [sys.executable, str(example.path)],
@@ -257,9 +279,20 @@ class ExampleRunner:
 
 
 def get_display_path(example: ExampleInfo, examples_dir: Path) -> str:
-    """Get display path including 'examples/' prefix."""
-    rel_path = example.path.relative_to(examples_dir)
-    return f"examples/{rel_path}"
+    """Get display path including 'examples/' or 'src/' prefix."""
+    # Try to make path relative to examples_dir first
+    try:
+        rel_path = example.path.relative_to(examples_dir)
+        return f"examples/{rel_path}"
+    except ValueError:
+        # Path is in workspace src, try that
+        workspace_root = examples_dir.parent
+        try:
+            rel_path = example.path.relative_to(workspace_root)
+            return str(rel_path)
+        except ValueError:
+            # Fallback to absolute path
+            return str(example.path)
 
 
 def print_colored(text: str, color: str = "") -> None:

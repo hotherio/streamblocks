@@ -99,58 +99,81 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         # No block_type found in metadata or parse failed, return info_string
         return self.info_string
 
-    def parse_block(
-        self, candidate: BlockCandidate, block_class: type[Any] | None = None
-    ) -> ParseResult[BaseMetadata, BaseContent]:
-        """Parse the complete block using the specified block class."""
+    def _set_metadata_defaults(
+        self,
+        metadata_dict: dict[str, Any],
+        candidate: BlockCandidate,
+        metadata_class: type[BaseMetadata],
+    ) -> None:
+        """Set default values for id and block_type if using BaseMetadata."""
+        if metadata_class is not BaseMetadata:
+            return
 
-        # Extract metadata and content classes from block_class
-        if block_class is None:
-            # Default to base classes
-            metadata_class = BaseMetadata
-            content_class = BaseContent
-        else:
-            # Extract from block class using type parameters
-            metadata_class, content_class = extract_block_types(block_class)
+        if "id" not in metadata_dict:
+            metadata_dict["id"] = f"block_{candidate.compute_hash()}"
 
-        # Parse metadata from accumulated metadata lines
-        metadata_dict, yaml_error = self._parse_yaml_metadata_strict(candidate.metadata_lines)
-        if yaml_error:
-            return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
+        if "block_type" not in metadata_dict:
+            metadata_dict["block_type"] = self.info_string or "markdown"
 
-        # Ensure id and block_type have defaults
-        # Only fill in defaults if using BaseMetadata (no custom class provided)
-        if metadata_class is BaseMetadata:
-            if "id" not in metadata_dict:
-                # Generate an ID based on hash of content
-                metadata_dict["id"] = f"block_{candidate.compute_hash()}"
-            if "block_type" not in metadata_dict:
-                # Try to infer from info string or use default
-                if self.info_string:
-                    metadata_dict["block_type"] = self.info_string
-                else:
-                    metadata_dict["block_type"] = "markdown"
-
+    def _parse_metadata_instance(
+        self,
+        metadata_class: type[BaseMetadata],
+        metadata_dict: dict[str, Any],
+    ) -> ParseResult[BaseMetadata, BaseContent] | BaseMetadata:
+        """Parse and validate metadata dict into metadata instance."""
         try:
-            # Pass metadata dict directly to Pydantic for validation
-            metadata = metadata_class(**metadata_dict)
+            return metadata_class(**metadata_dict)
         except ValidationError as e:
             return ParseResult(success=False, error=f"Metadata validation error: {e}", exception=e)
         except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
 
-        # Parse content
+    def _parse_content_instance(
+        self,
+        content_class: type[BaseContent],
+        candidate: BlockCandidate,
+    ) -> ParseResult[BaseMetadata, BaseContent] | BaseContent:
+        """Parse content lines into content instance."""
         content_text = "\n".join(candidate.content_lines)
 
         try:
-            # All content classes must have parse method
-            content = content_class.parse(content_text)
+            return content_class.parse(content_text)
         except ValidationError as e:
             return ParseResult(success=False, error=f"Content validation error: {e}", exception=e)
         except (TypeError, ValueError, KeyError) as e:
             return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
 
-        return ParseResult(success=True, metadata=metadata, content=content)
+    def parse_block(
+        self, candidate: BlockCandidate, block_class: type[Any] | None = None
+    ) -> ParseResult[BaseMetadata, BaseContent]:
+        """Parse the complete block using the specified block class."""
+
+        # Extract metadata and content classes
+        if block_class is None:
+            metadata_class = BaseMetadata
+            content_class = BaseContent
+        else:
+            metadata_class, content_class = extract_block_types(block_class)
+
+        # Parse YAML metadata
+        metadata_dict, yaml_error = self._parse_yaml_metadata_strict(candidate.metadata_lines)
+        if yaml_error:
+            return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
+
+        # Set defaults for BaseMetadata
+        self._set_metadata_defaults(metadata_dict, candidate, metadata_class)
+
+        # Parse metadata instance
+        metadata_result = self._parse_metadata_instance(metadata_class, metadata_dict)
+        if isinstance(metadata_result, ParseResult):
+            return metadata_result
+
+        # Parse content instance
+        content_result = self._parse_content_instance(content_class, candidate)
+        if isinstance(content_result, ParseResult):
+            return content_result
+
+        return ParseResult(success=True, metadata=metadata_result, content=content_result)
 
     def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing."""

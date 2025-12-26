@@ -4,7 +4,7 @@
 # Python configuration
 python:
   default-version: "3.13"
-  supported-versions: ["3.11", "3.12", "3.13"]
+  supported-versions: ["3.13", "3.14"]  # Actually tested in CI (project requires 3.13+)
 
 # Tool versions
 tools:

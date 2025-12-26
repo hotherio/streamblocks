@@ -1,6 +1,6 @@
 [project]
 name = "streamblocks"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Real-time extraction and processing of structured blocks from text streams"
 readme = "README.md"
 classifiers = [
@@ -41,19 +41,23 @@ all-providers = [
 # Enhanced logging
 structlog = ["structlog>=24.1.0"]
 loguru = ["loguru>=0.7.0"]
+# Examples dependencies
+examples = ["streamblocks-examples", "hother-cancelable>=0.1.0"]
 
-# Corrected build system to use UV build backend
+# Build system using hatchling with hatch-vcs for dynamic versioning
 [build-system]
-requires = ["uv_build>=0.8.22,<0.9.0"]
-build-backend = "uv_build"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-# UV build backend configuration with hother namespace
-[tool.uv.build-backend]
-module-name = "hother.streamblocks"
-module-root = "src"
+# Hatchling version configuration
+[tool.hatch.version]
+source = "vcs"
 
-# File inclusion configuration
-source-include = [
+[tool.hatch.build.targets.wheel]
+packages = ["src/hother"]
+
+[tool.hatch.build.targets.sdist]
+include = [
     "src/**",
     "tests/**",
     "CHANGELOG.md",
@@ -63,9 +67,7 @@ source-include = [
     "lefthook.yml",
     "pyproject.toml",
 ]
-
-# File exclusion configuration
-source-exclude = [
+exclude = [
     "**/__pycache__",
     "**/*.pyc",
     "**/*.pyo",
@@ -263,6 +265,32 @@ line-ending = "auto"
     "ASYNC109", # async function with timeout param (acceptable in examples)
     "SLF001",  # Private member access (acceptable in examples for cleanup)
 ]
+"src/hother/streamblocks_examples/**/*" = [
+    "C901",    # Too complex
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "PLR2004", # Magic value comparison
+    "INP001",  # Implicit namespace package
+    "S110",    # try-except-pass (acceptable in examples)
+    "S311",    # Pseudo-random generator (acceptable in examples)
+    "S307",    # Use of eval (acceptable in demo code)
+    "S603",    # subprocess call (acceptable in example runner)
+    "PTH100",  # os.path.abspath (acceptable in examples)
+    "PTH120",  # os.path.dirname (acceptable in examples)
+    "PTH123",  # os.path usage (acceptable in examples)
+    "EXE001",  # Shebang without executable
+    "PLC0415", # Import not at top-level (acceptable in examples)
+    "E741",    # Ambiguous variable names (acceptable in examples)
+    "DTZ005",  # datetime without tz (acceptable in examples)
+    "RUF001",  # Ambiguous unicode (emojis acceptable in examples)
+    "F401",    # Unused imports (acceptable in examples)
+    "B904",    # raise without from (acceptable in examples)
+    "B007",    # Loop variable not used (acceptable in examples)
+    "SIM102",  # Nested if (acceptable in examples)
+    "TRY300",  # return in try block (acceptable in examples)
+    "ASYNC109", # async function with timeout param (acceptable in examples)
+    "SLF001",  # Private member access (acceptable in examples for cleanup)
+]
 "sandbox/**/*" = [
     "C901",    # Too complex
     "PLR0912", # Too many branches
@@ -309,7 +337,7 @@ max-complexity = 10
 # Type checking with basedpyright
 [tool.pyright]
 include = ["src", "examples"]
-exclude = ["**/__pycache__", "**/migrations", ".venv", "tests"]
+exclude = ["**/__pycache__", "**/migrations", ".venv", "tests", "src/hother/streamblocks_examples"]
 ignore = [
     "examples/logging/structlog_example.py",
     "src/hother/streamblocks/adapters/detection.py",  # type(Any) returns type[Unknown]
@@ -403,3 +431,10 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "\\.\\.\\.",  # Ellipsis for abstract methods
 ]
+
+# UV Workspace Configuration
+[tool.uv.workspace]
+members = ["src/hother/streamblocks_examples"]
+
+[tool.uv.sources]
+streamblocks-examples = { workspace = true }

@@ -1,1 +1,1 @@
-"""MkDocs lifecycle hooks for StreamBlocks documentation."""
+"""MkDocs hooks package for Streamblocks documentation."""
