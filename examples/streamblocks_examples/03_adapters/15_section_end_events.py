@@ -16,6 +16,7 @@ import asyncio
 
 from streamblocks_examples.helpers.simulator import simulated_stream
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockContentEndEvent,
     BlockEndEvent,
@@ -28,7 +29,6 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     ValidationResult,
 )
-from hother.streamblocks.blocks import FileOperations
 from hother.streamblocks.core.processor import ProcessorConfig
 
 

@@ -8,6 +8,7 @@ maximum performance and minimal overhead.
 import asyncio
 from collections.abc import AsyncGenerator
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -16,7 +17,6 @@ from hother.streamblocks import (
     TextContentEvent,
     TextDeltaEvent,
 )
-from hother.streamblocks.blocks import FileOperations
 from hother.streamblocks.core.processor import ProcessorConfig
 
 

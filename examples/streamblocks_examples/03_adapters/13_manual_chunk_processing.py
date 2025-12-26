@@ -32,6 +32,7 @@ except ImportError:
     print("Or: pip install google-genai")
     sys.exit(1)
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -39,7 +40,6 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
-from hother.streamblocks.blocks import FileOperations
 
 
 async def get_gemini_response(prompt: str | None = None) -> AsyncIterator[Any]:

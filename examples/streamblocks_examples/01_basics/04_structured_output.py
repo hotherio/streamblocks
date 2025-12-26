@@ -14,12 +14,12 @@ from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
+from examples.blocks.agent.structured_output import create_structured_output_block
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     Registry,
     StreamBlockProcessor,
 )
-from hother.streamblocks.blocks.structured_output import create_structured_output_block
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
     BlockEndEvent,

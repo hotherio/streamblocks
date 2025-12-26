@@ -9,6 +9,7 @@ import asyncio
 import sys
 from collections.abc import AsyncGenerator
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     BlockStartEvent,
@@ -17,7 +18,6 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
-from hother.streamblocks.blocks import FileOperations
 
 
 async def character_stream() -> AsyncGenerator[str]:

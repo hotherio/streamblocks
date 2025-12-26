@@ -10,8 +10,8 @@ import os
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
+from examples.blocks.agent.files import FileContent, FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.files import FileContent, FileOperations
 from hother.streamblocks.core.types import BlockEndEvent, TextContentEvent
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ Make sure to include proper project structure with an app module and a simple Fa
                 extracted_blocks.append(block)
 
                 # Type narrowing for FileOperationsContent
-                from hother.streamblocks.blocks.files import FileOperationsContent
+                from examples.blocks.agent.files import FileOperationsContent
 
                 if not isinstance(block.content, FileOperationsContent):
                     continue
@@ -193,7 +193,7 @@ Make sure to include proper project structure with an app module and a simple Fa
                 extracted_blocks.append(block)
 
                 # Type narrowing for FileContentMetadata and FileContentContent
-                from hother.streamblocks.blocks.files import FileContentContent, FileContentMetadata
+                from examples.blocks.agent.files import FileContentContent, FileContentMetadata
 
                 if not isinstance(block.metadata, FileContentMetadata):
                     continue

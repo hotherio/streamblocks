@@ -12,8 +12,8 @@ import logging
 from collections.abc import AsyncIterator
 from textwrap import dedent
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core.types import BlockEndEvent
 
 

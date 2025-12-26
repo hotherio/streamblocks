@@ -8,8 +8,8 @@ from textwrap import dedent
 
 from streamblocks_examples.helpers.simulator import StreamConfig, simulated_stream
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks.core.types import BlockEndEvent
 

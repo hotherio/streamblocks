@@ -8,6 +8,7 @@ from typing import Any
 
 from streamblocks_examples.helpers.simulator import simple_text_stream
 
+from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     MetadataValidationFailureMode,
@@ -15,7 +16,6 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     ValidationResult,
 )
-from hother.streamblocks.blocks.files import FileOperations
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent
 
 # --8<-- [end:imports]
