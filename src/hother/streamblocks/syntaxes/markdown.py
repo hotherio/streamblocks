@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core.models import extract_block_types
-from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult, SectionType
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
@@ -55,24 +55,24 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
             if self._fence_pattern.match(line):
                 return DetectionResult(is_opening=True)
         # Inside a block
-        elif candidate.current_section == "header":
+        elif candidate.current_section == SectionType.HEADER:
             # Check if this is frontmatter start
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "metadata"
+                candidate.current_section = SectionType.METADATA
                 return DetectionResult(is_metadata_boundary=True)
             # Skip empty lines in header - frontmatter might follow
             if line.strip() == "":
                 return DetectionResult()
             # Non-empty, non-frontmatter line - move to content
-            candidate.current_section = "content"
+            candidate.current_section = SectionType.CONTENT
             candidate.content_lines.append(line)
-        elif candidate.current_section == "metadata":
+        elif candidate.current_section == SectionType.METADATA:
             # Check for metadata end
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "content"
+                candidate.current_section = SectionType.CONTENT
                 return DetectionResult(is_metadata_boundary=True)
             candidate.metadata_lines.append(line)
-        elif candidate.current_section == "content":
+        elif candidate.current_section == SectionType.CONTENT:
             # Check for closing fence
             if line.strip() == self.fence:
                 return DetectionResult(is_closing=True)
@@ -82,7 +82,7 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
 
     def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
         """Check if we're still in metadata section."""
-        return candidate.current_section in ["header", "metadata"]
+        return candidate.current_section in {SectionType.HEADER, SectionType.METADATA}
 
     def extract_block_type(self, candidate: BlockCandidate) -> str | None:
         """Extract block_type from YAML frontmatter."""

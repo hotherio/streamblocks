@@ -20,7 +20,8 @@ class TestBlockCandidate:
         assert "start_line=1" in repr_str
         assert "state=header_detected" in repr_str
         assert "lines=0" in repr_str
-        assert "section='header'" in repr_str
+        assert "section=" in repr_str
+        assert "HEADER" in repr_str
 
     def test_repr_with_lines(self) -> None:
         """Test __repr__ after adding lines."""

@@ -10,6 +10,8 @@ from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.registry import MetadataValidationFailureMode
 from hother.streamblocks.core.types import (
+    BaseContent,
+    BaseMetadata,
     BlockContentDeltaEvent,
     BlockContentEndEvent,
     BlockEndEvent,
@@ -21,6 +23,8 @@ from hother.streamblocks.core.types import (
     BlockStartEvent,
     BlockState,
     Event,
+    ParseResult,
+    SectionType,
     TextContentEvent,
 )
 from hother.streamblocks.core.utils import get_syntax_name
@@ -201,7 +205,11 @@ class BlockStateMachine:
         events.append(self._create_section_delta_event(candidate, line, line_number, is_boundary=True))
 
         # Check if metadata section just ended (transition to content)
-        if self._emit_section_end_events and old_section == "metadata" and candidate.current_section == "content":
+        if (
+            self._emit_section_end_events
+            and old_section == SectionType.METADATA
+            and candidate.current_section == SectionType.CONTENT
+        ):
             metadata_end_event = self._create_metadata_end_event(candidate, line_number)
             events.append(metadata_end_event)
 
@@ -337,64 +345,45 @@ class BlockStateMachine:
         self._candidates.clear()
         self._block_ids.clear()
 
-    def _try_extract_block(
-        self,
-        candidate: BlockCandidate,
-        line_number: int,
-    ) -> BlockEndEvent | BlockErrorEvent:
-        """Try to parse and validate a complete block.
+    def _parse_candidate(self, candidate: BlockCandidate) -> tuple[str | None, ParseResult[BaseMetadata, BaseContent]]:
+        """Extract block type, look up class, and parse the candidate.
 
         Args:
-            candidate: Block candidate to extract
+            candidate: Block candidate to parse
+
+        Returns:
+            Tuple of (block_type, parse_result)
+        """
+        # Extract block_type from candidate
+        block_type = candidate.syntax.extract_block_type(candidate)
+
+        # Look up block_class from registry
+        block_class = self._registry.get_block_class(block_type) if block_type else None
+
+        # Parse with the appropriate block_class
+        parse_result = candidate.syntax.parse_block(candidate, block_class)
+
+        return block_type, parse_result
+
+    def _create_extracted_block(
+        self,
+        candidate: BlockCandidate,
+        parse_result: ParseResult[BaseMetadata, BaseContent],
+        line_number: int,
+    ) -> ExtractedBlock[BaseMetadata, BaseContent]:
+        """Create ExtractedBlock from parse result.
+
+        Args:
+            candidate: Block candidate
+            parse_result: Successful parse result
             line_number: Current line number (end of block)
 
         Returns:
-            BlockEndEvent if successful, BlockErrorEvent if validation fails
+            ExtractedBlock with metadata, content, and extraction info
         """
-        # Step 1: Extract block_type from candidate
-        block_type = candidate.syntax.extract_block_type(candidate)
-
-        self._logger.debug(
-            "extracting_block",
-            syntax=get_syntax_name(candidate.syntax),
-            block_type=block_type,
-            start_line=candidate.start_line,
-            end_line=line_number,
-            size_bytes=len(candidate.raw_text),
-        )
-
-        # Step 2: Look up block_class from registry
-        block_class = None
-        if block_type:
-            block_class = self._registry.get_block_class(block_type)
-
-        # Step 3: Parse with the appropriate block_class
-        parse_result = candidate.syntax.parse_block(candidate, block_class)
-
-        if not parse_result.success:
-            error = parse_result.error or "Parse failed"
-            self._logger.warning(
-                "block_parse_failed",
-                block_type=block_type,
-                error=error,
-                syntax=get_syntax_name(candidate.syntax),
-                exc_info=parse_result.exception,
-            )
-            return self._create_error_event(
-                candidate, line_number, error, BlockErrorCode.PARSE_FAILED, parse_result.exception
-            )
-
-        metadata = parse_result.metadata
-        content = parse_result.content
-
-        if metadata is None or content is None:
-            error_code = BlockErrorCode.MISSING_METADATA if metadata is None else BlockErrorCode.MISSING_CONTENT
-            return self._create_error_event(candidate, line_number, "Missing metadata or content", error_code)
-
-        # Create extracted block with metadata, content, and extraction info
-        block = ExtractedBlock(
-            metadata=metadata,
-            content=content,
+        return ExtractedBlock(
+            metadata=parse_result.metadata,  # type: ignore[arg-type]  # Checked by caller
+            content=parse_result.content,  # type: ignore[arg-type]  # Checked by caller
             syntax_name=get_syntax_name(candidate.syntax),
             raw_text=candidate.raw_text,
             line_start=candidate.start_line,
@@ -402,7 +391,25 @@ class BlockStateMachine:
             hash_id=candidate.compute_hash(),
         )
 
-        # Additional validation from syntax
+    def _validate_extracted_block(
+        self,
+        candidate: BlockCandidate,
+        block: ExtractedBlock[BaseMetadata, BaseContent],
+        block_type: str | None,
+        line_number: int,
+    ) -> BlockErrorEvent | None:
+        """Run syntax and registry validation on extracted block.
+
+        Args:
+            candidate: Block candidate
+            block: Extracted block to validate
+            block_type: Block type from candidate
+            line_number: Current line number
+
+        Returns:
+            BlockErrorEvent if validation fails, None if passes
+        """
+        # Syntax validation
         if not candidate.syntax.validate_block(block):
             self._logger.warning(
                 "syntax_validation_failed",
@@ -424,6 +431,24 @@ class BlockStateMachine:
                 candidate, line_number, "Registry validation failed", BlockErrorCode.VALIDATION_FAILED
             )
 
+        return None
+
+    def _create_success_event(
+        self,
+        candidate: BlockCandidate,
+        block: ExtractedBlock[BaseMetadata, BaseContent],
+        block_type: str | None,
+    ) -> BlockEndEvent:
+        """Create BlockEndEvent for successful extraction.
+
+        Args:
+            candidate: Block candidate
+            block: Successfully extracted and validated block
+            block_type: Block type from candidate
+
+        Returns:
+            BlockEndEvent with all block information
+        """
         self._logger.info(
             "block_extracted",
             block_type=block_type,
@@ -437,18 +462,78 @@ class BlockStateMachine:
 
         event = BlockEndEvent(
             block_id=block_id,
-            block_type=block_type or metadata.block_type,
+            block_type=block_type or block.metadata.block_type,
             syntax=block.syntax_name,
             start_line=block.line_start,
             end_line=block.line_end,
-            metadata=metadata.model_dump(),
-            content=content.model_dump(),
+            metadata=block.metadata.model_dump(),
+            content=block.content.model_dump(),
             raw_content=block.raw_text,
             hash_id=block.hash_id,
         )
         # Set private attribute after construction
         object.__setattr__(event, "_block", block)
         return event
+
+    def _try_extract_block(
+        self,
+        candidate: BlockCandidate,
+        line_number: int,
+    ) -> BlockEndEvent | BlockErrorEvent:
+        """Try to parse and validate a complete block.
+
+        This orchestrates the extraction process by delegating to specialized helpers.
+
+        Args:
+            candidate: Block candidate to extract
+            line_number: Current line number (end of block)
+
+        Returns:
+            BlockEndEvent if successful, BlockErrorEvent if validation fails
+        """
+        # Step 1: Parse the candidate
+        block_type, parse_result = self._parse_candidate(candidate)
+
+        self._logger.debug(
+            "extracting_block",
+            syntax=get_syntax_name(candidate.syntax),
+            block_type=block_type,
+            start_line=candidate.start_line,
+            end_line=line_number,
+            size_bytes=len(candidate.raw_text),
+        )
+
+        # Handle parse failure
+        if not parse_result.success:
+            error = parse_result.error or "Parse failed"
+            self._logger.warning(
+                "block_parse_failed",
+                block_type=block_type,
+                error=error,
+                syntax=get_syntax_name(candidate.syntax),
+                exc_info=parse_result.exception,
+            )
+            return self._create_error_event(
+                candidate, line_number, error, BlockErrorCode.PARSE_FAILED, parse_result.exception
+            )
+
+        # Check for missing metadata or content
+        if parse_result.metadata is None or parse_result.content is None:
+            error_code = (
+                BlockErrorCode.MISSING_METADATA if parse_result.metadata is None else BlockErrorCode.MISSING_CONTENT
+            )
+            return self._create_error_event(candidate, line_number, "Missing metadata or content", error_code)
+
+        # Step 2: Create extracted block
+        block = self._create_extracted_block(candidate, parse_result, line_number)
+
+        # Step 3: Validate
+        validation_error = self._validate_extracted_block(candidate, block, block_type, line_number)
+        if validation_error:
+            return validation_error
+
+        # Step 4: Success!
+        return self._create_success_event(candidate, block, block_type)
 
     def _create_section_delta_event(
         self,
@@ -470,11 +555,11 @@ class BlockStateMachine:
             Section-specific delta event
         """
         block_id = self.get_block_id(candidate.start_line)
-        section = candidate.current_section or "content"
+        section = candidate.current_section or SectionType.CONTENT
         syntax_name = get_syntax_name(candidate.syntax)
         accumulated_size = len(candidate.raw_text)
 
-        if section == "header":
+        if section == SectionType.HEADER:
             return BlockHeaderDeltaEvent(
                 block_id=block_id,
                 delta=line,
@@ -483,7 +568,7 @@ class BlockStateMachine:
                 accumulated_size=accumulated_size,
                 inline_metadata=None,
             )
-        if section == "metadata":
+        if section == SectionType.METADATA:
             return BlockMetadataDeltaEvent(
                 block_id=block_id,
                 delta=line,

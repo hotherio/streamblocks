@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from hother.streamblocks.core.models import extract_block_types
-from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult, SectionType
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
@@ -194,23 +194,23 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
             if line.strip() == self.start_delimiter:
                 return DetectionResult(is_opening=True)
         # Inside a block
-        elif candidate.current_section == "header":
+        elif candidate.current_section == SectionType.HEADER:
             # Should be frontmatter start
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "metadata"
+                candidate.current_section = SectionType.METADATA
                 return DetectionResult(is_metadata_boundary=True)
             # Skip empty lines in header - frontmatter might follow
             if line.strip() == "":
                 return DetectionResult()
             # Move directly to content if no frontmatter
-            candidate.current_section = "content"
+            candidate.current_section = SectionType.CONTENT
             candidate.content_lines.append(line)
-        elif candidate.current_section == "metadata":
+        elif candidate.current_section == SectionType.METADATA:
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = "content"
+                candidate.current_section = SectionType.CONTENT
                 return DetectionResult(is_metadata_boundary=True)
             candidate.metadata_lines.append(line)
-        elif candidate.current_section == "content":
+        elif candidate.current_section == SectionType.CONTENT:
             if line.strip() == self.end_delimiter:
                 return DetectionResult(is_closing=True)
             candidate.content_lines.append(line)
@@ -219,7 +219,7 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
 
     def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
         """Check if we're still in metadata section."""
-        return candidate.current_section in ["header", "metadata"]
+        return candidate.current_section in {SectionType.HEADER, SectionType.METADATA}
 
     def extract_block_type(self, candidate: BlockCandidate) -> str | None:
         """Extract block_type from YAML frontmatter."""

@@ -98,6 +98,18 @@ class BlockErrorCode(StrEnum):
     SYNTAX_ERROR = "SYNTAX_ERROR"
 
 
+class SectionType(StrEnum):
+    """Block section types during accumulation.
+
+    These represent the different phases of block parsing as content
+    is accumulated line by line.
+    """
+
+    HEADER = "header"  # Block opening line(s) with inline metadata
+    METADATA = "metadata"  # Dedicated metadata section (e.g., YAML frontmatter)
+    CONTENT = "content"  # Main block content
+
+
 # ============== Base Event ==============
 
 

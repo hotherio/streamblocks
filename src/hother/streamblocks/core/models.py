@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState, SectionType
 
 if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
@@ -85,7 +85,7 @@ class BlockCandidate:
         self.state = BlockState.HEADER_DETECTED
         self.metadata_lines: list[str] = []
         self.content_lines: list[str] = []
-        self.current_section: str = "header"  # "header", "metadata", "content"
+        self.current_section: SectionType = SectionType.HEADER
 
         # Cache fields for early parsing results
         self.parsed_metadata: dict[str, Any] | None = None
