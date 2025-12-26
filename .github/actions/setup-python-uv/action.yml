@@ -40,9 +40,9 @@ runs:
       shell: bash
       run: |
         if [ -z "${{ inputs.dependency-groups }}" ]; then
-          uv sync
+          uv sync --python ${{ inputs.python-version }}
         elif [ "${{ inputs.dependency-groups }}" == "all" ]; then
-          uv sync --all-extras --dev
+          uv sync --python ${{ inputs.python-version }} --all-extras --dev
         else
-          uv sync --group ${{ inputs.dependency-groups }}
+          uv sync --python ${{ inputs.python-version }} --group ${{ inputs.dependency-groups }}
         fi
