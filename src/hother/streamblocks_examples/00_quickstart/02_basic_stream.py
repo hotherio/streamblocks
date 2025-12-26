@@ -4,7 +4,7 @@
 # --8<-- [start:imports]
 import asyncio
 
-from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent, TextContentEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
 from hother.streamblocks_examples.helpers.simulator import simulated_stream
@@ -16,21 +16,22 @@ from hother.streamblocks_examples.helpers.simulator import simulated_stream
 async def main() -> None:
     """Process a chunked text stream."""
     # --8<-- [start:example]
-    syntax = DelimiterPreambleSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
     # Text to stream in chunks
     text = "Some text before.\n!!block:files_operations\napp.py:C\n!!end\nSome text after."
+    stream = simulated_stream(text, preset="fast")
 
-    async for event in processor.process_stream(simulated_stream(text, preset="fast")):
+    async for event in processor.process_stream(stream):
         if isinstance(event, TextContentEvent):
             print(f"[TEXT] {event.content.strip()}")
         elif isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"[BLOCK] {block.metadata.id}")
+                print("\n[BLOCK] Extracted:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:example]
 
 

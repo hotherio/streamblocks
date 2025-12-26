@@ -4,11 +4,8 @@ import asyncio
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-from hother.streamblocks import (
-    DelimiterPreambleSyntax,
-    Registry,
-    StreamBlockProcessor,
-)
+from hother.streamblocks import Registry, StreamBlockProcessor
+from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
@@ -20,14 +17,9 @@ if TYPE_CHECKING:
 async def main() -> None:
     """Main example function."""
     # Create syntax with NO custom models - uses BaseMetadata and BaseContent
-    syntax = DelimiterPreambleSyntax()
-
-    # Create type-specific registry
-    registry = Registry(syntax=syntax)
+    registry = Registry()
 
     # Create processor with the registry
-    from hother.streamblocks.core.processor import ProcessorConfig
-
     config = ProcessorConfig(lines_buffer=5)
     processor = StreamBlockProcessor(registry, config=config)
 
@@ -75,14 +67,8 @@ async def main() -> None:
             if block is not None:
                 blocks_extracted.append(block)
 
-                print("\n[BLOCK] Extracted!")
-                print(f"  ID: {block.metadata.id}")
-                print(f"  Type: {block.metadata.block_type}")
-                print(f"  Raw content preview: {block.content.raw_content[:50]}...")
-
-                # All blocks have raw_content automatically
-                lines = block.content.raw_content.split("\n")
-                print(f"  Content lines: {len(lines)}")
+                print("\n[BLOCK] Extracted:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             # Block rejected
@@ -91,12 +77,11 @@ async def main() -> None:
     print("\n" + "-" * 60)
     print(f"Total blocks extracted: {len(blocks_extracted)}")
 
-    # Summary
-    print("\nBlock summary:")
+    # Show all extracted blocks
+    print("\nExtracted blocks (full details):")
     for i, block in enumerate(blocks_extracted, 1):
-        print(f"  {i}. {block.metadata.id} ({block.metadata.block_type})")
-
-    print("\n✓ Simple single-syntax processing - no custom models needed!")
+        print(f"\n--- Block {i} ---")
+        print(block.model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

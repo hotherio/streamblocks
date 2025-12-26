@@ -113,8 +113,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Block {block.metadata.id} passed all validators!")
-                print(f"Operations: {len(block.content.operations)}")
+                print("Block passed all validators!")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:test]
 
 

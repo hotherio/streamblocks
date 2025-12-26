@@ -94,7 +94,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Block ID: {block.metadata.id}")
+                print("Block extracted:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:valid_block]
 
 

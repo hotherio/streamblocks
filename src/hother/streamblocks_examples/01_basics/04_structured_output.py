@@ -94,25 +94,8 @@ async def example_1_basic_person() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\n✅ Extracted Person Block: {block.metadata.id}")
-
-            # Access structured data - fields are directly on content object
-            content = cast("Any", block.content)
-            if hasattr(content, "name"):
-                # Type-safe access to structured data
-                print(f"   Name: {content.name}")
-                print(f"   Age: {content.age}")
-                print(f"   Email: {content.email}")
-                print(f"   City: {content.city}")
-
-                # Can also validate and export as the original schema
-                person = PersonSchema(
-                    name=content.name,
-                    age=content.age,
-                    email=content.email,
-                    city=content.city,
-                )
-                print(f"\n   Validated: {person.model_dump()}")
+            print("\n✅ Extracted Person Block:")
+            print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -223,16 +206,8 @@ async def example_2_task_list() -> None:
             if block is None:
                 continue
             tasks.append(block)
-
-            # Access structured data - fields are directly on content object
-            content = cast("Any", block.content)
-            if hasattr(content, "title"):
-                print(f"\n📋 Task: {content.title}")
-                print(f"   Priority: {content.priority.upper()}")
-                print(f"   Due: {content.due_date or 'No deadline'}")
-                print(f"   Tags: {', '.join(content.tags) if content.tags else 'None'}")
-                if content.description:
-                    print(f"   Description: {content.description}")
+            print("\n📋 Extracted Task:")
+            print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -240,20 +215,6 @@ async def example_2_task_list() -> None:
 
     # Summary
     print(f"\n📊 Total tasks: {len(tasks)}")
-
-    # Count urgent and completed with type checking
-    urgent = 0
-    completed = 0
-    for t in tasks:
-        # t.content is already Any from list[Any]
-        if hasattr(t.content, "priority"):
-            if t.content.priority == Priority.URGENT:
-                urgent += 1
-            if t.content.completed:
-                completed += 1
-
-    print(f"   Urgent: {urgent}")
-    print(f"   Completed: {completed}")
 
 
 # ============================================================================
@@ -349,23 +310,8 @@ async def example_3_nested_schema() -> None:
             block = event.get_block()
             if block is None:
                 continue
-
-            # Access structured data - fields are directly on content object
-            content = cast("Any", block.content)
-            if hasattr(content, "name"):
-                print(f"\n👤 {content.name} ({content.age} years old)")
-                print(f"   Email: {content.email}")
-                print("\n   📍 Address:")
-                print(f"      {content.address.street}")
-                print(f"      {content.address.city}, {content.address.state} {content.address.zip_code}")
-
-                if content.company:
-                    print(f"\n   🏢 Company: {content.company.name}")
-                    print(f"      Industry: {content.company.industry}")
-                    print(f"      Size: {content.company.employee_count} employees")
-
-                if content.skills:
-                    print(f"\n   💻 Skills: {', '.join(content.skills)}")
+            print("\n👤 Extracted Profile:")
+            print(block.model_dump_json(indent=2))
 
 
 # ============================================================================
@@ -436,21 +382,8 @@ async def example_4_yaml_format() -> None:
             block = event.get_block()
             if block is None:
                 continue
-
-            # Access structured data - fields are directly on content object
-            content = cast("Any", block.content)
-            if hasattr(content, "app_name"):
-                print(f"\n⚙️  Application: {content.app_name} v{content.version}")
-                print(f"   Debug mode: {'ON' if content.debug else 'OFF'}")
-
-                print("\n   Features:")
-                for feature, enabled in content.features.items():
-                    status = "✓" if enabled else "✗"
-                    print(f"      {status} {feature}")
-
-                print("\n   Allowed hosts:")
-                for host in content.allowed_hosts:
-                    print(f"      - {host}")
+            print("\n⚙️  Extracted Configuration:")
+            print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -544,23 +477,8 @@ async def example_5_llm_simulation() -> None:
             if block is None:
                 continue
             print("\n")
-
-            # Access structured data - fields are directly on content object
-            content = cast("Any", block.content)
-            if hasattr(content, "summary"):
-                # Type-safe structured data from LLM!
-                print("\n📊 Analysis Results:")
-                print(f"   Summary: {content.summary}")
-                print(f"   Sentiment: {content.sentiment.upper()}")
-                print(f"   Confidence: {content.confidence * 100:.1f}%")
-
-                print("\n   Key Points:")
-                for i, point in enumerate(content.key_points, 1):
-                    print(f"      {i}. {point}")
-
-                print("\n   Entities:")
-                for entity_type, values in content.entities.items():
-                    print(f"      {entity_type.title()}: {', '.join(values)}")
+            print("\n📊 Analysis Results:")
+            print(block.model_dump_json(indent=2))
 
 
 # ============================================================================

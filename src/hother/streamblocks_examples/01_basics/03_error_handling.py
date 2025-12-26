@@ -74,10 +74,6 @@ async def main() -> None:
     """).strip()
 
     # Process stream and handle errors with structured information
-    print("=" * 60)
-    print("STRUCTURED ERROR HANDLING DEMONSTRATION")
-    print("=" * 60)
-
     extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
     rejected_blocks: list[BlockErrorEvent[BaseMetadata, BaseContent]] = []
 
@@ -86,13 +82,12 @@ async def main() -> None:
             block = event.get_block()
             if block is not None:
                 extracted_blocks.append(block)
-                print(f"\n✅ EXTRACTED: Block {block.metadata.id}")
-                print(f"   Type: {block.metadata.block_type}")
-                print(f"   Content length: {len(block.content.raw_content)} chars")
+                print("\nEXTRACTED Block:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             rejected_blocks.append(event)
-            print(f"\n❌ REJECTED: Block at lines {event.start_line}-{event.end_line}")
+            print(f"\nREJECTED: Block at lines {event.start_line}-{event.end_line}")
             print(f"   Syntax: {event.syntax}")
             print(f"   Reason: {event.reason}")
 

@@ -4,7 +4,7 @@ import asyncio
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import ExtractedBlock
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
@@ -27,11 +27,9 @@ if TYPE_CHECKING:
 
 async def main() -> None:
     """Main example function."""
-    # Create delimiter preamble syntax
-    syntax = DelimiterPreambleSyntax()
 
     # Create type-specific registry and register block
-    registry = Registry(syntax=syntax)
+    registry = Registry()
 
     # Add a custom validator
     def no_root_delete(block: ExtractedBlock[FileOperationsMetadata, FileOperationsContent]) -> bool:
@@ -89,13 +87,8 @@ async def main() -> None:
             block = event.get_block()
             if block is not None:
                 blocks_extracted.append(block)
-                print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
-
-                # Type narrow to FileOperationsContent for specific access
-                if isinstance(block.content, FileOperationsContent):
-                    print("        Operations:")
-                    for op in block.content.operations:
-                        print(f"          - {op.action}: {op.path}")
+                print("\n[BLOCK] Extracted:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             # Block rejected
@@ -103,17 +96,12 @@ async def main() -> None:
 
     print("-" * 60)
     print(f"\nTotal blocks extracted: {len(blocks_extracted)}")
-    for block in blocks_extracted:
-        print(block)
 
-    # Show metadata from blocks
-    print("\nBlock metadata:")
-    for block in blocks_extracted:
-        print(f"  - {block.metadata.id}: {block.metadata.block_type}")
-        # Check for dynamic extra parameters (e.g., param_0 from preamble)
-        param_0 = getattr(block.metadata, "param_0", None)
-        if param_0 is not None:
-            print(f"    Extra param: {param_0}")
+    # Show all extracted blocks
+    print("\nExtracted blocks (full details):")
+    for i, block in enumerate(blocks_extracted, 1):
+        print(f"\n--- Block {i} ---")
+        print(block.model_dump_json(indent=2))
 
 
 if __name__ == "__main__":
