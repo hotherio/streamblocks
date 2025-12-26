@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 from pydantic import ValidationError
 
 from hother.streamblocks.core.models import Block, BlockCandidate
-from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, SectionType
 from hother.streamblocks.syntaxes.markdown import MarkdownFrontmatterSyntax
 
 
@@ -65,24 +65,24 @@ class TestMarkdownFrontmatterSyntaxDetectLine:
         """Test detecting frontmatter start (---) in header section."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         result = syntax.detect_line("---", candidate)
 
         assert result.is_metadata_boundary is True
-        assert candidate.current_section == "metadata"
+        assert candidate.current_section == SectionType.METADATA
 
     def test_empty_line_in_header_stays_in_header(self) -> None:
         """Test that empty lines in header section don't change state."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         result = syntax.detect_line("", candidate)
 
         assert result.is_opening is False
         assert result.is_metadata_boundary is False
-        assert candidate.current_section == "header"
+        assert candidate.current_section == SectionType.HEADER
 
     def test_content_line_in_header_moves_to_content(self) -> None:
         """Test that non-empty, non-frontmatter line in header moves to content.
@@ -91,11 +91,11 @@ class TestMarkdownFrontmatterSyntaxDetectLine:
         """
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         result = syntax.detect_line("Some content directly after fence", candidate)
 
-        assert candidate.current_section == "content"
+        assert candidate.current_section == SectionType.CONTENT
         assert "Some content directly after fence" in candidate.content_lines
         assert result.is_opening is False
         assert result.is_metadata_boundary is False
@@ -104,30 +104,30 @@ class TestMarkdownFrontmatterSyntaxDetectLine:
         """Test handling content immediately after fence (no --- frontmatter)."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         # First content line after fence
         syntax.detect_line("print('hello')", candidate)
 
-        assert candidate.current_section == "content"
+        assert candidate.current_section == SectionType.CONTENT
         assert candidate.content_lines == ["print('hello')"]
 
     def test_frontmatter_end_in_metadata_section(self) -> None:
         """Test detecting frontmatter end (---) in metadata section."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "metadata"
+        candidate.current_section = SectionType.METADATA
 
         result = syntax.detect_line("---", candidate)
 
         assert result.is_metadata_boundary is True
-        assert candidate.current_section == "content"
+        assert candidate.current_section == SectionType.CONTENT
 
     def test_metadata_line_accumulates(self) -> None:
         """Test that metadata lines are accumulated."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "metadata"
+        candidate.current_section = SectionType.METADATA
 
         syntax.detect_line("key: value", candidate)
 
@@ -137,7 +137,7 @@ class TestMarkdownFrontmatterSyntaxDetectLine:
         """Test detecting closing fence in content section."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "content"
+        candidate.current_section = SectionType.CONTENT
 
         result = syntax.detect_line("```", candidate)
 
@@ -147,7 +147,7 @@ class TestMarkdownFrontmatterSyntaxDetectLine:
         """Test that content lines are accumulated and return value (branch 77->83)."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "content"
+        candidate.current_section = SectionType.CONTENT
 
         result = syntax.detect_line("content line", candidate)
 
@@ -179,7 +179,7 @@ class TestMarkdownFrontmatterSyntaxShouldAccumulateMetadata:
         """Test returns True when in header section."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "header"
+        candidate.current_section = SectionType.HEADER
 
         result = syntax.should_accumulate_metadata(candidate)
 
@@ -189,7 +189,7 @@ class TestMarkdownFrontmatterSyntaxShouldAccumulateMetadata:
         """Test returns True when in metadata section."""
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "metadata"
+        candidate.current_section = SectionType.METADATA
 
         result = syntax.should_accumulate_metadata(candidate)
 
@@ -202,7 +202,7 @@ class TestMarkdownFrontmatterSyntaxShouldAccumulateMetadata:
         """
         syntax = MarkdownFrontmatterSyntax()
         candidate = BlockCandidate(syntax=syntax, start_line=1)
-        candidate.current_section = "content"
+        candidate.current_section = SectionType.CONTENT
 
         result = syntax.should_accumulate_metadata(candidate)
 
@@ -557,7 +557,7 @@ class TestMarkdownFrontmatterSyntaxIntegration:
                 break
 
         # Verify we moved to content directly
-        assert candidate.current_section == "content"
+        assert candidate.current_section == SectionType.CONTENT
         assert len(candidate.content_lines) == 2
 
         # Parse the complete block
@@ -584,5 +584,5 @@ class TestMarkdownFrontmatterSyntaxIntegration:
 
         assert syntax.detect_line("~~~").is_opening is True
 
-        candidate.current_section = "content"
+        candidate.current_section = SectionType.CONTENT
         assert syntax.detect_line("~~~", candidate).is_closing is True

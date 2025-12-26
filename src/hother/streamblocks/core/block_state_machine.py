@@ -665,9 +665,8 @@ class BlockStateMachine:
                 validation_passed = result.passed
                 validation_error = result.error
 
-                # Store validation state in candidate
-                candidate.metadata_validation_passed = validation_passed
-                candidate.metadata_validation_error = validation_error
+                # Cache validation state in candidate
+                candidate.cache_metadata_validation(validation_passed, validation_error)
 
         return BlockMetadataEndEvent(
             block_id=block_id,
@@ -723,9 +722,8 @@ class BlockStateMachine:
             validation_passed = result.passed
             validation_error = result.error
 
-            # Store validation state in candidate
-            candidate.content_validation_passed = validation_passed
-            candidate.content_validation_error = validation_error
+            # Cache validation state in candidate
+            candidate.cache_content_validation(validation_passed, validation_error)
 
         return BlockContentEndEvent(
             block_id=block_id,

@@ -101,6 +101,48 @@ class BlockCandidate:
         """Add a line to the candidate."""
         self.lines.append(line)
 
+    def transition_to_metadata(self) -> None:
+        """Transition from header to metadata section.
+
+        This method encapsulates the section state transition logic,
+        making the state change explicit and centralized.
+        """
+        self.current_section = SectionType.METADATA
+
+    def transition_to_content(self) -> None:
+        """Transition from metadata/header to content section.
+
+        This method encapsulates the section state transition logic,
+        making the state change explicit and centralized.
+        """
+        self.current_section = SectionType.CONTENT
+
+    def cache_metadata_validation(self, passed: bool, error: str | None) -> None:
+        """Cache metadata validation result.
+
+        This method encapsulates validation result storage, providing
+        a clear interface for the state machine to cache validation state.
+
+        Args:
+            passed: Whether metadata validation passed
+            error: Error message if validation failed, None otherwise
+        """
+        self.metadata_validation_passed = passed
+        self.metadata_validation_error = error
+
+    def cache_content_validation(self, passed: bool, error: str | None) -> None:
+        """Cache content validation result.
+
+        This method encapsulates validation result storage, providing
+        a clear interface for the state machine to cache validation state.
+
+        Args:
+            passed: Whether content validation passed
+            error: Error message if validation failed, None otherwise
+        """
+        self.content_validation_passed = passed
+        self.content_validation_error = error
+
     @property
     def raw_text(self) -> str:
         """Get the raw text of all accumulated lines."""

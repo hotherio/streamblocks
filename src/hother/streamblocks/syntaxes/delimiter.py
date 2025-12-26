@@ -276,17 +276,17 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         elif candidate.current_section == SectionType.HEADER:
             # Should be frontmatter start
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = SectionType.METADATA
+                candidate.transition_to_metadata()
                 return DetectionResult(is_metadata_boundary=True)
             # Skip empty lines in header - frontmatter might follow
             if line.strip() == "":
                 return DetectionResult()
             # Move directly to content if no frontmatter
-            candidate.current_section = SectionType.CONTENT
+            candidate.transition_to_content()
             candidate.content_lines.append(line)
         elif candidate.current_section == SectionType.METADATA:
             if self._frontmatter_pattern.match(line):
-                candidate.current_section = SectionType.CONTENT
+                candidate.transition_to_content()
                 return DetectionResult(is_metadata_boundary=True)
             candidate.metadata_lines.append(line)
         elif candidate.current_section == SectionType.CONTENT:
