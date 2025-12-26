@@ -29,7 +29,45 @@ class ContentParser(Protocol):
 class DelimiterPreambleSyntax(BaseSyntax):
     """Syntax: !! delimiter with inline metadata.
 
-    Format: !!<id>:<type>[:param1:param2...]
+    This syntax uses delimiter markers with inline metadata in the opening line.
+    Metadata is extracted from the delimiter preamble, and all lines between
+    opening and closing delimiters become the content.
+
+    Format:
+        !!<id>:<type>[:param1:param2:...]
+        Content lines here
+        !!end
+
+    The opening delimiter must include:
+        - Block ID (alphanumeric, required)
+        - Block type (alphanumeric, required)
+        - Additional parameters (optional, colon-separated)
+
+    Additional parameters are stored as param_0, param_1, etc. in metadata.
+
+    Examples:
+        >>> # Simple block with just ID and type
+        >>> '''
+        ... !!patch001:patch
+        ... Fix the login bug
+        ... !!end
+        ... '''
+        >>>
+        >>> # Block with parameters
+        >>> '''
+        ... !!file123:operation:create:urgent
+        ... Create new config file
+        ... !!end
+        ... '''
+        >>> # Metadata will be: {
+        >>> #     "id": "file123",
+        >>> #     "block_type": "operation",
+        >>> #     "param_0": "create",
+        >>> #     "param_1": "urgent"
+        >>> # }
+
+    Args:
+        delimiter: Opening delimiter string (default: "!!")
     """
 
     def __init__(
@@ -163,13 +201,54 @@ class DelimiterPreambleSyntax(BaseSyntax):
 class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     """Syntax: Delimiter markers with YAML frontmatter.
 
+    This syntax uses simple delimiter markers with YAML frontmatter for metadata.
+    The frontmatter section is delimited by --- markers and must be valid YAML.
+
     Format:
-    !!start
-    ---
-    key: value
-    ---
-    content
-    !!end
+        !!start
+        ---
+        id: block_001
+        block_type: example
+        custom_field: value
+        ---
+        Content lines here
+        !!end
+
+    The YAML frontmatter should include:
+        - id: Block identifier (required if using BaseMetadata)
+        - block_type: Block type (required if using BaseMetadata)
+        - Any additional custom fields defined in your metadata class
+
+    Examples:
+        >>> # Simple block with minimal metadata
+        >>> '''
+        ... !!start
+        ... ---
+        ... id: msg001
+        ... block_type: message
+        ... ---
+        ... Hello, world!
+        ... !!end
+        ... '''
+        >>>
+        >>> # Block with nested YAML metadata
+        >>> '''
+        ... !!start
+        ... ---
+        ... id: task001
+        ... block_type: task
+        ... priority: high
+        ... tags:
+        ...   - urgent
+        ...   - backend
+        ... ---
+        ... Implement user authentication
+        ... !!end
+        ... '''
+
+    Args:
+        start_delimiter: Opening delimiter string (default: "!!start")
+        end_delimiter: Closing delimiter string (default: "!!end")
     """
 
     def __init__(

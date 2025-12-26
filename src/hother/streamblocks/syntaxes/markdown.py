@@ -14,15 +14,67 @@ if TYPE_CHECKING:
 
 
 class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
-    """Syntax: Markdown-style with YAML frontmatter.
+    """Syntax: Markdown fenced code blocks with YAML frontmatter.
+
+    This syntax uses Markdown-style fenced code blocks with optional YAML frontmatter
+    for metadata. The info_string after the opening fence can be used as a fallback
+    block_type when no frontmatter is present.
 
     Format:
-    ```[info]
-    ---
-    key: value
-    ---
-    content
-    ```
+        ```[info_string]
+        ---
+        id: block_001
+        block_type: example
+        custom_field: value
+        ---
+        Content lines here
+        ```
+
+    The info_string is optional. When provided, it's used as the block_type if
+    no YAML frontmatter is present. The YAML frontmatter is also optional - if
+    omitted, all content becomes the block content.
+
+    Examples:
+        >>> # Block with frontmatter
+        >>> '''
+        ... ```python
+        ... ---
+        ... id: code001
+        ... block_type: code
+        ... language: python
+        ... ---
+        ... def hello():
+        ...     print("Hello, world!")
+        ... ```
+        ... '''
+        >>>
+        >>> # Block without frontmatter (info_string becomes block_type)
+        >>> '''
+        ... ```patch
+        ... diff --git a/file.py b/file.py
+        ... - old line
+        ... + new line
+        ... ```
+        ... '''
+        >>> # block_type will be "patch" from info_string
+        >>>
+        >>> # Block with nested YAML
+        >>> '''
+        ... ```task
+        ... ---
+        ... id: task001
+        ... block_type: task
+        ... assignees:
+        ...   - alice
+        ...   - bob
+        ... ---
+        ... Implement user authentication
+        ... ```
+        ... '''
+
+    Args:
+        fence: Fence string (default: "```")
+        info_string: Optional info string used as fallback block_type
     """
 
     def __init__(
