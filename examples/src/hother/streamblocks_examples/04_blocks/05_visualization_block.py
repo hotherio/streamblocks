@@ -52,7 +52,7 @@ async def main() -> None:
         !!end
     """).strip()
 
-    from streamblocks_examples.helpers.simulator import simple_text_stream
+    from hother.streamblocks_examples.helpers.simulator import simple_text_stream
 
     # --8<-- [end:stream]
 

@@ -4,7 +4,7 @@
 # --8<-- [start:imports]
 import asyncio
 
-from streamblocks_examples.helpers.simulator import simple_text_stream
+from hother.streamblocks_examples.helpers.simulator import simple_text_stream
 
 from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import Registry, StreamBlockProcessor

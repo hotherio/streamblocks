@@ -106,7 +106,7 @@ async def main() -> None:
         !!end
     """).strip()
 
-    from streamblocks_examples.helpers.simulator import simple_text_stream
+    from hother.streamblocks_examples.helpers.simulator import simple_text_stream
 
     print("=== Validator chain test ===")
     async for event in processor.process_stream(simple_text_stream(text)):

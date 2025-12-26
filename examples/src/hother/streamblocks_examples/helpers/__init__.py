@@ -1,11 +1,11 @@
 """Reusable helpers for StreamBlocks examples."""
 
-from streamblocks_examples.helpers.handlers import collect_blocks, print_events
-from streamblocks_examples.helpers.setup import default_processor, default_registry
+from hother.streamblocks_examples.helpers.handlers import collect_blocks, print_events
+from hother.streamblocks_examples.helpers.setup import default_processor, default_registry
 
 # Import simulator helpers (may not be available if cancelable not installed)
 try:
-    from streamblocks_examples.helpers.simulator import (
+    from hother.streamblocks_examples.helpers.simulator import (
         SIMULATOR_AVAILABLE,
         StreamConfig,
         StreamPresets,

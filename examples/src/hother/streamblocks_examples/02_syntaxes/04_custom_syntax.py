@@ -142,7 +142,7 @@ async def main() -> None:
         Some text after the block.
     """).strip()
 
-    from streamblocks_examples.helpers.simulator import simple_text_stream
+    from hother.streamblocks_examples.helpers.simulator import simple_text_stream
 
     # --8<-- [end:stream]
 

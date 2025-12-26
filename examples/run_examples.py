@@ -188,11 +188,17 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Add project root to PYTHONPATH so examples can import from examples.blocks
+            # Add project root and examples/src to PYTHONPATH
+            # - project_root for examples.blocks.agent imports
+            # - examples_src for hother.streamblocks_examples imports
             project_root = str(self.examples_dir.parent)
+            examples_src = str(self.examples_dir / "src")
             env = os.environ.copy()
             existing_pythonpath = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+            paths = [project_root, examples_src]
+            if existing_pythonpath:
+                paths.append(existing_pythonpath)
+            env["PYTHONPATH"] = ":".join(paths)
 
             result = await asyncio.wait_for(
                 asyncio.create_subprocess_exec(
@@ -230,11 +236,17 @@ class ExampleRunner:
             Tuple of (success, stdout, stderr)
         """
         try:
-            # Add project root to PYTHONPATH so examples can import from examples.blocks
+            # Add project root and examples/src to PYTHONPATH
+            # - project_root for examples.blocks.agent imports
+            # - examples_src for hother.streamblocks_examples imports
             project_root = str(self.examples_dir.parent)
+            examples_src = str(self.examples_dir / "src")
             env = os.environ.copy()
             existing_pythonpath = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = f"{project_root}:{existing_pythonpath}" if existing_pythonpath else project_root
+            paths = [project_root, examples_src]
+            if existing_pythonpath:
+                paths.append(existing_pythonpath)
+            env["PYTHONPATH"] = ":".join(paths)
 
             result = subprocess.run(
                 [sys.executable, str(example.path)],
