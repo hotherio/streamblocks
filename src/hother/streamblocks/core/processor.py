@@ -13,6 +13,7 @@ from hother.streamblocks.adapters.input import IdentityInputAdapter
 from hother.streamblocks.adapters.protocols import HasNativeModulePrefix
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.block_state_machine import BlockStateMachine
+from hother.streamblocks.core.constants import LIMITS
 from hother.streamblocks.core.line_accumulator import LineAccumulator
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
@@ -84,9 +85,9 @@ class ProcessorConfig:
         ... )
     """
 
-    lines_buffer: int = 5
-    max_line_length: int = 16_384
-    max_block_size: int = 1_048_576  # 1MB
+    lines_buffer: int = LIMITS.LINES_BUFFER
+    max_line_length: int = LIMITS.MAX_LINE_LENGTH
+    max_block_size: int = LIMITS.MAX_BLOCK_SIZE
     emit_original_events: bool = True
     emit_text_deltas: bool = True
     emit_section_end_events: bool = True

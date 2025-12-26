@@ -7,13 +7,11 @@ from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from pydantic import BaseModel, Field
 
+from hother.streamblocks.core.constants import EXPECTED_BLOCK_TYPE_PARAMS, LIMITS
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState, SectionType
 
 if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
-
-# Expected number of type parameters for Block[TMetadata, TContent]
-_EXPECTED_BLOCK_TYPE_PARAMS = 2
 
 
 def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], type[BaseContent]]:
@@ -33,7 +31,7 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
         origin = get_origin(base)
         if origin is not None and origin.__name__ == "Block":
             args = get_args(base)
-            if len(args) == _EXPECTED_BLOCK_TYPE_PARAMS:
+            if len(args) == EXPECTED_BLOCK_TYPE_PARAMS:
                 return args
 
     # Fallback: extract from Pydantic field annotations (for non-generic subclasses)
@@ -149,8 +147,8 @@ class BlockCandidate:
         return "\n".join(self.lines)
 
     def compute_hash(self) -> str:
-        """Compute hash of first 64 chars for ID."""
-        text_slice = self.raw_text[:64]
+        """Compute hash of first N chars for ID (N defined in constants)."""
+        text_slice = self.raw_text[: LIMITS.HASH_PREFIX_LENGTH]
         return hashlib.sha256(text_slice.encode()).hexdigest()[:8]
 
     def __repr__(self) -> str:
