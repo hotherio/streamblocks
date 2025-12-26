@@ -149,22 +149,6 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         # No block_type found in metadata or parse failed, return info_string
         return self.info_string
 
-    def _set_metadata_defaults(
-        self,
-        metadata_dict: dict[str, Any],
-        candidate: BlockCandidate,
-        metadata_class: type[BaseMetadata],
-    ) -> None:
-        """Set default values for id and block_type if using BaseMetadata."""
-        if metadata_class is not BaseMetadata:
-            return
-
-        if "id" not in metadata_dict:
-            metadata_dict["id"] = f"block_{candidate.compute_hash()}"
-
-        if "block_type" not in metadata_dict:
-            metadata_dict["block_type"] = self.info_string or "markdown"
-
     def _parse_metadata_instance(
         self,
         metadata_class: type[BaseMetadata],
@@ -199,8 +183,10 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         if yaml_error:
             return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
-        # Set defaults for BaseMetadata
-        self._set_metadata_defaults(metadata_dict, candidate, metadata_class)
+        # Set default id and block_type if using BaseMetadata
+        self._set_default_metadata_fields(
+            metadata_dict, candidate, metadata_class, default_type=self.info_string or "markdown"
+        )
 
         # Parse metadata instance
         metadata_result = self._parse_metadata_instance(metadata_class, metadata_dict)

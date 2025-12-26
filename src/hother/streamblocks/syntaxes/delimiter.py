@@ -326,14 +326,8 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         if yaml_error:
             return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
-        # Ensure id and block_type have defaults
-        # Only fill in defaults if using BaseMetadata (no custom class provided)
-        if metadata_class is BaseMetadata:
-            if "id" not in metadata_dict:
-                # Generate an ID based on hash of content
-                metadata_dict["id"] = f"block_{candidate.compute_hash()}"
-            if "block_type" not in metadata_dict:
-                metadata_dict["block_type"] = "unknown"
+        # Set default id and block_type if using BaseMetadata
+        self._set_default_metadata_fields(metadata_dict, candidate, metadata_class, default_type="unknown")
 
         # Parse metadata using helper
         metadata = self._safe_parse_metadata(metadata_class, metadata_dict)
