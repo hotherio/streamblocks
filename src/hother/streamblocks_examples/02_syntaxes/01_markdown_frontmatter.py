@@ -127,35 +127,8 @@ async def main() -> None:
                 continue
             blocks_extracted.append(block)
             current_partial = None
-
-            # Type narrowing for patch blocks
-            from hother.streamblocks_examples.blocks.agent.patch import PatchContent, PatchMetadata
-
-            if not isinstance(block.metadata, PatchMetadata):
-                continue
-            if not isinstance(block.content, PatchContent):
-                continue
-
-            metadata = block.metadata
-            content = block.content
-
-            print(f"\n[BLOCK] Extracted: {metadata.id} (syntax: {block.syntax_name})")
-            print(f"        File: {metadata.file}")
-            print(f"        Start line: {metadata.start_line}")
-
-            # Show extra metadata if present
-            if hasattr(metadata, "author"):
-                print(f"        Author: {metadata.author}")
-            if hasattr(metadata, "priority"):
-                print(f"        Priority: {metadata.priority}")
-
-            # Show patch preview
-            print("        Patch preview:")
-            lines: list[str] = content.diff.strip().split("\\n")
-            for line in lines[:3]:  # Show first 3 lines
-                print(f"          {line}")
-            if len(lines) > 3:
-                print(f"          ... ({len(lines) - 3} more lines)")
+            print("\n[BLOCK] Extracted:")
+            print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             # Block rejected
@@ -166,15 +139,11 @@ async def main() -> None:
     print("-" * 70)
     print(f"\nTotal blocks extracted: {len(blocks_extracted)}")
 
-    # Summary
-    print("\nBlock summary:")
+    # Show all extracted blocks
+    print("\nExtracted blocks (full details):")
     for i, block in enumerate(blocks_extracted, 1):
-        # Type narrowing for summary
-        from hother.streamblocks_examples.blocks.agent.patch import PatchMetadata
-
-        if isinstance(block.metadata, PatchMetadata):
-            syntax_display = block.syntax_name.replace("markdown_frontmatter_", "")
-            print(f"  {i}. {block.metadata.id} - {block.metadata.file} ({syntax_display} syntax)")
+        print(f"\n--- Block {i} ---")
+        print(block.model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

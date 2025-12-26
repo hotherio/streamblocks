@@ -191,29 +191,8 @@ async def main() -> None:
             if block is None:
                 continue
             blocks_extracted.append(block)
-
-            # Type narrow to TaskMetadata and TaskContent for specific access
-            if isinstance(block.metadata, TaskMetadata) and isinstance(block.content, TaskContent):
-                metadata = block.metadata
-                content = block.content
-
-                print(f"\n{'=' * 60}")
-                print(f"[TASK] {metadata.id} - {metadata.title}")
-                print(f"       Priority: {metadata.priority}")
-                print(f"       Status: {metadata.status}")
-                if metadata.assignee:
-                    print(f"       Assignee: {metadata.assignee}")
-                if metadata.due_date:
-                    print(f"       Due: {metadata.due_date}")
-                if metadata.tags:
-                    print(f"       Tags: {', '.join(metadata.tags)}")
-
-                print(f"\n       Description: {content.description}")
-                if content.subtasks:
-                    print("       Subtasks:")
-                    for subtask in content.subtasks:
-                        print(f"         - {subtask}")
-                print("=" * 60)
+            print("\n[TASK] Extracted:")
+            print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             # Block rejected
@@ -221,13 +200,10 @@ async def main() -> None:
 
     print("\n\nEXTRACTED BLOCKS SUMMARY:")
     print(f"Total blocks: {len(blocks_extracted)}")
-    print("\nTasks:")
-    for task in blocks_extracted:
-        # Type narrow to TaskMetadata for specific access
-        if isinstance(task.metadata, TaskMetadata):
-            print(f"  - [{task.metadata.priority.upper()}] {task.metadata.title}")
-            print(f"    Assignee: {task.metadata.assignee or 'Unassigned'}")
-            print(f"    Status: {task.metadata.status}")
+    print("\nExtracted blocks (full details):")
+    for i, block in enumerate(blocks_extracted, 1):
+        print(f"\n--- Block {i} ---")
+        print(block.model_dump_json(indent=2))
 
     print("\n✓ DelimiterFrontmatterSyntax processing complete!")
 

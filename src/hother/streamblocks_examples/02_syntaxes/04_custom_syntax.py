@@ -152,9 +152,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Block ID: {block.metadata.id}")
-                print(f"Type: {block.metadata.block_type}")
-                print(f"Operations: {len(block.content.operations)}")
+                print("Extracted block:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:process]
 
 
