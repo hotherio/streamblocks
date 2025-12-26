@@ -86,7 +86,7 @@ dev = [
     "pytest-asyncio>=0.21",
     "hypothesis>=6.0",
     "ruff>=0.8",
-    "basedpyright>=1.31.4",
+    "basedpyright>=1.36.2",
     "pre-commit>=4.0",
     "detect-secrets>=1.5",
     "pretty_errors>=1.2",
@@ -340,6 +340,10 @@ include = ["src", "examples"]
 exclude = ["**/__pycache__", "**/migrations", ".venv", "tests", "src/hother/streamblocks_examples"]
 ignore = [
     "examples/logging/structlog_example.py",
+    "examples/run_examples.py",  # Example runner has complex dynamic typing
+    "examples/blocks/agent/files.py",  # Literal narrowing for block_type
+    "examples/blocks/agent/message.py",  # Literal narrowing for block_type
+    "examples/blocks/agent/patch.py",  # Literal narrowing for block_type
     "src/hother/streamblocks/adapters/detection.py",  # type(Any) returns type[Unknown]
     "src/hother/streamblocks/core/protocol_processor.py",  # Complex generic type interactions
     "src/hother/streamblocks/extensions/agui/output_adapter.py",  # Complex generic type interactions
@@ -351,7 +355,7 @@ ignore = [
     "src/hother/streamblocks/blocks/message.py",
 ]
 
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 venvPath = ".venv"
 
 typeCheckingMode = "strict"
