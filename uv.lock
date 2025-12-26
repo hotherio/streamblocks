@@ -2275,7 +2275,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pydantic-ai", specifier = ">=1.0.9" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "streamblocks-examples", marker = "extra == 'examples'", editable = "examples" },
+    { name = "streamblocks-examples", marker = "extra == 'examples'", editable = "src/hother/streamblocks_examples" },
     { name = "structlog", marker = "extra == 'structlog'", specifier = ">=24.1.0" },
     { name = "textual", specifier = ">=6.1.0" },
 ]
@@ -2313,7 +2313,7 @@ doc = [
 [[package]]
 name = "streamblocks-examples"
 version = "0.1.0"
-source = { editable = "examples" }
+source = { editable = "src/hother/streamblocks_examples" }
 dependencies = [
     { name = "hother-cancelable" },
     { name = "streamblocks" },

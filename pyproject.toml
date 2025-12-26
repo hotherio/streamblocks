@@ -434,7 +434,7 @@ exclude_lines = [
 
 # UV Workspace Configuration
 [tool.uv.workspace]
-members = ["examples"]
+members = ["src/hother/streamblocks_examples"]
 
 [tool.uv.sources]
 streamblocks-examples = { workspace = true }
