@@ -4,11 +4,10 @@
 # --8<-- [start:imports]
 import asyncio
 
-from hother.streamblocks_examples.helpers.simulator import simulated_stream
-
 from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent, TextContentEvent
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 # --8<-- [end:imports]
 

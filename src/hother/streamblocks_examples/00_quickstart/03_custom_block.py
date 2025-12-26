@@ -4,12 +4,10 @@
 # --8<-- [start:imports]
 import asyncio
 
-from hother.streamblocks_examples.helpers.simulator import simple_text_stream
-from pydantic import Field
-
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockEndEvent
+from hother.streamblocks_examples.helpers.simulator import simple_text_stream
 
 # --8<-- [end:imports]
 
