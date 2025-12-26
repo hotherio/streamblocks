@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 import yaml
+from pydantic import ValidationError
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
-    from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+    from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult
+
+# Import ParseResult at module level to avoid circular import issues
+# This is safe because it's only used for return types
+from hother.streamblocks.core.types import ParseResult
+
+# Module-level logger for debugging YAML parsing failures
+_logger = logging.getLogger(__name__)
 
 
 class YAMLFrontmatterMixin:
@@ -41,7 +50,14 @@ class YAMLFrontmatterMixin:
         yaml_content = "\n".join(metadata_lines)
         try:
             return yaml.safe_load(yaml_content) or {}
-        except yaml.YAMLError:
+        except yaml.YAMLError as e:
+            # Log parse failure for debugging
+            _logger.debug(
+                "YAML parse failed: %s (lines=%d, preview=%s)",
+                str(e),
+                len(metadata_lines),
+                yaml_content[:100] if yaml_content else "",
+            )
             return None
 
     def _parse_yaml_metadata_strict(self, metadata_lines: list[str]) -> tuple[dict[str, Any], Exception | None]:
@@ -158,6 +174,74 @@ class BaseSyntax(ABC):
             ParseResult with parsed metadata and content or error
         """
         ...
+
+    # Helper methods for validation
+
+    def _safe_parse_metadata(
+        self,
+        metadata_class: type[BaseMetadata],
+        data: dict[str, Any],
+    ) -> BaseMetadata | ParseResult[BaseMetadata, BaseContent]:
+        """Safely parse metadata dict into Pydantic model.
+
+        Helper method to reduce code duplication across syntax implementations.
+        Handles ValidationError and returns either the parsed metadata or a
+        ParseResult with error information.
+
+        Args:
+            metadata_class: The metadata class to instantiate
+            data: Dictionary of metadata fields
+
+        Returns:
+            Parsed metadata instance, or ParseResult with error on failure
+        """
+        try:
+            return metadata_class(**data)
+        except ValidationError as e:
+            return ParseResult(
+                success=False,
+                error=f"Metadata validation error: {e}",
+                exception=e,
+            )
+        except (TypeError, ValueError, KeyError) as e:
+            return ParseResult(
+                success=False,
+                error=f"Invalid metadata: {e}",
+                exception=e,
+            )
+
+    def _safe_parse_content(
+        self,
+        content_class: type[BaseContent],
+        raw_text: str,
+    ) -> BaseContent | ParseResult[BaseMetadata, BaseContent]:
+        """Safely parse content into Pydantic model.
+
+        Helper method to reduce code duplication across syntax implementations.
+        Handles ValidationError and returns either the parsed content or a
+        ParseResult with error information.
+
+        Args:
+            content_class: The content class to instantiate
+            raw_text: Raw text content to parse
+
+        Returns:
+            Parsed content instance, or ParseResult with error on failure
+        """
+        try:
+            return content_class.parse(raw_text)
+        except ValidationError as e:
+            return ParseResult(
+                success=False,
+                error=f"Content validation error: {e}",
+                exception=e,
+            )
+        except (TypeError, ValueError, KeyError) as e:
+            return ParseResult(
+                success=False,
+                error=f"Invalid content: {e}",
+                exception=e,
+            )
 
     # Default implementations
 

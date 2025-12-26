@@ -5,8 +5,6 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from pydantic import ValidationError
-
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
@@ -110,26 +108,22 @@ class DelimiterPreambleSyntax(BaseSyntax):
         if not detection.metadata:
             return ParseResult(success=False, error="Missing metadata in preamble")
 
-        try:
-            # Convert all metadata values to strings for type safety
-            # Note: id and block_type are always set by detect_line()
-            typed_metadata = {k: str(v) for k, v in detection.metadata.items()}
-            metadata = metadata_class(**typed_metadata)
-        except ValidationError as e:
-            return ParseResult(success=False, error=f"Metadata validation error: {e}", exception=e)
-        except (TypeError, ValueError, KeyError) as e:
-            return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
+        # Convert all metadata values to strings for type safety
+        # Note: id and block_type are always set by detect_line()
+        typed_metadata = {k: str(v) for k, v in detection.metadata.items()}
+
+        # Parse metadata using helper
+        metadata = self._safe_parse_metadata(metadata_class, typed_metadata)
+        if isinstance(metadata, ParseResult):
+            return metadata  # Return error
 
         # Parse content (skip first and last lines)
         content_text = "\n".join(candidate.lines[1:-1])
 
-        try:
-            # All content classes must have parse method
-            content = content_class.parse(content_text)
-        except ValidationError as e:
-            return ParseResult(success=False, error=f"Content validation error: {e}", exception=e)
-        except (TypeError, ValueError, KeyError) as e:
-            return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
+        # Parse content using helper
+        content = self._safe_parse_content(content_class, content_text)
+        if isinstance(content, ParseResult):
+            return content  # Return error
 
         return ParseResult(success=True, metadata=metadata, content=content)
 
@@ -262,23 +256,16 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
             if "block_type" not in metadata_dict:
                 metadata_dict["block_type"] = "unknown"
 
-        try:
-            # Pass metadata dict directly to Pydantic for validation
-            metadata = metadata_class(**metadata_dict)
-        except ValidationError as e:
-            return ParseResult(success=False, error=f"Metadata validation error: {e}", exception=e)
-        except (TypeError, ValueError, KeyError) as e:
-            return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
+        # Parse metadata using helper
+        metadata = self._safe_parse_metadata(metadata_class, metadata_dict)
+        if isinstance(metadata, ParseResult):
+            return metadata  # Return error
 
+        # Parse content using helper
         content_text = "\n".join(candidate.content_lines)
-
-        try:
-            # All content classes must have parse method
-            content = content_class.parse(content_text)
-        except ValidationError as e:
-            return ParseResult(success=False, error=f"Content validation error: {e}", exception=e)
-        except (TypeError, ValueError, KeyError) as e:
-            return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
+        content = self._safe_parse_content(content_class, content_text)
+        if isinstance(content, ParseResult):
+            return content  # Return error
 
         return ParseResult(success=True, metadata=metadata, content=content)
 

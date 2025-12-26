@@ -14,13 +14,13 @@ from hother.streamblocks.core.processor import (
     ProcessorConfig,
     StreamBlockProcessor,
     StreamState,
-    _get_syntax_name,
 )
 from hother.streamblocks.core.types import (
     BlockEndEvent,
     BlockErrorEvent,
     TextDeltaEvent,
 )
+from hother.streamblocks.core.utils import get_syntax_name
 from hother.streamblocks.syntaxes.delimiter import DelimiterPreambleSyntax
 
 
@@ -93,13 +93,13 @@ class TestProcessorConfig:
 
 
 class TestGetSyntaxName:
-    """Tests for _get_syntax_name function."""
+    """Tests for get_syntax_name function."""
 
-    def test_get_syntax_name_returns_class_name(self) -> None:
-        """Test that _get_syntax_name returns the class name."""
+    def testget_syntax_name_returns_class_name(self) -> None:
+        """Test that get_syntax_name returns the class name."""
         syntax = DelimiterPreambleSyntax()
 
-        name = _get_syntax_name(syntax)
+        name = get_syntax_name(syntax)
 
         assert name == "DelimiterPreambleSyntax"
 
