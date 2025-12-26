@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate changelog for release
-        uses: orhun/git-cliff-action@d77b37db2e3f7398432d34b72a12aa3e2ba87e51 # v4
+        uses: orhun/git-cliff-action@e16f179f0be49ecdfe63753837f20b9531642772 # v4
         id: git-cliff
         with:
           config: cliff.toml
@@ -28,7 +28,7 @@ jobs:
           OUTPUT: CHANGELOG.md
 
       - name: Update full changelog
-        uses: orhun/git-cliff-action@d77b37db2e3f7398432d34b72a12aa3e2ba87e51 # v4
+        uses: orhun/git-cliff-action@e16f179f0be49ecdfe63753837f20b9531642772 # v4
         with:
           config: cliff.toml
           args: -o CHANGELOG.md
@@ -41,7 +41,7 @@ jobs:
           uv build
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@aec2ec56f94eb8180ceec724245f64ef008b89f5 # v2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           body: ${{ steps.git-cliff.outputs.content }}
           files: dist/*
