@@ -23,16 +23,12 @@ from hother.streamblocks.core.types import (
     Event,
     TextContentEvent,
 )
+from hother.streamblocks.core.utils import get_syntax_name
 
 if TYPE_CHECKING:
     from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.registry import Registry
     from hother.streamblocks.syntaxes.base import BaseSyntax
-
-
-def _get_syntax_name(syntax: object) -> str:
-    """Get the name of a syntax from its class name."""
-    return type(syntax).__name__
 
 
 class BlockStateMachine:
@@ -282,7 +278,7 @@ class BlockStateMachine:
                 BlockStartEvent(
                     block_id=block_id,
                     block_type=None,  # Not known until parsed
-                    syntax=_get_syntax_name(candidate.syntax),
+                    syntax=get_syntax_name(candidate.syntax),
                     start_line=candidate.start_line,
                     inline_metadata=detection.metadata,
                 )
@@ -290,7 +286,7 @@ class BlockStateMachine:
 
             self._logger.debug(
                 "block_candidate_created",
-                syntax=_get_syntax_name(candidate.syntax),
+                syntax=get_syntax_name(candidate.syntax),
                 start_line=candidate.start_line,
                 inline_metadata=bool(detection.metadata),
             )
@@ -360,7 +356,7 @@ class BlockStateMachine:
 
         self._logger.debug(
             "extracting_block",
-            syntax=_get_syntax_name(candidate.syntax),
+            syntax=get_syntax_name(candidate.syntax),
             block_type=block_type,
             start_line=candidate.start_line,
             end_line=line_number,
@@ -381,7 +377,7 @@ class BlockStateMachine:
                 "block_parse_failed",
                 block_type=block_type,
                 error=error,
-                syntax=_get_syntax_name(candidate.syntax),
+                syntax=get_syntax_name(candidate.syntax),
                 exc_info=parse_result.exception,
             )
             return self._create_error_event(
@@ -399,7 +395,7 @@ class BlockStateMachine:
         block = ExtractedBlock(
             metadata=metadata,
             content=content,
-            syntax_name=_get_syntax_name(candidate.syntax),
+            syntax_name=get_syntax_name(candidate.syntax),
             raw_text=candidate.raw_text,
             line_start=candidate.start_line,
             line_end=line_number,
@@ -475,7 +471,7 @@ class BlockStateMachine:
         """
         block_id = self.get_block_id(candidate.start_line)
         section = candidate.current_section or "content"
-        syntax_name = _get_syntax_name(candidate.syntax)
+        syntax_name = get_syntax_name(candidate.syntax)
         accumulated_size = len(candidate.raw_text)
 
         if section == "header":
@@ -529,7 +525,7 @@ class BlockStateMachine:
             "block_error",
             reason=reason,
             error_code=error_code,
-            syntax=_get_syntax_name(candidate.syntax),
+            syntax=get_syntax_name(candidate.syntax),
             lines=(candidate.start_line, line_number),
             has_exception=exception is not None,
             exc_info=exception if exception else None,
@@ -541,7 +537,7 @@ class BlockStateMachine:
             block_id=block_id,
             reason=reason,
             error_code=error_code,
-            syntax=_get_syntax_name(candidate.syntax),
+            syntax=get_syntax_name(candidate.syntax),
             start_line=candidate.start_line,
             end_line=line_number,
             exception=exception,
@@ -564,7 +560,7 @@ class BlockStateMachine:
             BlockMetadataEndEvent with parsed metadata and validation result
         """
         block_id = self.get_block_id(candidate.start_line)
-        syntax_name = _get_syntax_name(candidate.syntax)
+        syntax_name = get_syntax_name(candidate.syntax)
 
         # Get raw metadata
         raw_metadata = "\n".join(candidate.metadata_lines)
@@ -616,7 +612,7 @@ class BlockStateMachine:
             BlockContentEndEvent with parsed content and validation result
         """
         block_id = self.get_block_id(candidate.start_line)
-        syntax_name = _get_syntax_name(candidate.syntax)
+        syntax_name = get_syntax_name(candidate.syntax)
 
         # Get raw content
         raw_content = "\n".join(candidate.content_lines)

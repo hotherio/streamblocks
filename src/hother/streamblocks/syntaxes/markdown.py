@@ -5,8 +5,6 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from pydantic import ValidationError
-
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
@@ -121,12 +119,7 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         metadata_dict: dict[str, Any],
     ) -> ParseResult[BaseMetadata, BaseContent] | BaseMetadata:
         """Parse and validate metadata dict into metadata instance."""
-        try:
-            return metadata_class(**metadata_dict)
-        except ValidationError as e:
-            return ParseResult(success=False, error=f"Metadata validation error: {e}", exception=e)
-        except (TypeError, ValueError, KeyError) as e:
-            return ParseResult(success=False, error=f"Invalid metadata: {e}", exception=e)
+        return self._safe_parse_metadata(metadata_class, metadata_dict)
 
     def _parse_content_instance(
         self,
@@ -135,13 +128,7 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     ) -> ParseResult[BaseMetadata, BaseContent] | BaseContent:
         """Parse content lines into content instance."""
         content_text = "\n".join(candidate.content_lines)
-
-        try:
-            return content_class.parse(content_text)
-        except ValidationError as e:
-            return ParseResult(success=False, error=f"Content validation error: {e}", exception=e)
-        except (TypeError, ValueError, KeyError) as e:
-            return ParseResult(success=False, error=f"Invalid content: {e}", exception=e)
+        return self._safe_parse_content(content_class, content_text)
 
     def parse_block(
         self, candidate: BlockCandidate, block_class: type[Any] | None = None

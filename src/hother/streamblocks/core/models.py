@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args, get_origin
 
 from pydantic import BaseModel, Field
 
@@ -12,13 +12,15 @@ from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState
 if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
 
+# Expected number of type parameters for Block[TMetadata, TContent]
+_EXPECTED_BLOCK_TYPE_PARAMS = 2
+
 
 def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], type[BaseContent]]:
     """Extract metadata and content type parameters from a Block class.
 
-    For classes inheriting from Block[M, C], Pydantic resolves the concrete
-    types and stores them in the field annotations. We simply extract them
-    from the model_fields.
+    Works with both generic Block[M, C] classes and concrete subclasses.
+    Uses typing.get_args() for more idiomatic type extraction.
 
     Args:
         block_class: The block class to extract types from
@@ -26,7 +28,15 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
     Returns:
         Tuple of (metadata_class, content_class)
     """
-    # Extract from Pydantic field annotations
+    # Try to get generic args from the class hierarchy using typing.get_args()
+    for base in block_class.__mro__:
+        origin = get_origin(base)
+        if origin is not None and origin.__name__ == "Block":
+            args = get_args(base)
+            if len(args) == _EXPECTED_BLOCK_TYPE_PARAMS:
+                return args
+
+    # Fallback: extract from Pydantic field annotations (for non-generic subclasses)
     if issubclass(block_class, BaseModel):
         metadata_field = block_class.model_fields.get("metadata")
         content_field = block_class.model_fields.get("content")
@@ -39,7 +49,7 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
         ):
             return (metadata_field.annotation, content_field.annotation)
 
-    # Fallback to base classes
+    # Final fallback to base classes
     return (BaseMetadata, BaseContent)
 
 
