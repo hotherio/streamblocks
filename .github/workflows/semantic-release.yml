@@ -1,0 +1,76 @@
+name: Semantic Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write      # PyPI Trusted Publishing
+  contents: write      # Create tags and releases
+  issues: write        # Comment on issues
+  pull-requests: write # Comment on PRs
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    concurrency: release
+
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Import GPG key
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
+        with:
+          gpg_private_key: ${{ secrets.HOTHER_BOT_GPG_KEY }}
+          passphrase: ${{ secrets.HOTHER_BOT_GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+
+      - name: Configure Git
+        run: |
+          git config user.email "${{ steps.import-gpg.outputs.email }}"
+          git config user.name "${{ steps.import-gpg.outputs.name }}"
+          git config core.autocrlf false
+          git config commit.gpgsign true
+          git config tag.gpgsign true
+
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@fe6b271e942115b528c85e42bc19611c01dcea59 # v10.5.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI
+        if: steps.release.outputs.released == 'true'
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
+        with:
+          packages-dir: dist/
+
+      - name: Publish GitHub Release
+        if: steps.release.outputs.released == 'true'
+        uses: python-semantic-release/publish-action@fe6b271e942115b528c85e42bc19611c01dcea59 # v10.5.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get package description
+        if: steps.release.outputs.released == 'true'
+        id: description
+        run: |
+          python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['description'])" > desc.txt
+          echo "value=$(cat desc.txt)" >> $GITHUB_OUTPUT
+
+      - name: Dispatch to package registry
+        if: steps.release.outputs.released == 'true'
+        run: |
+          curl -H "Accept: application/vnd.github.everest-preview+json" \
+          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          --request POST \
+          --data '{"event_type": "new_release", "client_payload": { "package_name": "${{ vars.PKG_NAME }}", "version": "${{ steps.release.outputs.version }}", "author": "${{ github.repository_owner }}", "short_desc": "${{ steps.description.outputs.value }}", "long_desc": "${{ steps.description.outputs.value }}", "homepage": "https://github.com/${{ github.repository }}/", "link": "https://github.com/${{ github.repository }}/releases/tag/v${{ steps.release.outputs.version }}" }}' \
+          https://api.github.com/repos/${{ vars.PKG_REGISTRY }}/dispatches

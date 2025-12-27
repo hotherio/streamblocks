@@ -9,7 +9,7 @@ from textwrap import dedent
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
-from hother.streamblocks_examples.helpers.simulator import StreamConfig, simulated_stream
+from hother.streamblocks_examples.helpers.simulator import chunked_text_stream
 
 # --8<-- [end:imports]
 
@@ -58,16 +58,8 @@ async def main() -> None:
     full_text = "\n\n".join(block_template.format(n=i) for i in range(20))
 
     # Character-by-character streaming simulation
-    char_by_char_config = StreamConfig(
-        chunk_size=1,
-        base_delay=0.0,
-        jitter_probability=0.0,
-        burst_probability=0.0,
-        stall_probability=0.0,
-    )
-
     def stream():
-        return simulated_stream(full_text, config=char_by_char_config)
+        return chunked_text_stream(full_text, chunk_size=1, delay=0.0)
 
     # --8<-- [end:test_data]
 

@@ -23,13 +23,7 @@ except ImportError:
     print("Or: pip install google-genai")
     sys.exit(1)
 
-from hother.streamblocks import (
-    BlockEndEvent,
-    DelimiterPreambleSyntax,
-    Registry,
-    StreamBlockProcessor,
-    TextDeltaEvent,
-)
+from hother.streamblocks import BlockEndEvent, Registry, StreamBlockProcessor, TextDeltaEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
@@ -50,8 +44,7 @@ async def main() -> None:
         raise ValueError(msg)
 
     # Setup processor
-    syntax = DelimiterPreambleSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
@@ -75,9 +68,6 @@ IMPORTANT:
 - The first characters must be !!proj01:files_operations
 - End with !!end on its own line
 """
-
-    print("Connecting to Gemini API...")
-    print()
 
     try:
         # Get stream from Gemini and pass directly to processor

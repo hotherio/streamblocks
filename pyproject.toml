@@ -1,6 +1,6 @@
 [project]
 name = "streamblocks"
-dynamic = ["version"]
+version = "0.0.1"
 description = "Real-time extraction and processing of structured blocks from text streams"
 readme = "README.md"
 classifiers = [
@@ -44,14 +44,10 @@ loguru = ["loguru>=0.7.0"]
 # Examples dependencies
 examples = ["streamblocks-examples", "hother-cancelable>=0.1.0"]
 
-# Build system using hatchling with hatch-vcs for dynamic versioning
+# Build system using hatchling
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-# Hatchling version configuration
-[tool.hatch.version]
-source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hother"]
@@ -442,3 +438,29 @@ members = ["src/hother/streamblocks_examples"]
 
 [tool.uv.sources]
 streamblocks-examples = { workspace = true }
+
+# Python Semantic Release Configuration
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+upload_to_vcs_release = true
+upload_to_pypi = true
+build_command = "uv build"
+tag_format = "v{version}"
+major_on_zero = false
+allow_zero_version = true
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = [
+    "build", "chore", "ci", "docs", "feat", "fix",
+    "perf", "refactor", "style", "test", "revert"
+]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf", "refactor"]
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+    "^chore\\(release\\):",
+    "^Merge pull request",
+]

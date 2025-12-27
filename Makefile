@@ -74,7 +74,7 @@ changelog-latest: ## Get changelog for latest tag
 
 # Version management
 version: ## Show current version
-	@echo "Current version: $$(grep -m1 'version = ' pyproject.toml | cut -d'\"' -f2)"
+	@python3 -c "import tomllib; print('Current version:', tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])"
 
 # Clean targets
 clean: clean-build clean-pyc clean-coverage ## Remove all build artifacts
