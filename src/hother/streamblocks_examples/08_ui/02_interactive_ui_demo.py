@@ -23,7 +23,10 @@ from textual.widgets import (
     Static,
 )
 
-from examples.blocks.agent.interactive import (
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks.core.models import Block
+from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent
+from hother.streamblocks_examples.blocks.agent.interactive import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -41,9 +44,6 @@ from examples.blocks.agent.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.core.models import Block
-from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent
 
 
 class InteractiveWidget(Static):

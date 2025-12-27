@@ -7,7 +7,6 @@ import re
 from textwrap import dedent
 from typing import Any
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import BlockCandidate, extract_block_types
 from hother.streamblocks.core.types import (
@@ -18,6 +17,7 @@ from hother.streamblocks.core.types import (
     ParseResult,
 )
 from hother.streamblocks.syntaxes.base import BaseSyntax
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 # --8<-- [end:imports]
 
@@ -152,9 +152,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Block ID: {block.metadata.id}")
-                print(f"Type: {block.metadata.block_type}")
-                print(f"Operations: {len(block.content.operations)}")
+                print("Extracted block:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:process]
 
 

@@ -22,15 +22,16 @@ except ImportError:
     print("Or: pip install anthropic")
     sys.exit(1)
 
-from examples.blocks.agent.files import FileOperations
+# Enable auto-detection for Anthropic streams
+import hother.streamblocks.extensions.anthropic
 from hother.streamblocks import (
-    AnthropicAdapter,
     BlockEndEvent,
     DelimiterPreambleSyntax,
     Registry,
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def main() -> None:
@@ -49,12 +50,11 @@ async def main() -> None:
         )
         raise ValueError(msg)
 
-    # Setup processor with explicit adapter
+    # Setup processor - auto-detection handles Anthropic streams
     syntax = DelimiterPreambleSyntax()
     registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
-    adapter = AnthropicAdapter()
 
     # Create Anthropic client
     client = AsyncAnthropic(api_key=api_key)
@@ -82,13 +82,13 @@ IMPORTANT:
     print()
 
     try:
-        # Get stream from Anthropic and pass directly to processor with explicit adapter
+        # Get stream from Anthropic - auto-detection handles the format
         async with client.messages.stream(
             model="claude-sonnet-4-5-20250929",
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}],
         ) as stream:
-            async for event in processor.process_stream(stream, adapter=adapter):
+            async for event in processor.process_stream(stream):
                 # Original Anthropic events - provider-agnostic detection
                 if processor.is_native_event(event):
                     event_type = getattr(event, "type", None)
@@ -108,9 +108,8 @@ IMPORTANT:
                     block = event.get_block()
                     if block is None:
                         continue
-                    print(f"\n✅ Block: {block.metadata.id}")
-                    for op in block.content.operations:
-                        print(f"   - {op.path}")
+                    print("\n✅ Block Extracted:")
+                    print(block.model_dump_json(indent=2))
                     print()
 
     except ValueError as e:

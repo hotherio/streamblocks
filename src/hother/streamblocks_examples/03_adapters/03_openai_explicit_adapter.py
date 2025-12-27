@@ -22,7 +22,6 @@ except ImportError:
     print("Or: pip install openai")
     sys.exit(1)
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -31,6 +30,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def main() -> None:
@@ -107,9 +107,8 @@ IMPORTANT:
                 block = event.get_block()
                 if block is None:
                     continue
-                print(f"\n✅ Block: {block.metadata.id}")
-                for op in block.content.operations:
-                    print(f"   - {op.path}")
+                print("\n✅ Block Extracted:")
+                print(block.model_dump_json(indent=2))
                 print()
 
     except ValueError as e:

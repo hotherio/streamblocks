@@ -9,9 +9,9 @@
 import asyncio
 from textwrap import dedent
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 # --8<-- [end:imports]
 
@@ -63,7 +63,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Block extracted: {block.metadata.id}")
+                print("Block extracted:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:unidirectional]
 
     # --8<-- [start:bidirectional]

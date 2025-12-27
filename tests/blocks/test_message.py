@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from examples.blocks.agent.message import Message, MessageContent, MessageMetadata
+from hother.streamblocks_examples.blocks.agent.message import Message, MessageContent, MessageMetadata
 
 
 class TestMessageMetadata:

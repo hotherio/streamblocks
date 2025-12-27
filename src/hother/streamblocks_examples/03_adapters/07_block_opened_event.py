@@ -8,7 +8,6 @@ or resources BEFORE block content arrives.
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     BlockStartEvent,
@@ -17,6 +16,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def delayed_stream() -> AsyncGenerator[str]:
@@ -88,10 +88,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print("\n✅ BlockExtracted!")
-            print(f"   {len(block.content.operations)} operations:")
-            for op in block.content.operations:
-                print(f"   - {op.path}")
+            print("\n✅ BlockExtracted:")
+            print(block.model_dump_json(indent=2))
 
             # Clean up
             active_blocks.clear()

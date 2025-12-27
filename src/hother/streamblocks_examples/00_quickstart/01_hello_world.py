@@ -4,9 +4,9 @@
 # --8<-- [start:imports]
 import asyncio
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 from hother.streamblocks_examples.helpers.simulator import simple_text_stream
 
 # --8<-- [end:imports]
@@ -30,7 +30,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Extracted block: {block.metadata.id}")
+                print("Extracted block:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:example]
 
 

@@ -5,9 +5,9 @@
 import asyncio
 from textwrap import dedent
 
-from examples.blocks.agent.visualization import Visualization
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.visualization import Visualization
 
 # --8<-- [end:imports]
 
@@ -61,9 +61,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"[{block.metadata.viz_type.upper()}] {block.metadata.title}")
-                print(f"  Format: {block.metadata.format}")
-                print(f"  Data: {block.content.data}")
+                print("Extracted visualization block:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:process]
 
 

@@ -5,9 +5,9 @@
 import asyncio
 from textwrap import dedent
 
-from examples.blocks.agent.memory import Memory
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.memory import Memory
 
 # --8<-- [end:imports]
 
@@ -66,14 +66,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                op = block.metadata.memory_type
-                key = block.metadata.key
-                ns = block.metadata.namespace
-                print(f"[{op.upper()}] key={key}, namespace={ns}")
-                if block.content.value:
-                    print(f"  Value: {block.content.value}")
-                if block.metadata.ttl_seconds:
-                    print(f"  TTL: {block.metadata.ttl_seconds}s")
+                print("Extracted memory block:")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:process]
 
 

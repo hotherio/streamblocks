@@ -29,13 +29,7 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
-from hother.streamblocks.core.types import (
-    BaseContent,
-    BaseMetadata,
-    BlockEndEvent,
-    BlockErrorEvent,
-    TextContentEvent,
-)
+from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockEndEvent, BlockErrorEvent, TextContentEvent
 
 # ============================================================================
 # EXAMPLE 1: Basic YAML Parsing (Permissive Mode)
@@ -117,27 +111,8 @@ async def example_1_basic_yaml_parsing() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is not None:
-                print(f"\n✅ Extracted Config Block: {block.metadata.id}")
-
-                # Type narrowing for ConfigContent
-                if isinstance(block.content, ConfigContent):
-                    content = block.content
-
-                    # Type-safe access to parsed YAML data
-                    if content.app_name:
-                        print(f"   App: {content.app_name} v{content.version}")
-                        print(f"   Debug: {content.debug}")
-                        print(f"   Port: {content.port}")
-
-                        if content.features:
-                            print("   Features:")
-                            for feature, enabled in content.features.items():
-                                status = "✓" if enabled else "✗"
-                                print(f"      {status} {feature}")
-                    else:
-                        # Malformed YAML - fell back to raw_content
-                        print("   ⚠️  YAML parsing failed (PERMISSIVE mode)")
-                        print(f"   Raw content preserved: {content.raw_content[:50]}...")
+                print("\n✅ Extracted Config Block:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -342,8 +317,9 @@ async def example_3_non_dict_handling() -> None:
     async for event in processor.process_stream(scalar_stream()):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
-            if block is not None and isinstance(block.content, ScalarWrapperContent):
-                print(f"   Block {block.metadata.id}: value = {block.content.value!r}")
+            if block is not None:
+                print("   Extracted Block:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -379,11 +355,9 @@ async def example_3_non_dict_handling() -> None:
     async for event in processor2.process_stream(scalar_stream2()):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
-            if block is not None and isinstance(block.content, ScalarNoWrapContent):
-                if block.content.message:
-                    print(f"   ✅ Block {block.metadata.id}: message = {block.content.message!r}")
-                else:
-                    print(f"   ⚠️  Block {block.metadata.id}: fell back to raw_content")
+            if block is not None:
+                print("   Extracted Block:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -508,26 +482,13 @@ async def example_4_mixed_stream() -> None:
 
             if block.metadata.block_type == "db_config":
                 db_configs.append(block)
-
-                # Type narrowing for DatabaseConfigContent
-                if isinstance(block.content, DatabaseConfigContent):
-                    content = block.content
-                    print(f"\n🗄️  Database Config: {block.metadata.id}")
-                    print(f"   Host: {content.host}:{content.port}")
-                    print(f"   Database: {content.database}")
-                    print(f"   Pool: {content.pool_size} connections")
+                print("\n🗄️  Extracted Database Config:")
+                print(block.model_dump_json(indent=2))
 
             elif block.metadata.block_type == "metrics":
                 metrics_samples.append(block)
-
-                # Type narrowing for MetricsContent
-                if isinstance(block.content, MetricsContent):
-                    content = block.content
-                    print(f"\n📊 Metrics: {block.metadata.id}")
-                    print(f"   CPU: {content.cpu_usage}%")
-                    print(f"   Memory: {content.memory_mb} MB")
-                    print(f"   RPS: {content.requests_per_sec}")
-                    print(f"   Error rate: {content.error_rate}%")
+                print("\n📊 Extracted Metrics:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -624,14 +585,9 @@ async def example_5_error_handling() -> None:
     async for event in processor_permissive.process_stream(permissive_stream()):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
-            if block is not None and isinstance(block.content, PermissiveJSONContent):
-                content = block.content
-                if content.status:
-                    print(f"   ✅ {block.metadata.id}: Parsed successfully")
-                    print(f"       status={content.status!r}, count={content.count}")
-                else:
-                    print(f"   ⚠️  {block.metadata.id}: Parsing failed, using raw_content")
-                    print(f"       Raw: {content.raw_content.strip()[:50]}...")
+            if block is not None:
+                print("   Extracted Block:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
@@ -654,10 +610,9 @@ async def example_5_error_handling() -> None:
     async for event in processor_strict.process_stream(strict_stream()):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
-            if block is not None and isinstance(block.content, StrictJSONContent):
-                content = block.content
-                print(f"   ✅ {block.metadata.id}: Parsed successfully")
-                print(f"       status={content.status!r}, count={content.count}")
+            if block is not None:
+                print("   ✅ Extracted Block:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             # STRICT mode causes parsing failures to reject the block
@@ -688,14 +643,11 @@ async def main() -> None:
     await example_5_error_handling()
 
     print("\n" + "=" * 70)
-    print("✅ All examples completed!")
-    print("\nKey Takeaways:")
     print("  - Use @parse_as_yaml() for automatic YAML parsing")
     print("  - Use @parse_as_json() for automatic JSON parsing")
     print("  - PERMISSIVE: falls back to raw_content on errors")
     print("  - STRICT: raises exceptions on parsing errors")
     print("  - handle_non_dict: wraps scalar values in {'value': ...}")
-    print("  - Zero boilerplate - just add the decorator!")
     print("  - Works with any syntax (delimiter, markdown, etc.)")
 
 

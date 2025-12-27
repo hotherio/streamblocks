@@ -9,7 +9,6 @@ import asyncio
 import sys
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     BlockStartEvent,
@@ -18,6 +17,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def character_stream() -> AsyncGenerator[str]:
@@ -74,7 +74,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\n[Block extracted: {len(block.content.operations)} files]")
+            print("\n[Block extracted:]")
+            print(block.model_dump_json(indent=2))
 
     print("-" * 40)
     print()

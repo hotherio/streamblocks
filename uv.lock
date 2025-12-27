@@ -2224,6 +2224,7 @@ wheels = [
 
 [[package]]
 name = "streamblocks"
+version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
@@ -2304,7 +2305,7 @@ requires-dist = [
     { name = "structlog", marker = "extra == 'structlog'", specifier = ">=24.1.0" },
     { name = "textual", specifier = ">=6.1.0" },
 ]
-provides-extras = ["all-providers", "anthropic", "examples", "gemini", "loguru", "openai", "structlog"]
+provides-extras = ["gemini", "openai", "anthropic", "all-providers", "structlog", "loguru", "examples"]
 
 [package.metadata.requires-dev]
 dev = [

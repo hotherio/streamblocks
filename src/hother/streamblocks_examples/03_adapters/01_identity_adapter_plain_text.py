@@ -8,15 +8,8 @@ No adapter needed - it just works!
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
-from hother.streamblocks import (
-    BlockEndEvent,
-    DelimiterPreambleSyntax,
-    Registry,
-    StreamBlockProcessor,
-    TextContentEvent,
-    TextDeltaEvent,
-)
+from hother.streamblocks import BlockEndEvent, Registry, StreamBlockProcessor, TextContentEvent, TextDeltaEvent
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def plain_text_stream() -> AsyncGenerator[str]:
@@ -43,8 +36,7 @@ async def main() -> None:
     print()
 
     # Setup
-    syntax = DelimiterPreambleSyntax()
-    registry = Registry(syntax=syntax)
+    registry = Registry()
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
 
@@ -66,10 +58,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\n✅ Block Extracted: {block.metadata.id}")
-            print("   Files:")
-            for op in block.content.operations:
-                print(f"   - {op.action}: {op.path}")
+            print("\n✅ Block Extracted:")
+            print(block.model_dump_json(indent=2))
             print()
 
     print()

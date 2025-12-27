@@ -2,7 +2,6 @@
 
 import pytest
 
-from examples.blocks.agent import FileOperations
 from hother.streamblocks import (
     DelimiterPreambleSyntax,
     Registry,
@@ -19,6 +18,7 @@ from hother.streamblocks.core.types import (
     EventType,
     TextContentEvent,
 )
+from hother.streamblocks_examples.blocks.agent import FileOperations
 
 
 @pytest.fixture

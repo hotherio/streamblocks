@@ -6,7 +6,6 @@ import asyncio
 from textwrap import dedent
 from typing import Any
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     Registry,
@@ -15,6 +14,7 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.core.models import ExtractedBlock
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 # --8<-- [end:imports]
 
@@ -113,8 +113,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Block {block.metadata.id} passed all validators!")
-                print(f"Operations: {len(block.content.operations)}")
+                print("Block passed all validators!")
+                print(block.model_dump_json(indent=2))
     # --8<-- [end:test]
 
 

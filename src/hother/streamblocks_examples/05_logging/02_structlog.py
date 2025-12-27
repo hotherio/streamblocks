@@ -12,9 +12,9 @@ import logging
 from collections.abc import AsyncIterator
 from textwrap import dedent
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -77,7 +77,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block is not None:
-                print(f"✓ Extracted block: {block.metadata.id}")
+                print("✓ Extracted block:")
+                print(block.model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

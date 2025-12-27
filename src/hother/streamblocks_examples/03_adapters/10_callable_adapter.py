@@ -8,7 +8,6 @@ for quick custom extraction without a full adapter class.
 import asyncio
 from typing import Any
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -16,6 +15,7 @@ from hother.streamblocks import (
     Registry,
     StreamBlockProcessor,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Simple dict-based chunks
@@ -87,9 +87,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\nBlock: {block.metadata.id}")
-            for op in block.content.operations:
-                print(f"   - {op.path}")
+            print("\nBlock Extracted:")
+            print(block.model_dump_json(indent=2))
             print()
 
     print()

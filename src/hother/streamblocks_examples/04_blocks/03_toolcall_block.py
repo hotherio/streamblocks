@@ -6,9 +6,9 @@ import asyncio
 from textwrap import dedent
 from typing import Any
 
-from examples.blocks.agent.toolcall import ToolCall
 from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
+from hother.streamblocks_examples.blocks.agent.toolcall import ToolCall
 
 # --8<-- [end:imports]
 
@@ -58,9 +58,8 @@ async def main() -> None:
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
             if block:
-                print(f"Tool: {block.metadata.tool_name}")
-                print(f"Async: {block.metadata.async_call}")
-                print(f"Parameters: {block.content.parameters}")
+                print("Extracted tool call block:")
+                print(block.model_dump_json(indent=2))
                 result = execute_tool(block.metadata.tool_name, block.content.parameters)
                 print(f"Result: {result}")
     # --8<-- [end:process]

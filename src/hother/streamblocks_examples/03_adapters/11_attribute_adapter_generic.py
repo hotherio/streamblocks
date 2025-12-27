@@ -8,7 +8,6 @@ with a text-like attribute, without writing custom adapter code.
 import asyncio
 from collections.abc import AsyncGenerator
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -16,6 +15,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.adapters.input import AttributeInputAdapter
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 # Generic chunk classes
@@ -82,9 +82,8 @@ async def main() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\nBlock: {block.metadata.id}")
-            for op in block.content.operations:
-                print(f"   - {op.path}")
+            print("\nBlock Extracted:")
+            print(block.model_dump_json(indent=2))
             print()
 
     print()

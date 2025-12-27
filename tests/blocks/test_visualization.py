@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from examples.blocks.agent.visualization import (
+from hother.streamblocks_examples.blocks.agent.visualization import (
     VisualizationContent,
     VisualizationMetadata,
 )

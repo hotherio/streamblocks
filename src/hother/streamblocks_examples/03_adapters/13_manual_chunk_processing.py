@@ -32,7 +32,6 @@ except ImportError:
     print("Or: pip install google-genai")
     sys.exit(1)
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -40,6 +39,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 async def get_gemini_response(prompt: str | None = None) -> AsyncIterator[Any]:
@@ -132,10 +132,7 @@ async def example_basic_manual_processing() -> None:
                 if block is None:
                     continue
                 print(f"\n✅ Chunk #{chunk_count}: Block extracted!")
-                print(f"   ID: {block.metadata.id}")
-                print("   Operations:")
-                for op in block.content.operations:
-                    print(f"     - {op.action}: {op.path}")
+                print(block.model_dump_json(indent=2))
                 print()
 
     # Finalize to process remaining text and get any rejection events
@@ -148,10 +145,7 @@ async def example_basic_manual_processing() -> None:
             if block is None:
                 continue
             print("\n✅ Finalize: Block extracted!")
-            print(f"   ID: {block.metadata.id}")
-            print("   Operations:")
-            for op in block.content.operations:
-                print(f"     - {op.action}: {op.path}")
+            print(block.model_dump_json(indent=2))
             print()
         elif isinstance(event, TextDeltaEvent):
             print("📝 Finalize: Text delta (processing remaining text)")
@@ -199,7 +193,8 @@ async def example_selective_processing() -> None:
                     block = event.get_block()
                     if block is None:
                         continue
-                    print(f"✅ Block: {block.metadata.id}")
+                    print("✅ Block Extracted:")
+                    print(block.model_dump_json(indent=2))
                     print(f"   Found in chunk with text: {text[:50]}...")
         else:
             # Skip this chunk
@@ -212,9 +207,8 @@ async def example_selective_processing() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"✅ Block from finalize: {block.metadata.id}")
-            for op in block.content.operations:
-                print(f"   - {op.action}: {op.path}")
+            print("✅ Block from finalize:")
+            print(block.model_dump_json(indent=2))
 
     print()
     print(f"Processed: {processed_chunks} chunks")
@@ -261,7 +255,8 @@ async def example_batch_processing() -> None:
                         block = event.get_block()
                         if block is None:
                             continue
-                        print(f"  ✅ Block: {block.metadata.id}")
+                        print("  ✅ Block Extracted:")
+                        print(block.model_dump_json(indent=2))
 
             chunk_buffer.clear()
 
@@ -278,7 +273,8 @@ async def example_batch_processing() -> None:
                     block = event.get_block()
                     if block is None:
                         continue
-                    print(f"  ✅ Block: {block.metadata.id}")
+                    print("  ✅ Block Extracted:")
+                    print(block.model_dump_json(indent=2))
 
     # Finalize to process remaining text and get any extracted blocks
     final_events = processor.finalize()
@@ -287,9 +283,8 @@ async def example_batch_processing() -> None:
             block = event.get_block()
             if block is None:
                 continue
-            print(f"\n  ✅ Block from finalize: {block.metadata.id}")
-            for op in block.content.operations:
-                print(f"     - {op.action}: {op.path}")
+            print("\n  ✅ Block from finalize:")
+            print(block.model_dump_json(indent=2))
 
     print()
     print(f"Processed {batch_number} batches total")

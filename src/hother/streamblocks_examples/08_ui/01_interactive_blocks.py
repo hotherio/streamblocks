@@ -5,7 +5,9 @@ from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
-from examples.blocks.agent.interactive import (
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
+from hother.streamblocks_examples.blocks.agent.interactive import (
     ChoiceContent,
     ChoiceMetadata,
     ConfirmContent,
@@ -23,8 +25,6 @@ from examples.blocks.agent.interactive import (
     YesNoContent,
     YesNoMetadata,
 )
-from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
-from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, TextContentEvent
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
@@ -294,73 +294,7 @@ async def main() -> None:
             blocks_extracted.append(block)
 
             print(f"\n✅ Block Extracted: {block.metadata.id}")
-            print(f"   Type: {block.metadata.block_type}")
-
-            # Access prompt - all interactive content types have this field
-            if isinstance(
-                block.content,
-                (
-                    YesNoContent,
-                    ChoiceContent,
-                    MultiChoiceContent,
-                    InputContent,
-                    ScaleContent,
-                    RankingContent,
-                    ConfirmContent,
-                    FormContent,
-                ),
-            ):
-                print(f"   Prompt: {block.content.prompt}")
-
-            # Show block-specific details with type narrowing
-            if block.metadata.block_type == "yesno":
-                if isinstance(block.metadata, YesNoMetadata):
-                    print(f"   Labels: [{block.metadata.yes_label}] / [{block.metadata.no_label}]")
-
-            elif block.metadata.block_type == "choice":
-                if isinstance(block.metadata, ChoiceMetadata) and isinstance(block.content, ChoiceContent):
-                    print(f"   Style: {block.metadata.display_style}")
-                    print(f"   Options: {len(block.content.options)} choices")
-                    for i, opt in enumerate(block.content.options, 1):
-                        print(f"     {i}. {opt}")
-
-            elif block.metadata.block_type == "multichoice":
-                if isinstance(block.metadata, MultiChoiceMetadata) and isinstance(block.content, MultiChoiceContent):
-                    print(f"   Selections: {block.metadata.min_selections}-{block.metadata.max_selections or 'all'}")
-                    print(f"   Options: {len(block.content.options)} choices")
-
-            elif block.metadata.block_type == "input":
-                if isinstance(block.metadata, InputMetadata) and isinstance(block.content, InputContent):
-                    print(f"   Type: {block.metadata.input_type}")
-                    print(f"   Length: {block.metadata.min_length}-{block.metadata.max_length or 'unlimited'}")
-                    if block.metadata.pattern:
-                        print(f"   Pattern: {block.metadata.pattern}")
-                    if block.content.placeholder:
-                        print(f"   Placeholder: {block.content.placeholder}")
-
-            elif block.metadata.block_type == "scale":
-                if isinstance(block.metadata, ScaleMetadata) and isinstance(block.content, ScaleContent):
-                    print(f"   Range: {block.metadata.min_value}-{block.metadata.max_value}")
-                    if block.content.labels:
-                        print(f"   Labels: {block.content.labels}")
-
-            elif block.metadata.block_type == "ranking":
-                if isinstance(block.metadata, RankingMetadata) and isinstance(block.content, RankingContent):
-                    print(f"   Items to rank: {len(block.content.items)}")
-                    print(f"   Allow partial: {block.metadata.allow_partial}")
-
-            elif block.metadata.block_type == "confirm":
-                if isinstance(block.metadata, ConfirmMetadata) and isinstance(block.content, ConfirmContent):
-                    print(f"   Danger mode: {block.metadata.danger_mode}")
-                    print(f"   Buttons: [{block.metadata.confirm_label}] / [{block.metadata.cancel_label}]")
-                    print(f"   Message preview: {block.content.message[:50]}...")
-
-            elif block.metadata.block_type == "form":
-                if isinstance(block.metadata, FormMetadata) and isinstance(block.content, FormContent):
-                    print(f"   Fields: {len(block.content.fields)}")
-                    for field in block.content.fields:
-                        req = "required" if field.required else "optional"
-                        print(f"     - {field.name} ({field.field_type}, {req})")
+            print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             # Block rejected

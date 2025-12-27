@@ -1,12 +1,10 @@
 """Basic usage example for StreamBlocks."""
 
 import asyncio
-from collections.abc import AsyncIterator
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-from examples.blocks.agent.files import FileOperations, FileOperationsContent, FileOperationsMetadata
-from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
+from hother.streamblocks import Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import ExtractedBlock
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
@@ -16,13 +14,37 @@ from hother.streamblocks.core.types import (
     BlockMetadataDeltaEvent,
     TextContentEvent,
 )
+from hother.streamblocks_examples.blocks.agent.files import (
+    FileOperations,
+    FileOperationsContent,
+    FileOperationsMetadata,
+)
+from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 
-async def example_stream() -> AsyncIterator[str]:
-    """Example stream with multiple blocks."""
+async def main() -> None:
+    """Main example function."""
+
+    # Create type-specific registry and register block
+    registry = Registry()
+
+    # Add a custom validator
+    def no_root_delete(block: ExtractedBlock[FileOperationsMetadata, FileOperationsContent]) -> bool:
+        """Don't allow deleting files from root directory."""
+        return all(not (op.action == "delete" and op.path.startswith("/")) for op in block.content.operations)
+
+    registry.register("files_operations", FileOperations, validators=[no_root_delete])
+
+    # Create processor with config
+    from hother.streamblocks.core.processor import ProcessorConfig
+
+    config = ProcessorConfig(lines_buffer=5)
+    processor = StreamBlockProcessor(registry, config=config)
+
+    # Example text with multiple blocks
     text = dedent("""
         This is some introductory text that will be passed through as raw text.
 
@@ -43,42 +65,13 @@ async def example_stream() -> AsyncIterator[str]:
         And some final text after all blocks.
     """)
 
-    # Simulate chunk-based streaming (more realistic than line-by-line)
-    chunk_size = 50
-    for i in range(0, len(text), chunk_size):
-        chunk = text[i : i + chunk_size]
-        yield chunk
-        await asyncio.sleep(0.01)  # Simulate network delay
-
-
-async def main() -> None:
-    """Main example function."""
-    # Create delimiter preamble syntax
-    syntax = DelimiterPreambleSyntax()
-
-    # Create type-specific registry and register block
-    registry = Registry(syntax=syntax)
-
-    # Add a custom validator
-    def no_root_delete(block: ExtractedBlock[FileOperationsMetadata, FileOperationsContent]) -> bool:
-        """Don't allow deleting files from root directory."""
-        return all(not (op.action == "delete" and op.path.startswith("/")) for op in block.content.operations)
-
-    registry.register("files_operations", FileOperations, validators=[no_root_delete])
-
-    # Create processor with config
-    from hother.streamblocks.core.processor import ProcessorConfig
-
-    config = ProcessorConfig(lines_buffer=5)
-    processor = StreamBlockProcessor(registry, config=config)
-
     # Process stream
     print("Processing stream...")
     print("-" * 60)
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
-    async for event in processor.process_stream(example_stream()):
+    async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Raw text passed through
             if event.content.strip():  # Skip empty lines for cleaner output
@@ -94,13 +87,8 @@ async def main() -> None:
             block = event.get_block()
             if block is not None:
                 blocks_extracted.append(block)
-                print(f"[BLOCK] Extracted: {block.metadata.id} ({block.syntax_name})")
-
-                # Type narrow to FileOperationsContent for specific access
-                if isinstance(block.content, FileOperationsContent):
-                    print("        Operations:")
-                    for op in block.content.operations:
-                        print(f"          - {op.action}: {op.path}")
+                print("\n[BLOCK] Extracted:")
+                print(block.model_dump_json(indent=2))
 
         elif isinstance(event, BlockErrorEvent):
             # Block rejected
@@ -108,17 +96,12 @@ async def main() -> None:
 
     print("-" * 60)
     print(f"\nTotal blocks extracted: {len(blocks_extracted)}")
-    for block in blocks_extracted:
-        print(block)
 
-    # Show metadata from blocks
-    print("\nBlock metadata:")
-    for block in blocks_extracted:
-        print(f"  - {block.metadata.id}: {block.metadata.block_type}")
-        # Check for dynamic extra parameters (e.g., param_0 from preamble)
-        param_0 = getattr(block.metadata, "param_0", None)
-        if param_0 is not None:
-            print(f"    Extra param: {param_0}")
+    # Show all extracted blocks
+    print("\nExtracted blocks (full details):")
+    for i, block in enumerate(blocks_extracted, 1):
+        print(f"\n--- Block {i} ---")
+        print(block.model_dump_json(indent=2))
 
 
 if __name__ == "__main__":

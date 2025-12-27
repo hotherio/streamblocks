@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
-"""
-Compute next semantic version from Conventional Commits and create the tag.
-Usage:  hatch release {dev|rc|final} [SHA]
+"""Manual release script for dev/rc/final releases.
+
+NOTE: The primary release method is automated via python-semantic-release
+(see .github/workflows/semantic-release.yml). This script is for manual
+releases when you need to create dev or rc versions, or when semantic-release
+automation is not appropriate.
+
+Usage:
+    python tools/release.py {dev|rc|final} [SHA]
+
+Examples:
+    python tools/release.py dev      # Create dev release from HEAD
+    python tools/release.py rc       # Create release candidate from HEAD
+    python tools/release.py final    # Create final release (uses conventional commits)
 """
 
 import subprocess

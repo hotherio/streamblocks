@@ -183,11 +183,6 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         if yaml_error:
             return ParseResult(success=False, error=f"YAML parse error: {yaml_error}", exception=yaml_error)
 
-        # Set default id and block_type if using BaseMetadata
-        self._set_default_metadata_fields(
-            metadata_dict, candidate, metadata_class, default_type=self.info_string or "markdown"
-        )
-
         # Parse metadata instance
         metadata_result = self._parse_metadata_instance(metadata_class, metadata_dict)
         if isinstance(metadata_result, ParseResult):

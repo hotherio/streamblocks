@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from examples.blocks.agent.toolcall import ToolCallContent, ToolCallMetadata
+from hother.streamblocks_examples.blocks.agent.toolcall import ToolCallContent, ToolCallMetadata
 
 
 class TestToolCallMetadata:

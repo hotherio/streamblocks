@@ -1,8 +1,8 @@
 """Common setup functions for examples."""
 
-from examples.blocks.agent.files import FileOperations
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.processor import ProcessorConfig
+from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
 
 def default_registry() -> Registry:

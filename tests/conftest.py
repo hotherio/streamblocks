@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 
-from examples.blocks.agent import FileOperations
 from hother.streamblocks import (
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
@@ -15,6 +14,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks.core.processor import ProcessorConfig
+from hother.streamblocks_examples.blocks.agent import FileOperations
 
 # =============================================================================
 # Timing Utilities

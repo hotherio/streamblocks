@@ -2,7 +2,6 @@
 
 import pytest
 
-from examples.blocks.agent import FileOperations
 from hother.streamblocks import (
     BlockContentEndEvent,
     BlockEndEvent,
@@ -16,6 +15,7 @@ from hother.streamblocks import (
     ValidationResult,
 )
 from hother.streamblocks.core.block_state_machine import BlockStateMachine
+from hother.streamblocks_examples.blocks.agent import FileOperations
 
 
 @pytest.fixture

@@ -516,19 +516,18 @@ class TestDelimiterFrontmatterSyntaxParseBlock:
         assert result.success is False
         assert "YAML parse error" in result.error
 
-    def test_parse_block_success_with_defaults(self) -> None:
-        """Test successful parse with default id and block_type."""
+    def test_parse_block_fails_without_required_fields(self) -> None:
+        """Test that parse fails when required id and block_type are missing."""
         syntax = DelimiterFrontmatterSyntax()
         candidate = MagicMock(spec=BlockCandidate)
-        candidate.metadata_lines = []  # No frontmatter
+        candidate.metadata_lines = []  # No frontmatter - missing required fields
         candidate.content_lines = ["content"]
-        candidate.compute_hash = MagicMock(return_value="abc123")
 
         result = syntax.parse_block(candidate)
 
-        assert result.success is True
-        assert result.metadata.id == "block_abc123"
-        assert result.metadata.block_type == "unknown"
+        assert result.success is False
+        assert "validation error" in result.error.lower()
+        assert "id" in result.error.lower() or "block_type" in result.error.lower()
 
     def test_parse_block_metadata_validation_error(self) -> None:
         """Test parse_block with metadata validation error (lines 269-270)."""

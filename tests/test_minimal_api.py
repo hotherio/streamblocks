@@ -64,8 +64,12 @@ No custom models needed.
 
 
 @pytest.mark.asyncio
-async def test_auto_populated_fields_delimiter_frontmatter() -> None:
-    """Test that id and block_type are auto-populated for DelimiterFrontmatterSyntax."""
+async def test_missing_required_fields_delimiter_frontmatter() -> None:
+    """Test that missing id and block_type cause validation failure for DelimiterFrontmatterSyntax."""
+    from pydantic import ValidationError
+
+    from hother.streamblocks import BlockErrorEvent
+
     # Use base classes (no custom models)
     syntax = DelimiterFrontmatterSyntax()
 
@@ -75,7 +79,7 @@ async def test_auto_populated_fields_delimiter_frontmatter() -> None:
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:
-        # Note: No id or block_type in metadata!
+        # Note: No id or block_type in metadata - these are required!
         text = """!!start
 ---
 priority: high
@@ -89,24 +93,32 @@ assignee: john
             yield line + "\n"
 
     extracted_blocks = []
+    error_events = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_END:
             assert isinstance(event, BlockEndEvent)
             block = event.get_block()
             if block:
                 extracted_blocks.append(block)
+        elif event.type == EventType.BLOCK_ERROR:
+            assert isinstance(event, BlockErrorEvent)
+            error_events.append(event)
 
-    assert len(extracted_blocks) == 1
-    block = extracted_blocks[0]
-
-    # Check auto-populated fields
-    assert block.metadata.id.startswith("block_")  # Auto-generated hash-based ID
-    assert block.metadata.block_type == "unknown"  # Default when not specified
+    # Block should be rejected due to missing required fields
+    assert len(extracted_blocks) == 0
+    assert len(error_events) == 1
+    assert isinstance(error_events[0].exception, ValidationError)
+    assert "id" in str(error_events[0].exception)
+    assert "block_type" in str(error_events[0].exception)
 
 
 @pytest.mark.asyncio
-async def test_auto_populated_fields_markdown() -> None:
-    """Test that id and block_type are auto-populated for MarkdownFrontmatterSyntax."""
+async def test_missing_required_fields_markdown() -> None:
+    """Test that missing id and block_type cause validation failure for MarkdownFrontmatterSyntax."""
+    from pydantic import ValidationError
+
+    from hother.streamblocks import BlockErrorEvent
+
     # Use base classes with info string
     syntax = MarkdownFrontmatterSyntax(info_string="python")
 
@@ -116,7 +128,7 @@ async def test_auto_populated_fields_markdown() -> None:
     processor = StreamBlockProcessor(registry)
 
     async def mock_stream() -> Any:
-        # Note: No id or block_type in metadata!
+        # Note: No id or block_type in metadata - these are required!
         text = """```python
 ---
 author: alice
@@ -129,19 +141,23 @@ def hello():
             yield line + "\n"
 
     extracted_blocks = []
+    error_events = []
     async for event in processor.process_stream(mock_stream()):
         if event.type == EventType.BLOCK_END:
             assert isinstance(event, BlockEndEvent)
             block = event.get_block()
             if block:
                 extracted_blocks.append(block)
+        elif event.type == EventType.BLOCK_ERROR:
+            assert isinstance(event, BlockErrorEvent)
+            error_events.append(event)
 
-    assert len(extracted_blocks) == 1
-    block = extracted_blocks[0]
-
-    # Check auto-populated fields
-    assert block.metadata.id.startswith("block_")  # Auto-generated hash-based ID
-    assert block.metadata.block_type == "python"  # Inferred from info_string
+    # Block should be rejected due to missing required fields
+    assert len(extracted_blocks) == 0
+    assert len(error_events) == 1
+    assert isinstance(error_events[0].exception, ValidationError)
+    assert "id" in str(error_events[0].exception)
+    assert "block_type" in str(error_events[0].exception)
 
 
 @pytest.mark.asyncio
