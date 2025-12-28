@@ -27,9 +27,11 @@ def extract_block_types(block_class: type[Any]) -> tuple[type[BaseMetadata], typ
         Tuple of (metadata_class, content_class)
     """
     # Try to get generic args from the class hierarchy using typing.get_args()
+    # Note: For Pydantic BaseModel subclasses, get_origin() returns None for MRO entries,
+    # so this branch is unreachable. Pydantic resolves generics into field annotations.
     for base in block_class.__mro__:
         origin = get_origin(base)
-        if origin is not None and origin.__name__ == "Block":
+        if origin is not None and origin.__name__ == "Block":  # pragma: no cover
             args = get_args(base)
             if len(args) == EXPECTED_BLOCK_TYPE_PARAMS:
                 return args
