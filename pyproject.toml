@@ -1,6 +1,6 @@
 [project]
 name = "streamblocks"
-version = "0.2.3"
+version = "0.2.4"
 description = "Real-time extraction and processing of structured blocks from text streams"
 readme = "README.md"
 classifiers = [
