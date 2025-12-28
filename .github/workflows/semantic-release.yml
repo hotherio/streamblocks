@@ -76,6 +76,10 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
+      - name: Publish to PyPI
+        if: steps.release.outputs.released == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+
       - name: Generate asset checksums
         if: steps.release.outputs.released == 'true'
         run: |
@@ -108,10 +112,6 @@ jobs:
           done
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-
-      - name: Publish to PyPI
-        if: steps.release.outputs.released == 'true'
-        uses: pypa/gh-action-pypi-publish@release/v1
 
   dispatch:
     name: Dispatch to Package Registry
