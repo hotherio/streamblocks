@@ -9,6 +9,8 @@
 
 Real-time extraction and processing of structured blocks from text streams.
 
+When processing streaming text from LLMs or other sources, you often need to detect and extract structured blocks (code, metadata, commands) in real-time. Streamblocks provides an event-driven processor that detects block boundaries as they appear, accumulates content line-by-line, and emits typed events—enabling you to react to blocks before the stream completes.
+
 <div align="center">
   <a href="https://streamblocks.hother.io/">Documentation</a>
 </div>
@@ -18,8 +20,10 @@ Real-time extraction and processing of structured blocks from text streams.
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [More Examples](#more-examples)
 - [Built-in Syntaxes](#built-in-syntaxes)
 - [Event Types](#event-types)
+- [Optional Extras](#optional-extras)
 - [Documentation](#documentation)
 - [Development](#development)
 - [Contributing](#contributing)
@@ -36,34 +40,8 @@ Real-time extraction and processing of structured blocks from text streams.
 
 ## Installation
 
-### Core Installation
-
 ```bash
 pip install streamblocks
-```
-
-### Optional Extras
-
-Streamblocks provides optional extras for AI provider integrations:
-
-| Extra | Dependencies | Purpose |
-|-------|-------------|---------|
-| `gemini` | google-genai | Google Gemini stream processing |
-| `openai` | openai | OpenAI stream processing |
-| `anthropic` | anthropic | Anthropic Claude stream processing |
-| `all-providers` | All above | All AI provider integrations |
-
-### Installing with Extras
-
-```bash
-# Single provider
-pip install streamblocks[gemini]
-
-# Multiple providers
-pip install streamblocks[gemini,openai]
-
-# All providers
-pip install streamblocks[all-providers]
 ```
 
 ## Quick Start
@@ -88,10 +66,72 @@ async def main():
         yield "!!end\n"
 
     async for event in processor.process_stream(text_stream()):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            print(f"Block: {event.metadata['extracted_block'].metadata.id}")
+        if event.type == EventType.BLOCK_END:
+            print(f"Block extracted: {event.block_id}")
 
 asyncio.run(main())
+```
+
+## More Examples
+
+### Processing AI Provider Streams
+
+```python
+from google import genai
+from streamblocks import StreamBlockProcessor
+
+client = genai.Client(api_key="...")
+response = await client.aio.models.generate_content_stream(
+    model="gemini-2.5-flash",
+    contents="Create a Python script",
+)
+
+# Adapter auto-detected for Gemini streams
+async for event in processor.process_stream(response):
+    match event.type:
+        case EventType.BLOCK_START:
+            print(f"Block started: {event.block_id}")
+        case EventType.BLOCK_END:
+            print(f"Block complete: {event.block_id}")
+```
+
+### Event Handling Pattern
+
+```python
+async for event in processor.process_stream(stream):
+    match event.type:
+        case EventType.STREAM_STARTED:
+            print("Processing started")
+        case EventType.TEXT_DELTA:
+            print(event.delta, end="")
+        case EventType.BLOCK_START:
+            print(f"\n[Block {event.block_id} detected]")
+        case EventType.BLOCK_CONTENT_DELTA:
+            print(event.delta, end="")
+        case EventType.BLOCK_END:
+            print(f"\n[Block {event.block_id} complete]")
+        case EventType.STREAM_FINISHED:
+            print("\nDone")
+```
+
+### Using Markdown Frontmatter Syntax
+
+```python
+from streamblocks import MarkdownFrontmatterSyntax
+
+syntax = MarkdownFrontmatterSyntax(
+    metadata_class=CodeBlockMetadata,
+    content_class=CodeBlockContent,
+)
+registry.register_syntax(syntax, block_types=["python", "javascript"])
+
+# Detects blocks like:
+# ```python
+# ---
+# name: example
+# ---
+# print("hello")
+# ```
 ```
 
 ## Built-in Syntaxes
@@ -104,10 +144,53 @@ asyncio.run(main())
 
 ## Event Types
 
-- `RAW_TEXT` - Non-block text passed through
-- `BLOCK_DELTA` - Partial block update (new line added)
-- `BLOCK_EXTRACTED` - Complete block successfully extracted
-- `BLOCK_REJECTED` - Block failed validation or stream ended
+### Lifecycle Events
+
+- `STREAM_STARTED` - Stream processing began
+- `STREAM_FINISHED` - Stream processing completed
+- `STREAM_ERROR` - Stream processing failed
+
+### Text Events
+
+- `TEXT_CONTENT` - Complete text content outside blocks
+- `TEXT_DELTA` - Incremental text chunk
+
+### Block Events
+
+- `BLOCK_START` - Block header detected
+- `BLOCK_HEADER_DELTA` - Block header line received
+- `BLOCK_METADATA_DELTA` - Metadata line received
+- `BLOCK_CONTENT_DELTA` - Content line received
+- `BLOCK_METADATA_END` - Metadata section complete
+- `BLOCK_CONTENT_END` - Content section complete
+- `BLOCK_END` - Block fully extracted
+- `BLOCK_ERROR` - Block extraction failed
+
+### Custom
+
+- `CUSTOM` - User-defined event
+
+## Optional Extras
+
+Streamblocks provides optional extras for AI provider integrations:
+
+| Extra | Dependencies | Purpose |
+|-------|-------------|---------|
+| `gemini` | google-genai | Google Gemini stream processing |
+| `openai` | openai | OpenAI stream processing |
+| `anthropic` | anthropic | Anthropic Claude stream processing |
+| `all-providers` | All above | All AI provider integrations |
+
+```bash
+# Single provider
+pip install streamblocks[gemini]
+
+# Multiple providers
+pip install streamblocks[gemini,openai]
+
+# All providers
+pip install streamblocks[all-providers]
+```
 
 ## Documentation
 
