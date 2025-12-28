@@ -17,6 +17,8 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    # Skip if this is a release commit (prevents self-triggering loop)
+    if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
     outputs:
       released: ${{ steps.release.outputs.released }}
       version: ${{ steps.release.outputs.version }}
@@ -64,7 +66,8 @@ jobs:
         id: release
         run: |
           semantic-release version --no-vcs-release
-          if [ $? -eq 0 ]; then
+          # Check if dist/ was created (actual release happened)
+          if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
             echo "released=true" >> $GITHUB_OUTPUT
             LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
             echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
@@ -72,6 +75,7 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
             echo "released=false" >> $GITHUB_OUTPUT
+            echo "No new release - dist/ not created"
           fi
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
