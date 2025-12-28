@@ -42,6 +42,3 @@ class ProcessingLimits:
 
 # Singleton instance for convenient access
 LIMITS = ProcessingLimits()
-
-# Type system constants
-EXPECTED_BLOCK_TYPE_PARAMS = 2  # For Block[TMetadata, TContent]
