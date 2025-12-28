@@ -14,6 +14,11 @@ on:
     - released
     - prereleased
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   prepare:
     name: Get Current version
