@@ -148,7 +148,7 @@ extra:
   generator: false
 watch:
   - src
-  - examples
+  - src/hother/streamblocks_examples
   - docs
   - docs/.hooks
 hooks:
