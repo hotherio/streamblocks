@@ -147,7 +147,7 @@ class TestMemoryContentParse:
         if it's a yaml.YAMLError, so TypeError propagates.
         """
         yaml_text = "42"
-        with pytest.raises(TypeError, match="not iterable"):
+        with pytest.raises(TypeError, match=r"not.*iterable"):
             MemoryContent.parse(yaml_text)
 
     def test_parse_yaml_list_becomes_value(self) -> None:
