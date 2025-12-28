@@ -3530,8 +3530,9 @@ access to block-specific fields.</p>
     <div class="doc doc-contents ">
 
         <p>Extract metadata and content type parameters from a Block class.</p>
-<p>Works with both generic Block[M, C] classes and concrete subclasses.
-Uses typing.get_args() for more idiomatic type extraction.</p>
+<p>For classes inheriting from Block[M, C], Pydantic resolves the concrete
+types and stores them in the field annotations during class definition.
+This function extracts those resolved types from model_fields.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
