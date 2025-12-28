@@ -450,6 +450,7 @@ tag_format = "v{version}"
 major_on_zero = false
 allow_zero_version = true
 changelog_file = "CHANGELOG.md"
+commit_message = "chore(release): bump to {version}"
 
 [tool.semantic_release.commit_author]
 env = "GIT_COMMIT_AUTHOR"
