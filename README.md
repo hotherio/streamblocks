@@ -9,7 +9,7 @@
 
 Real-time extraction and processing of structured blocks from text streams.
 
-When processing streaming text from LLMs or other sources, you often need to detect and extract structured blocks (code, metadata, commands) in real-time. Streamblocks provides an event-driven processor that detects block boundaries as they appear, accumulates content line-by-line, and emits typed events—enabling you to react to blocks before the stream completes.
+LLMs often embed structured data in their responses—file operations, code blocks, tool calls. Streamblocks extracts these blocks in real-time as the stream arrives, emitting events like `BLOCK_START`, `BLOCK_CONTENT_DELTA`, and `BLOCK_END`. Process a Gemini stream, detect `!!save:file\npath/to/file.py\n!!end` blocks, and react immediately—no need to wait for the full response.
 
 <div align="center">
   <a href="https://streamblocks.hother.io/">Documentation</a>
@@ -34,6 +34,7 @@ When processing streaming text from LLMs or other sources, you often need to det
 - **Pluggable Syntax System**: Define your own block syntaxes or use built-in ones
 - **Async Stream Processing**: Process text streams line-by-line with full async support
 - **AI Provider Adapters**: Automatic adapter detection for Gemini, OpenAI, Anthropic
+- **AG-UI Protocol Support**: Bidirectional adapters for AG-UI—consume AG-UI streams and emit AG-UI events
 - **Type-Safe Models**: Use Pydantic models for block metadata and content
 - **Event-Driven Architecture**: React to block detection, updates, completion, and rejection
 - **Production Ready**: Comprehensive error handling, logging, and validation
@@ -179,6 +180,7 @@ Streamblocks provides optional extras for AI provider integrations:
 | `gemini` | google-genai | Google Gemini stream processing |
 | `openai` | openai | OpenAI stream processing |
 | `anthropic` | anthropic | Anthropic Claude stream processing |
+| `agui` | ag-ui | AG-UI protocol adapters |
 | `all-providers` | All above | All AI provider integrations |
 
 ```bash
