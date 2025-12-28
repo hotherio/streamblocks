@@ -2,7 +2,8 @@ name: Semantic Release
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -15,44 +16,102 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
-    concurrency: release
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Python Semantic Release
-        id: release
-        uses: python-semantic-release/python-semantic-release@v10.5.3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          python-version: '3.13'
+
+      - name: Install python-semantic-release
+        run: pip install python-semantic-release
+
+      - name: Import GPG key
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.HOTHER_BOT_GPG_KEY }}
+          passphrase: ${{ secrets.HOTHER_BOT_GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+
+      - name: Configure Git
+        run: |
+          git config user.email "github-bot@hother.io"
+          git config user.name "Hother Bot"
+          git config core.autocrlf false
+
+      - name: Run Semantic Release (no VCS release)
+        id: release
+        run: |
+          semantic-release version --no-vcs-release
+          if [ $? -eq 0 ]; then
+            echo "released=true" >> $GITHUB_OUTPUT
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+            VERSION=${LATEST_TAG#v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "released=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create immutable release with assets
+        if: steps.release.outputs.released == 'true'
+        run: |
+          gh release create ${{ steps.release.outputs.tag }} \
+            --title "${{ steps.release.outputs.tag }}" \
+            --notes-file CHANGELOG.md \
+            dist/*.whl dist/*.tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
         if: steps.release.outputs.released == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: dist/
 
-      - name: Publish GitHub Release
-        if: steps.release.outputs.released == 'true'
-        uses: python-semantic-release/publish-action@v10.5.3
+  dispatch:
+    name: Dispatch to Package Registry
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ needs.release.outputs.tag }}
 
       - name: Get package description
-        if: steps.release.outputs.released == 'true'
         id: description
         run: |
           python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['description'])" > desc.txt
           echo "value=$(cat desc.txt)" >> $GITHUB_OUTPUT
 
       - name: Dispatch to package registry
-        if: steps.release.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PKG_NAME: ${{ vars.PKG_NAME }}
+          PKG_REGISTRY: ${{ vars.PKG_REGISTRY }}
+          VERSION_TAG: ${{ needs.release.outputs.tag }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_FULL: ${{ github.repository }}
+          DESCRIPTION: ${{ steps.description.outputs.value }}
         run: |
           curl -H "Accept: application/vnd.github.everest-preview+json" \
-          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          -H "Authorization: token $GH_TOKEN" \
           --request POST \
-          --data '{"event_type": "new_release", "client_payload": { "package_name": "${{ vars.PKG_NAME }}", "version": "${{ steps.release.outputs.version }}", "author": "${{ github.repository_owner }}", "short_desc": "${{ steps.description.outputs.value }}", "long_desc": "${{ steps.description.outputs.value }}", "homepage": "https://github.com/${{ github.repository }}/", "link": "https://github.com/${{ github.repository }}/releases/tag/v${{ steps.release.outputs.version }}" }}' \
-          https://api.github.com/repos/${{ vars.PKG_REGISTRY }}/dispatches
+          --data "{\"event_type\": \"new_release\", \"client_payload\": { \"package_name\": \"$PKG_NAME\", \"version\": \"$VERSION_TAG\", \"author\": \"$REPO_OWNER\", \"short_desc\": \"$DESCRIPTION\", \"long_desc\": \"$DESCRIPTION\", \"homepage\": \"https://github.com/$REPO_FULL/\", \"link\": \"https://github.com/$REPO_FULL/releases/tag/$VERSION_TAG\" }}" \
+          "https://api.github.com/repos/$PKG_REGISTRY/dispatches"

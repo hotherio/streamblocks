@@ -451,6 +451,10 @@ major_on_zero = false
 allow_zero_version = true
 changelog_file = "CHANGELOG.md"
 
+[tool.semantic_release.commit_author]
+env = "GIT_COMMIT_AUTHOR"
+default = "Hother Bot <github-bot@hother.io>"
+
 [tool.semantic_release.commit_parser_options]
 allowed_tags = [
     "build", "chore", "ci", "docs", "feat", "fix",
