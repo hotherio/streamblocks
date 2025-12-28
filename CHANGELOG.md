@@ -93,5 +93,3 @@ All notable changes to this project will be documented in this file.
 - Add validate_block method to protocol tests
 - Add tests for base classes and minimal API
 - Remove old test files
-
-
