@@ -18,44 +18,26 @@ jobs:
     concurrency: release
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Import GPG key
-        id: import-gpg
-        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
-        with:
-          gpg_private_key: ${{ secrets.HOTHER_BOT_GPG_KEY }}
-          passphrase: ${{ secrets.HOTHER_BOT_GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_tag_gpgsign: true
-
-      - name: Configure Git
-        run: |
-          git config user.email "${{ steps.import-gpg.outputs.email }}"
-          git config user.name "${{ steps.import-gpg.outputs.name }}"
-          git config core.autocrlf false
-          git config commit.gpgsign true
-          git config tag.gpgsign true
-
       - name: Python Semantic Release
         id: release
-        uses: python-semantic-release/python-semantic-release@754a065a2ea187da71977ada6630a8ec0f98e380 # v10.5.3
+        uses: python-semantic-release/python-semantic-release@v10.5.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
         if: steps.release.outputs.released == 'true'
-        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
 
       - name: Publish GitHub Release
         if: steps.release.outputs.released == 'true'
-        uses: python-semantic-release/publish-action@68eaac9f1f594e9ec4b985245d06355734f43eea # v10.5.3
+        uses: python-semantic-release/publish-action@v10.5.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
