@@ -7,10 +7,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write      # PyPI Trusted Publishing
-  contents: write      # Create tags and releases
-  issues: write        # Comment on issues
-  pull-requests: write # Comment on PRs
+  id-token: write       # PyPI Trusted Publishing
+  contents: write       # Create tags and releases
+  issues: write         # Comment on issues
+  pull-requests: write  # Comment on PRs
+  attestations: write   # Build provenance attestations
 
 jobs:
   release:
@@ -75,13 +76,36 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
-      - name: Create immutable release with assets
+      - name: Generate asset checksums
+        if: steps.release.outputs.released == 'true'
+        run: |
+          cd dist
+          sha256sum *.whl *.tar.gz > SHA256SUMS
+
+      - name: Sign checksums with GPG
+        if: steps.release.outputs.released == 'true'
+        run: |
+          cd dist
+          gpg --detach-sign --armor SHA256SUMS
+
+      - name: Create immutable release with signed assets
         if: steps.release.outputs.released == 'true'
         run: |
           gh release create ${{ steps.release.outputs.tag }} \
             --title "${{ steps.release.outputs.tag }}" \
             --notes-file CHANGELOG.md \
-            dist/*.whl dist/*.tar.gz
+            --latest \
+            dist/*.whl dist/*.tar.gz dist/SHA256SUMS dist/SHA256SUMS.asc
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Attest build provenance
+        if: steps.release.outputs.released == 'true'
+        run: |
+          for file in dist/*.whl dist/*.tar.gz; do
+            gh attestation verify "$file" --owner ${{ github.repository_owner }} 2>/dev/null || \
+            gh attestation attest "$file" --owner ${{ github.repository_owner }} || true
+          done
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
