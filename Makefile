@@ -44,14 +44,14 @@ check: lint type-check test ## Run all quality checks
 
 # Examples
 examples: ## Run all examples (skip API-dependent ones)
-	uv run python examples/run_examples.py --skip-api
+	uv run python -m hother.streamblocks_examples.run_examples --skip-api
 
 # Documentation targets
 docs: ## Serve documentation locally
 	uv run mkdocs serve
 
-docs-build: ## Build documentation
-	uv run mkdocs build
+docs-build: ## Build documentation (strict, same as CI)
+	uv run mkdocs build --strict
 
 # Build targets
 build: clean-build ## Build package

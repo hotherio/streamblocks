@@ -6,7 +6,9 @@ on:
     - .github/workflows/docs.yaml
     - docs/**
     - mkdocs.yml
-    - requirements-docs.txt
+    - pyproject.toml
+    - src/hother/streamblocks/**
+    - src/hother/streamblocks_examples/**
     branches:
     - main
   release:
