@@ -1,8 +1,8 @@
-# Streamblocks
+# StreamBlocks
 
 **Real-time extraction of structured blocks from AI text streams**
 
-Streamblocks is a Python library for detecting and extracting structured content blocks from streaming text. Extract semantic blocks as they stream—not after completion—enabling reactive AI agents and real-time processing.
+StreamBlocks is a Python library for detecting and extracting structured content blocks from streaming text. Extract semantic blocks as they stream — not after completion — enabling reactive AI agents and real-time processing.
 
 <div class="grid cards" markdown>
 
@@ -12,7 +12,7 @@ Streamblocks is a Python library for detecting and extracting structured content
 
     Extract blocks in real-time as text streams, enabling immediate reactions and feedback loops with LLMs.
 
-    [:octicons-arrow-right-24: Getting Started](getting_started.md)
+    [:octicons-arrow-right-24: Getting Started](getting-started/index.md)
 
 -   :material-puzzle:{ .lg .middle } **Multiple Syntaxes**
 
@@ -20,7 +20,7 @@ Streamblocks is a Python library for detecting and extracting structured content
 
     Choose from delimiter-based, Markdown frontmatter, or create custom syntaxes for your use case.
 
-    [:octicons-arrow-right-24: Syntaxes Guide](syntaxes.md)
+    [:octicons-arrow-right-24: Syntaxes](concepts/syntaxes.md)
 
 -   :material-connection:{ .lg .middle } **Provider Adapters**
 
@@ -28,7 +28,7 @@ Streamblocks is a Python library for detecting and extracting structured content
 
     Works with Gemini, OpenAI, Anthropic out of the box. Easy to add custom adapters.
 
-    [:octicons-arrow-right-24: Adapters Guide](adapters.md)
+    [:octicons-arrow-right-24: Adapters](concepts/adapters.md)
 
 -   :material-shield-check:{ .lg .middle } **Type Safe**
 
@@ -36,86 +36,43 @@ Streamblocks is a Python library for detecting and extracting structured content
 
     Full Pydantic model support with validation. Define your block metadata and content with type safety.
 
-    [:octicons-arrow-right-24: Block Types](blocks.md)
+    [:octicons-arrow-right-24: Blocks & Registry](concepts/blocks-and-registry.md)
 
 </div>
 
 ## Quick Example
 
 ```python
-import asyncio
-from streamblocks import StreamBlockProcessor, BlockRegistry, Syntax
+--8<-- "src/hother/streamblocks_examples/00_quickstart/01_hello_world.py:imports"
 
-async def main():
-    # Create registry and processor
-    registry = BlockRegistry()
-    processor = StreamBlockProcessor(registry, syntax=Syntax.DELIMITER_PREAMBLE)
-
-    # Simulate a text stream
-    async def text_stream():
-        chunks = [
-            "Here's the file operations:\n",
-            "!!file01:files_operations\n",
-            "src/main.py:C\n",
-            "src/utils.py:E\n",
-            "!!end\n",
-            "Done!"
-        ]
-        for chunk in chunks:
-            yield chunk
-
-    # Process and react to blocks in real-time
-    async for event in processor.process_stream(text_stream()):
-        if event.type.name == "BLOCK_EXTRACTED":
-            print(f"Extracted: {event.block.metadata.id}")
-
-asyncio.run(main())
+--8<-- "src/hother/streamblocks_examples/00_quickstart/01_hello_world.py:example"
 ```
 
-## Why Streamblocks?
+The processor consumes any async text stream and emits [events](concepts/events.md) as it detects, accumulates, and completes blocks. When a block closes, `BlockEndEvent.get_block()` returns the fully parsed, validated, typed block.
+
+## Why StreamBlocks?
 
 | Feature | Benefit |
 |---------|---------|
-| **LLM Agnostic** | Works with any text stream—no vendor lock-in |
+| **LLM Agnostic** | Works with any text stream — no vendor lock-in |
 | **Real-time Processing** | React to blocks as they stream, don't wait for completion |
 | **Type Safety** | Pydantic models for metadata and content validation |
 | **Extensible** | Custom syntaxes, adapters, and block types |
-| **Framework Compatible** | Integrates with LangGraph, Pydantic AI, and others |
+| **Framework Compatible** | Integrates with Pydantic AI, AG-UI, and others |
 
 ## Installation
 
-=== "uv"
-
-    ```bash
-    uv add streamblocks
-    ```
-
-=== "pip"
-
-    ```bash
-    pip install streamblocks
-    ```
+```bash
+pip install streamblocks
+```
 
 With provider support:
 
-=== "uv"
+```bash
+pip install streamblocks[all-providers]
+```
 
-    ```bash
-    uv add streamblocks[gemini]      # Google Gemini
-    uv add streamblocks[openai]      # OpenAI
-    uv add streamblocks[anthropic]   # Anthropic Claude
-    uv add streamblocks[all-providers]  # All providers
-    ```
+See [Installation](getting-started/installation.md) for all extras.
 
-=== "pip"
-
-    ```bash
-    pip install streamblocks[gemini]
-    pip install streamblocks[openai]
-    pip install streamblocks[anthropic]
-    pip install streamblocks[all-providers]
-    ```
-
-[Get Started :material-arrow-right:](getting_started.md){ .md-button .md-button--primary }
+[Get Started :material-arrow-right:](getting-started/quickstart.md){ .md-button .md-button--primary }
 [View Examples](examples/index.md){ .md-button }
-
