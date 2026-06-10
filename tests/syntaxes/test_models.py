@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from hother.streamblocks import SyntaxConfigError
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
 from hother.streamblocks.syntaxes.delimiter import (
     DelimiterFrontmatterSyntax,
@@ -141,7 +142,7 @@ class TestGetSyntaxInstanceWithCustomSyntax:
             ) -> ParseResult[BaseMetadata, BaseContent]:
                 return ParseResult(success=False, error="Not implemented")
 
-        with pytest.raises(TypeError, match="Expected Syntax enum or BaseSyntax instance"):
+        with pytest.raises(SyntaxConfigError, match="Expected a Syntax enum member or BaseSyntax instance"):
             get_syntax_instance(DuckTypedSyntax())  # type: ignore[arg-type]
 
 
@@ -149,27 +150,27 @@ class TestGetSyntaxInstanceErrors:
     """Tests for get_syntax_instance() error cases."""
 
     def test_invalid_string_raises_type_error(self) -> None:
-        """Test that a plain string raises TypeError."""
-        with pytest.raises(TypeError, match="Expected Syntax enum or BaseSyntax instance"):
+        """Test that a plain string raises SyntaxConfigError."""
+        with pytest.raises(SyntaxConfigError, match="Expected a Syntax enum member or BaseSyntax instance"):
             get_syntax_instance("invalid")  # type: ignore[arg-type]
 
     def test_invalid_number_raises_type_error(self) -> None:
-        """Test that a number raises TypeError."""
-        with pytest.raises(TypeError, match="Expected Syntax enum or BaseSyntax instance"):
+        """Test that a number raises SyntaxConfigError."""
+        with pytest.raises(SyntaxConfigError, match="Expected a Syntax enum member or BaseSyntax instance"):
             get_syntax_instance(123)  # type: ignore[arg-type]
 
     def test_invalid_none_raises_type_error(self) -> None:
-        """Test that None raises TypeError."""
-        with pytest.raises(TypeError, match="Expected Syntax enum or BaseSyntax instance"):
+        """Test that None raises SyntaxConfigError."""
+        with pytest.raises(SyntaxConfigError, match="Expected a Syntax enum member or BaseSyntax instance"):
             get_syntax_instance(None)  # type: ignore[arg-type]
 
     def test_invalid_dict_raises_type_error(self) -> None:
-        """Test that a dict raises TypeError."""
-        with pytest.raises(TypeError, match="Expected Syntax enum or BaseSyntax instance"):
+        """Test that a dict raises SyntaxConfigError."""
+        with pytest.raises(SyntaxConfigError, match="Expected a Syntax enum member or BaseSyntax instance"):
             get_syntax_instance({"detect_line": True})  # type: ignore[arg-type]
 
     def test_incomplete_object_raises_type_error(self) -> None:
-        """Test that an object without required methods raises TypeError."""
+        """Test that an object without required methods raises SyntaxConfigError."""
 
         class IncompleteSyntax:
             def detect_line(self, line: str) -> DetectionResult:
@@ -177,12 +178,12 @@ class TestGetSyntaxInstanceErrors:
 
             # Missing parse_block method
 
-        with pytest.raises(TypeError, match="Expected Syntax enum or BaseSyntax instance"):
+        with pytest.raises(SyntaxConfigError, match="Expected a Syntax enum member or BaseSyntax instance"):
             get_syntax_instance(IncompleteSyntax())  # type: ignore[arg-type]
 
     def test_error_message_includes_type_info(self) -> None:
         """Test that error message includes the type of invalid input."""
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(SyntaxConfigError) as exc_info:
             get_syntax_instance([1, 2, 3])  # type: ignore[arg-type]
 
         assert "list" in str(exc_info.value)

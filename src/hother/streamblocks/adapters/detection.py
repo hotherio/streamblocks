@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
+from hother.streamblocks.core.exceptions import AdapterDetectionError
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -199,16 +201,14 @@ def detect_input_adapter(sample: Any) -> InputProtocolAdapter[Any]:
         Detected adapter instance
 
     Raises:
-        ValueError: If no adapter matches the sample
+        AdapterDetectionError: If no adapter matches the sample
     """
     adapter = InputAdapterRegistry.detect(sample)
     if adapter is None:
         chunk_type = type(sample)
-        registered_modules = list(InputAdapterRegistry.get_registered_modules().keys())
-        msg = (
-            f"No input adapter found for {chunk_type.__module__}.{chunk_type.__name__}. "
-            f"Registered module prefixes: {registered_modules}. "
-            f"Consider importing the appropriate extension or registering a custom adapter."
+        registered_modules = tuple(InputAdapterRegistry.get_registered_modules().keys())
+        raise AdapterDetectionError(
+            chunk_type=f"{chunk_type.__module__}.{chunk_type.__name__}",
+            registered_prefixes=registered_modules,
         )
-        raise ValueError(msg)
     return adapter

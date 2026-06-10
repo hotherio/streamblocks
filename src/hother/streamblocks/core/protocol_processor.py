@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, TypeVar
 from hother.streamblocks.adapters.categories import EventCategory
 from hother.streamblocks.adapters.detection import detect_input_adapter
 from hother.streamblocks.adapters.output import StreamBlocksOutputAdapter
+from hother.streamblocks.core.exceptions import AdapterNotConfiguredError
 from hother.streamblocks.core.processor import ProcessorConfig, StreamBlockProcessor
 
 if TYPE_CHECKING:
@@ -183,8 +184,7 @@ class ProtocolStreamProcessor[TInput, TOutput]:
         """Process TEXT_CONTENT event and yield output events."""
         # _input_adapter is guaranteed to be set by _process_input_event
         if self._input_adapter is None:  # pragma: no cover
-            msg = "Input adapter not initialized - this should not happen"
-            raise RuntimeError(msg)
+            raise AdapterNotConfiguredError(context="protocol_processor")
         text = self._input_adapter.extract_text(input_event)
         if text:
             for sb_event in self._core_processor.process_chunk(text):

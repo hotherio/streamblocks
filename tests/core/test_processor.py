@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hother.streamblocks import Registry
+from hother.streamblocks import AdapterNotConfiguredError, Registry
 from hother.streamblocks.adapters.input import IdentityInputAdapter
 from hother.streamblocks.adapters.protocols import InputProtocolAdapter
 from hother.streamblocks.core.processor import (
@@ -195,10 +195,7 @@ class TestStreamBlockProcessorProcessChunk:
         assert len(text_deltas) == 0
 
     def test_process_chunk_raises_if_adapter_not_set(self, registry: Registry) -> None:
-        """Test RuntimeError if adapter is None after first chunk.
-
-        This covers lines 174-175.
-        """
+        """Test AdapterNotConfiguredError if adapter is None after first chunk."""
         config = ProcessorConfig(auto_detect_adapter=False)
         processor = StreamBlockProcessor(registry, config=config)
 
@@ -207,7 +204,7 @@ class TestStreamBlockProcessorProcessChunk:
         processor._first_chunk_processed = True
         processor._adapter = None
 
-        with pytest.raises(RuntimeError, match="Adapter should be set"):
+        with pytest.raises(AdapterNotConfiguredError, match="process_chunk"):
             processor.process_chunk("text")
 
 
@@ -418,10 +415,7 @@ class TestStreamBlockProcessorProcessStream:
 
     @pytest.mark.asyncio
     async def test_process_stream_raises_if_adapter_not_set(self, registry: Registry) -> None:
-        """Test RuntimeError if adapter is None after first chunk.
-
-        This covers lines 350-351.
-        """
+        """Test AdapterNotConfiguredError if adapter is None after first chunk."""
         config = ProcessorConfig(auto_detect_adapter=False)
         processor = StreamBlockProcessor(registry, config=config)
 
@@ -432,7 +426,7 @@ class TestStreamBlockProcessorProcessStream:
         async def mock_stream():
             yield "text"
 
-        with pytest.raises(RuntimeError, match="Adapter should be set"):
+        with pytest.raises(AdapterNotConfiguredError, match="process_stream"):
             async for _event in processor.process_stream(mock_stream()):
                 pass
 

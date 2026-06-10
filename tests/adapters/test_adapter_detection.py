@@ -6,6 +6,7 @@ from __future__ import annotations
 import hother.streamblocks.extensions.anthropic
 import hother.streamblocks.extensions.gemini
 import hother.streamblocks.extensions.openai  # noqa: F401
+from hother.streamblocks import AdapterDetectionError
 from hother.streamblocks.adapters import (
     EventCategory,
     InputAdapterRegistry,
@@ -107,13 +108,13 @@ class TestInputAdapterRegistry:
         assert adapter is None
 
     def test_detect_input_adapter_raises_for_unknown(self):
-        """detect_input_adapter should raise ValueError for unknown formats."""
+        """detect_input_adapter should raise AdapterDetectionError for unknown formats."""
         import pytest
 
         class WeirdChunk:
             data = "no standard attributes"
 
-        with pytest.raises(ValueError, match="No input adapter found"):
+        with pytest.raises(AdapterDetectionError, match="No input adapter found"):
             detect_input_adapter(WeirdChunk())
 
     def test_custom_adapter_registration_by_module(self):

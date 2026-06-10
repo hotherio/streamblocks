@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 
+from hother.streamblocks.core.exceptions import SyntaxConfigError
 from hother.streamblocks.syntaxes.base import BaseSyntax
 from hother.streamblocks.syntaxes.delimiter import (
     DelimiterFrontmatterSyntax,
@@ -35,7 +36,7 @@ def get_syntax_instance(
         A syntax instance inheriting from BaseSyntax
 
     Raises:
-        TypeError: If syntax is neither a Syntax enum nor a BaseSyntax instance
+        SyntaxConfigError: If syntax is neither a Syntax enum nor a BaseSyntax instance
 
     Example:
         >>> # Using built-in syntax
@@ -61,5 +62,4 @@ def get_syntax_instance(
     if isinstance(syntax, BaseSyntax):
         return syntax
 
-    error_msg = f"Expected Syntax enum or BaseSyntax instance, got {type(syntax).__name__}"
-    raise TypeError(error_msg)
+    raise SyntaxConfigError(received_type=type(syntax).__name__)

@@ -14,6 +14,7 @@ from hother.streamblocks.adapters.protocols import HasNativeModulePrefix
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.block_state_machine import BlockStateMachine
 from hother.streamblocks.core.constants import LIMITS
+from hother.streamblocks.core.exceptions import AdapterNotConfiguredError
 from hother.streamblocks.core.line_accumulator import LineAccumulator
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
@@ -206,8 +207,7 @@ class StreamBlockProcessor:
 
         # Extract text from chunk
         if self._adapter is None:
-            msg = "Adapter should be set after first chunk processing"
-            raise RuntimeError(msg)
+            raise AdapterNotConfiguredError(context="process_chunk")
         text = self._adapter.extract_text(chunk)  # type: ignore[arg-type]
 
         if not text:
@@ -386,8 +386,7 @@ class StreamBlockProcessor:
 
             # Extract text from chunk
             if self._adapter is None:
-                msg = "Adapter should be set after first chunk processing"
-                raise RuntimeError(msg)
+                raise AdapterNotConfiguredError(context="process_stream")
             text = self._adapter.extract_text(chunk)  # type: ignore[arg-type]
 
             if not text:
