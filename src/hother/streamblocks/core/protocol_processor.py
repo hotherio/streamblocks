@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from hother.streamblocks.adapters.categories import EventCategory
 from hother.streamblocks.adapters.detection import detect_input_adapter
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     )
     from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.registry import Registry
+    from hother.streamblocks.core.types import Event
 
 TInput = TypeVar("TInput")
 TOutput = TypeVar("TOutput")
@@ -79,8 +80,12 @@ class ProtocolStreamProcessor[TInput, TOutput]:
         """
         self.registry = registry
         self._input_adapter = input_adapter
-        self._output_adapter: OutputProtocolAdapter[TOutput] = (
-            output_adapter if output_adapter is not None else StreamBlocksOutputAdapter()  # type: ignore[assignment]
+        # StreamBlocksOutputAdapter emits native BaseEvent output and cannot be
+        # statically proven to satisfy OutputProtocolAdapter[TOutput] for an arbitrary
+        # TOutput, so cast the default rather than suppress.
+        self._output_adapter: OutputProtocolAdapter[TOutput] = cast(
+            "OutputProtocolAdapter[TOutput]",
+            output_adapter if output_adapter is not None else StreamBlocksOutputAdapter(),
         )
         self._auto_detected = False
 
@@ -193,10 +198,14 @@ class ProtocolStreamProcessor[TInput, TOutput]:
 
     async def _transform_sb_event(
         self,
-        sb_event: str | object,
+        sb_event: Event | str,
     ) -> AsyncIterator[TOutput]:
         """Transform StreamBlocks event to output protocol events."""
-        output = self._output_adapter.to_protocol_event(sb_event)  # type: ignore[arg-type]
+        if isinstance(sb_event, str):  # pragma: no cover - emit_original_events is False here
+            # Original passthrough chunks are disabled for protocol processing,
+            # so only StreamBlocks events reach this transform.
+            return
+        output = self._output_adapter.to_protocol_event(sb_event)
         if output is not None:
             async for event in self._ensure_async_iterable(output):
                 yield event
@@ -238,6 +247,8 @@ class ProtocolStreamProcessor[TInput, TOutput]:
             if text:
                 # Process text chunk and get StreamBlocks events
                 for sb_event in self._core_processor.process_chunk(text):
+                    if isinstance(sb_event, str):  # pragma: no cover - emit_original_events is False here
+                        continue
                     output = self._output_adapter.to_protocol_event(sb_event)
                     if output is not None:
                         events.extend(self._ensure_list(output))
@@ -299,7 +310,9 @@ class ProtocolStreamProcessor[TInput, TOutput]:
             Individual events
         """
         if isinstance(output, list):
-            for item in output:
+            # TOutput is unbounded so pyright widens list narrowing to list[Unknown];
+            # the declared parameter guarantees the element type.
+            for item in cast("list[TOutput]", output):
                 yield item
         else:
             yield output
@@ -314,5 +327,6 @@ class ProtocolStreamProcessor[TInput, TOutput]:
             List of events
         """
         if isinstance(output, list):
-            return output
+            # See _ensure_async_iterable: narrow the unbounded-TypeVar list element type.
+            return cast("list[TOutput]", output)
         return [output]
