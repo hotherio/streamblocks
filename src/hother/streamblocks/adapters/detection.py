@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast, runtime_checkable
 
 from hother.streamblocks.core.exceptions import AdapterDetectionError
 
@@ -205,7 +205,8 @@ def detect_input_adapter(sample: Any) -> InputProtocolAdapter[Any]:
     """
     adapter = InputAdapterRegistry.detect(sample)
     if adapter is None:
-        chunk_type = type(sample)
+        # sample is Any, so type(sample) is type[Unknown]; pin it to a known type.
+        chunk_type = cast("type[object]", type(sample))
         registered_modules = tuple(InputAdapterRegistry.get_registered_modules().keys())
         raise AdapterDetectionError(
             chunk_type=f"{chunk_type.__module__}.{chunk_type.__name__}",

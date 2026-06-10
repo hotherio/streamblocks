@@ -340,7 +340,6 @@ ignore = [
     "examples/blocks/agent/files.py",  # Literal narrowing for block_type
     "examples/blocks/agent/message.py",  # Literal narrowing for block_type
     "examples/blocks/agent/patch.py",  # Literal narrowing for block_type
-    "src/hother/streamblocks/adapters/detection.py",  # type(Any) returns type[Unknown]
     "src/hother/streamblocks/extensions/agui/output_adapter.py",  # Complex generic type interactions
     "src/hother/streamblocks/extensions/agui/input_adapter.py",  # ag_ui.core has no type stubs
     "src/hother/streamblocks/syntaxes/factory.py",  # Exhaustive match on StrEnum triggers reportUnnecessaryComparison
