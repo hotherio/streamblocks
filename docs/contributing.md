@@ -2,6 +2,11 @@
 
 Thank you for your interest in contributing to Streamblocks!
 
+> **Conventions:** see [`AGENTS.md`](https://github.com/hotherio/streamblocks/blob/main/AGENTS.md)
+> in the repository root for the canonical, enforced engineering conventions (typing,
+> error handling, testing, the no-`type: ignore`/no-magic-values contracts). This page
+> covers the day-to-day workflow.
+
 ## Development Setup
 
 1. **Clone the repository**:
