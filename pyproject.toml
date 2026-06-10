@@ -80,6 +80,8 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=6.0",
     "pytest-asyncio>=0.21",
+    "pytest-randomly>=3.16",
+    "pytest-xdist>=3.6",
     "hypothesis>=6.0",
     "ruff>=0.8",
     "basedpyright>=1.36.2",
@@ -385,7 +387,11 @@ python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+# Treat unexpected xpass as a failure so stale xfails surface.
+xfail_strict = true
 addopts = [
+    "-n",
+    "auto",
     "--cov=hother.streamblocks",
     "--cov-report=term-missing",
     "--cov-report=html",
