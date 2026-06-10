@@ -342,7 +342,6 @@ ignore = [
     "examples/blocks/agent/patch.py",  # Literal narrowing for block_type
     "src/hother/streamblocks/extensions/agui/output_adapter.py",  # Complex generic type interactions
     "src/hother/streamblocks/extensions/agui/input_adapter.py",  # ag_ui.core has no type stubs
-    "src/hother/streamblocks/syntaxes/factory.py",  # Exhaustive match on StrEnum triggers reportUnnecessaryComparison
     # Block types use Literal narrowing for block_type which triggers reportIncompatibleVariableOverride
     "src/hother/streamblocks/blocks/patch.py",
     "src/hother/streamblocks/blocks/files.py",

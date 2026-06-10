@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
+from typing import cast
 
 from hother.streamblocks.core.exceptions import SyntaxConfigError
 from hother.streamblocks.syntaxes.base import BaseSyntax
@@ -54,12 +55,11 @@ def get_syntax_instance(
                 return DelimiterPreambleSyntax()
             case Syntax.MARKDOWN_FRONTMATTER:
                 return MarkdownFrontmatterSyntax()
-            case _:  # pragma: no cover - guard for future enum additions
-                error_msg = f"Unhandled Syntax enum value: {syntax}"
-                raise NotImplementedError(error_msg)
 
-    # It's a custom syntax instance - must inherit from BaseSyntax
-    if isinstance(syntax, BaseSyntax):
-        return syntax
-
-    raise SyntaxConfigError(received_type=type(syntax).__name__)
+    # A custom instance must inherit from BaseSyntax. Validate against ``object``
+    # rather than the declared type: callers may be untyped and pass an
+    # unsupported value (or a future, unhandled Syntax member), which must raise.
+    unchecked = cast("object", syntax)
+    if isinstance(unchecked, BaseSyntax):
+        return unchecked
+    raise SyntaxConfigError(received_type=type(unchecked).__name__)
