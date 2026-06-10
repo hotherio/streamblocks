@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 from uuid import uuid4
 
 from hother.streamblocks.adapters.detection import InputAdapterRegistry
@@ -208,7 +208,10 @@ class StreamBlockProcessor:
         # Extract text from chunk
         if self._adapter is None:
             raise AdapterNotConfiguredError(context="process_chunk")
-        text = self._adapter.extract_text(chunk)  # type: ignore[arg-type]
+        # Earlier isinstance checks narrow self._adapter to a union whose
+        # IdentityInputAdapter arm types extract_text as str-only; cast back to the
+        # declared protocol so an arbitrary chunk type is accepted.
+        text = cast("InputProtocolAdapter[Any]", self._adapter).extract_text(chunk)
 
         if not text:
             return events
@@ -387,7 +390,9 @@ class StreamBlockProcessor:
             # Extract text from chunk
             if self._adapter is None:
                 raise AdapterNotConfiguredError(context="process_stream")
-            text = self._adapter.extract_text(chunk)  # type: ignore[arg-type]
+            # See process_chunk: cast back to the declared protocol type so the
+            # narrowed IdentityInputAdapter arm does not constrain extract_text to str.
+            text = cast("InputProtocolAdapter[Any]", self._adapter).extract_text(chunk)
 
             if not text:
                 continue
