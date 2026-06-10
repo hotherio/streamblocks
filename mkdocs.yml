@@ -5,50 +5,48 @@ edit_uri: ""
 dev_addr: 0.0.0.0:1234
 site_dir: "static/docs"
 nav:
-  - Streamblocks: index.md
-  - Installation: installation.md
-  - Getting Started: getting_started.md
-  - Documentation:
-    - Basics: basics.md
-    - Stream Processing: processing.md
-    - Syntaxes: syntaxes.md
-    - Adapters: adapters.md
-    - Block Types: blocks.md
-    - Validation: validation.md
-    - Events: events.md
-    - Error Handling: errors.md
-    - Common Patterns: patterns.md
-    - Performance: performance.md
-  - Architecture:
-    - Overview: architecture/index.md
-    - Extension System: architecture/extensions.md
-    - State Machine: architecture/state-machine.md
-    - Adapter Protocol: architecture/adapters.md
+  - StreamBlocks: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - Quickstart: getting-started/quickstart.md
+    - Your First Custom Block: getting-started/first-custom-block.md
+  - Concepts:
+    - concepts/index.md
+    - Blocks & Registry: concepts/blocks-and-registry.md
+    - Events: concepts/events.md
+    - Syntaxes: concepts/syntaxes.md
+    - Adapters: concepts/adapters.md
+  - Guides:
+    - guides/index.md
+    - Defining Custom Blocks: guides/define-custom-blocks.md
+    - Validation: guides/validation.md
+    - Error Handling: guides/error-handling.md
+    - OpenAI, Anthropic & Gemini: guides/providers.md
+    - AG-UI Protocol: guides/agui.md
+    - Pydantic AI: guides/pydantic-ai.md
+    - Logging: guides/logging.md
+    - Performance Tuning: guides/performance.md
   - Examples:
-    - Setup: examples/setup.md
-    - Overview: examples/index.md
-    - Basic Patterns: examples/basic.md
+    - examples/index.md
+    - Quickstart: examples/quickstart.md
+    - Basics: examples/basics.md
     - Syntaxes: examples/syntaxes.md
     - Adapters: examples/adapters.md
-    - Provider Examples: examples/providers.md
+    - Blocks: examples/blocks.md
     - Integrations: examples/integrations.md
-  - Integrations:
-    - Overview: integrations/index.md
-    - PydanticAI: integrations/pydantic_ai.md
-    - AG-UI Protocol: integrations/agui.md
+    - Providers: examples/providers.md
   - Reference:
-    - Overview: reference/index.md
-    - Core: reference/core.md
+    - reference/index.md
+    - Processors: reference/processors.md
+    - Registry & Models: reference/registry-and-models.md
+    - Events: reference/events.md
     - Syntaxes: reference/syntaxes.md
     - Adapters: reference/adapters.md
-    - Blocks: reference/blocks.md
-    - Events: reference/events.md
+    - Parsing & Validation: reference/parsing-and-validation.md
     - Extensions: reference/extensions.md
-  - Help:
-    - Troubleshooting: troubleshooting.md
-    - FAQ: faq.md
-    - Community: community.md
-    - Contributing: contributing.md
+    - Integrations: reference/integrations.md
+  - Contributing: contributing.md
 theme:
   name: material
   language: en
@@ -163,6 +161,34 @@ plugins:
       lang: en
   - autorefs
   - glightbox
+  - redirects:
+      redirect_maps:
+        getting_started.md: getting-started/quickstart.md
+        installation.md: getting-started/installation.md
+        basics.md: concepts/index.md
+        processing.md: concepts/index.md
+        syntaxes.md: concepts/syntaxes.md
+        adapters.md: concepts/adapters.md
+        events.md: concepts/events.md
+        blocks.md: guides/define-custom-blocks.md
+        validation.md: guides/validation.md
+        errors.md: guides/error-handling.md
+        patterns.md: guides/index.md
+        performance.md: guides/performance.md
+        troubleshooting.md: guides/index.md
+        faq.md: index.md
+        community.md: index.md
+        architecture/index.md: concepts/index.md
+        architecture/extensions.md: concepts/adapters.md
+        architecture/state-machine.md: concepts/index.md
+        architecture/adapters.md: concepts/adapters.md
+        integrations/index.md: guides/index.md
+        integrations/pydantic_ai.md: guides/pydantic-ai.md
+        integrations/agui.md: guides/agui.md
+        examples/basic.md: examples/basics.md
+        examples/setup.md: examples/index.md
+        reference/core.md: reference/processors.md
+        reference/blocks.md: reference/registry-and-models.md
   - mkdocstrings:
       default_handler: python
       handlers:
