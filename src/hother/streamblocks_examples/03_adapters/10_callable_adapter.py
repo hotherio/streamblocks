@@ -5,6 +5,7 @@ This example shows how to create a simple inline input adapter class
 for quick custom extraction without a full adapter class.
 """
 
+# --8<-- [start:imports]
 import asyncio
 from typing import Any
 
@@ -16,6 +17,8 @@ from hother.streamblocks import (
     StreamBlockProcessor,
 )
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 # Simple dict-based chunks
@@ -33,6 +36,7 @@ async def dict_stream():
         await asyncio.sleep(0.1)
 
 
+# --8<-- [start:adapter]
 # Simple inline adapter class
 class DictInputAdapter:
     """Simple adapter for dict-based chunks."""
@@ -56,6 +60,9 @@ class DictInputAdapter:
         return None
 
 
+# --8<-- [end:adapter]
+
+
 async def main() -> None:
     """Run the example."""
     print("=" * 60)
@@ -63,6 +70,7 @@ async def main() -> None:
     print("=" * 60)
     print()
 
+    # --8<-- [start:example]
     # Create adapter instance
     adapter = DictInputAdapter()
 
@@ -90,6 +98,7 @@ async def main() -> None:
             print("\nBlock Extracted:")
             print(block.model_dump_json(indent=2))
             print()
+    # --8<-- [end:example]
 
     print()
     print("Simple adapter class")

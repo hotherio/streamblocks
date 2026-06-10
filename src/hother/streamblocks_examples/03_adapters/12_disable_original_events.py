@@ -5,6 +5,7 @@ This example shows how to disable original event passthrough for
 maximum performance and minimal overhead.
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncGenerator
 
@@ -18,6 +19,8 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 # Mock Gemini chunk
@@ -82,8 +85,10 @@ async def compare_modes() -> None:
     print("Mode 2: Lightweight (emit_original_events=False)")
     print("-" * 40)
 
+    # --8<-- [start:example]
     config_light = ProcessorConfig(emit_original_events=False)  # Disable passthrough
     processor_light = StreamBlockProcessor(registry, config=config_light)
+    # --8<-- [end:example]
 
     event_count_light = 0
     async for event in processor_light.process_stream(large_gemini_stream()):

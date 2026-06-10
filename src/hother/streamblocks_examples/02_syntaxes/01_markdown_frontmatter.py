@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
 async def main() -> None:
     """Main example function."""
+    # --8<-- [start:setup]
     # Create markdown frontmatter syntax for patch blocks
     # Each Registry holds exactly one syntax.
     # To handle multiple info strings (patch/yaml/diff), you would need separate processors
@@ -40,6 +41,7 @@ async def main() -> None:
     # Create processor with config
     config = ProcessorConfig(lines_buffer=10)
     processor = StreamBlockProcessor(registry, config=config)
+    # --8<-- [end:setup]
 
     # Example text with markdown frontmatter blocks
     text = dedent("""

@@ -5,6 +5,7 @@ This example shows how to use BlockOpenedEvent to prepare UI elements
 or resources BEFORE block content arrives.
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncGenerator
 
@@ -17,6 +18,8 @@ from hother.streamblocks import (
     TextDeltaEvent,
 )
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def delayed_stream() -> AsyncGenerator[str]:
@@ -58,6 +61,7 @@ async def main() -> None:
     # Track active blocks
     active_blocks = {}
 
+    # --8<-- [start:example]
     async for event in processor.process_stream(delayed_stream()):
         if isinstance(event, BlockStartEvent):
             print("🟢 BlockOpened!")
@@ -94,6 +98,7 @@ async def main() -> None:
             # Clean up
             active_blocks.clear()
             print("   → UI widget finalized\n")
+    # --8<-- [end:example]
 
     print()
     print("✓ BlockOpened emitted immediately")

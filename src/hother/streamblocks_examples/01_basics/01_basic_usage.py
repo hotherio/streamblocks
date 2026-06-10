@@ -1,5 +1,6 @@
 """Basic usage example for StreamBlocks."""
 
+# --8<-- [start:imports]
 import asyncio
 from textwrap import dedent
 from typing import TYPE_CHECKING
@@ -21,6 +22,8 @@ from hother.streamblocks_examples.blocks.agent.files import (
 )
 from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
+# --8<-- [end:imports]
+
 if TYPE_CHECKING:
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
@@ -28,6 +31,7 @@ if TYPE_CHECKING:
 async def main() -> None:
     """Main example function."""
 
+    # --8<-- [start:register]
     # Create type-specific registry and register block
     registry = Registry()
 
@@ -37,12 +41,15 @@ async def main() -> None:
         return all(not (op.action == "delete" and op.path.startswith("/")) for op in block.content.operations)
 
     registry.register("files_operations", FileOperations, validators=[no_root_delete])
+    # --8<-- [end:register]
 
+    # --8<-- [start:processor]
     # Create processor with config
     from hother.streamblocks.core.processor import ProcessorConfig
 
     config = ProcessorConfig(lines_buffer=5)
     processor = StreamBlockProcessor(registry, config=config)
+    # --8<-- [end:processor]
 
     # Example text with multiple blocks
     text = dedent("""
@@ -71,6 +78,7 @@ async def main() -> None:
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
+    # --8<-- [start:events]
     async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Raw text passed through
@@ -93,6 +101,7 @@ async def main() -> None:
         elif isinstance(event, BlockErrorEvent):
             # Block rejected
             print(f"[REJECT] {event.reason} - {event.syntax}")
+    # --8<-- [end:events]
 
     print("-" * 60)
     print(f"\nTotal blocks extracted: {len(blocks_extracted)}")

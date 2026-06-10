@@ -16,12 +16,14 @@ if TYPE_CHECKING:
 
 async def main() -> None:
     """Main example function."""
+    # --8<-- [start:setup]
     # Create syntax with NO custom models - uses BaseMetadata and BaseContent
     registry = Registry()
 
     # Create processor with the registry
     config = ProcessorConfig(lines_buffer=5)
     processor = StreamBlockProcessor(registry, config=config)
+    # --8<-- [end:setup]
 
     # Example text with simple blocks
     text = dedent("""
@@ -55,6 +57,7 @@ async def main() -> None:
 
     blocks_extracted: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
 
+    # --8<-- [start:process]
     async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, TextContentEvent):
             # Raw text passed through
@@ -73,6 +76,7 @@ async def main() -> None:
         elif isinstance(event, BlockErrorEvent):
             # Block rejected
             print(f"\n[REJECT] {event.reason}")
+    # --8<-- [end:process]
 
     print("\n" + "-" * 60)
     print(f"Total blocks extracted: {len(blocks_extracted)}")

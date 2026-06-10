@@ -4,7 +4,7 @@
 # --8<-- [start:imports]
 import asyncio
 
-from hother.streamblocks import Registry, StreamBlockProcessor
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockEndEvent
 from hother.streamblocks_examples.helpers.simulator import simple_text_stream
@@ -40,7 +40,7 @@ TaskBlock = Block[TaskMetadata, TaskContent]
 async def main() -> None:
     """Use a custom block type."""
     # --8<-- [start:example]
-    registry = Registry()
+    registry = Registry(syntax=DelimiterFrontmatterSyntax())
     registry.register("task", TaskBlock)
     processor = StreamBlockProcessor(registry)
 

@@ -5,13 +5,17 @@ This example shows the default behavior with plain text streams.
 No adapter needed - it just works!
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncGenerator
 
 from hother.streamblocks import BlockEndEvent, Registry, StreamBlockProcessor, TextContentEvent, TextDeltaEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
+# --8<-- [end:imports]
 
+
+# --8<-- [start:stream]
 async def plain_text_stream() -> AsyncGenerator[str]:
     """Simulate a plain text stream."""
     chunks = [
@@ -28,6 +32,10 @@ async def plain_text_stream() -> AsyncGenerator[str]:
         await asyncio.sleep(0.1)  # Simulate streaming delay
 
 
+# --8<-- [end:stream]
+
+
+# --8<-- [start:main]
 async def main() -> None:
     """Run the example."""
     print("=" * 60)
@@ -35,6 +43,7 @@ async def main() -> None:
     print("=" * 60)
     print()
 
+    # --8<-- [start:example]
     # Setup
     registry = Registry()
     registry.register("files_operations", FileOperations)
@@ -61,10 +70,14 @@ async def main() -> None:
             print("\n✅ Block Extracted:")
             print(block.model_dump_json(indent=2))
             print()
+    # --8<-- [end:example]
 
     print()
     print("✓ Plain text streams work automatically!")
     print("✓ No adapter configuration needed")
+
+
+# --8<-- [end:main]
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ Section-specific events provide:
 - Clear intent: Code clearly expresses which section is being handled
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncIterator
 
@@ -26,6 +27,8 @@ from hother.streamblocks.core.types import (
     BlockStartEvent,
     TextContentEvent,
 )
+
+# --8<-- [end:imports]
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -86,6 +89,7 @@ async def main() -> None:
     metadata_lines: list[str] = []
     content_lines: list[str] = []
 
+    # --8<-- [start:example]
     async for event in processor.process_stream(example_stream()):
         # Handle lifecycle events
         if isinstance(event, BlockStartEvent):
@@ -131,6 +135,7 @@ async def main() -> None:
             # Regular text outside blocks
             if event.content.strip():
                 print(f"[TEXT] {event.content.strip()}")
+    # --8<-- [end:example]
 
     # Summary
     print()

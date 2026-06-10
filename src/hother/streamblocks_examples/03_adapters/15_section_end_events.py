@@ -12,6 +12,7 @@ Section end events are emitted when sections complete:
 - BlockContentEndEvent: When content section ends (before BlockEndEvent)
 """
 
+# --8<-- [start:imports]
 import asyncio
 
 from hother.streamblocks import (
@@ -29,6 +30,8 @@ from hother.streamblocks import (
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
 from hother.streamblocks_examples.helpers.simulator import simulated_stream
+
+# --8<-- [end:imports]
 
 
 async def example_basic_section_events() -> None:
@@ -59,6 +62,7 @@ async def example_basic_section_events() -> None:
     print("Processing stream with section end events enabled:")
     print()
 
+    # --8<-- [start:example]
     async for event in processor.process_stream(simulated_stream(text, preset="fast")):
         if isinstance(event, BlockStartEvent):
             print(f"  [BlockStart] Block opened: {event.syntax}")
@@ -72,6 +76,7 @@ async def example_basic_section_events() -> None:
             if block:
                 print(f"  [BlockEnd] Block extracted: {event.block_type}")
                 print(block.model_dump_json(indent=2))
+    # --8<-- [end:example]
 
     print()
 
@@ -87,9 +92,11 @@ async def example_disabled_section_events() -> None:
     registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
 
+    # --8<-- [start:optout]
     # Disable section end events for maximum performance
     config = ProcessorConfig(emit_section_end_events=False)  # Opt-out
     processor = StreamBlockProcessor(registry, config=config)
+    # --8<-- [end:optout]
 
     text = "".join(
         [
@@ -142,6 +149,7 @@ async def example_frontmatter_metadata_events() -> None:
     print("Processing stream with YAML frontmatter:")
     print()
 
+    # --8<-- [start:metadata_end]
     async for event in processor.process_stream(simulated_stream(text, preset="fast")):
         if isinstance(event, BlockStartEvent):
             print("  [BlockStart] Block opened")
@@ -153,6 +161,7 @@ async def example_frontmatter_metadata_events() -> None:
             print("  [ContentEnd] Content section complete")
         elif isinstance(event, BlockEndEvent):
             print(f"  [BlockEnd] Block extracted: {event.block_type}")
+    # --8<-- [end:metadata_end]
 
     print()
 
@@ -164,6 +173,7 @@ async def example_early_validation() -> None:
     print("=" * 60)
     print()
 
+    # --8<-- [start:early_validation]
     syntax = DelimiterFrontmatterSyntax()
     registry = Registry(
         syntax=syntax,
@@ -181,6 +191,7 @@ async def example_early_validation() -> None:
         return ValidationResult.success()
 
     registry.add_metadata_validator("files_operations", validate_metadata)
+    # --8<-- [end:early_validation]
 
     processor = StreamBlockProcessor(registry)
 

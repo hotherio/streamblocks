@@ -5,6 +5,7 @@ This example demonstrates how to handle a stream containing BOTH
 original chunks and StreamBlocks events. Shows type checking patterns.
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncGenerator
 
@@ -19,7 +20,10 @@ from hother.streamblocks import (
 )
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
+# --8<-- [end:imports]
 
+
+# --8<-- [start:models]
 # Custom chunk type
 class MyCustomChunk:
     """Custom chunk with metadata."""
@@ -43,6 +47,9 @@ async def custom_stream() -> AsyncGenerator[MyCustomChunk]:
         await asyncio.sleep(0.05)
 
 
+# --8<-- [end:models]
+
+
 async def main() -> None:
     """Run the example."""
     print("=" * 60)
@@ -63,6 +70,7 @@ async def main() -> None:
     original_count = 0
     streamblocks_count = 0
 
+    # --8<-- [start:example]
     async for event in processor.process_stream(custom_stream()):
         # Check if it's an original chunk
         if isinstance(event, MyCustomChunk):
@@ -91,6 +99,7 @@ async def main() -> None:
         elif isinstance(event, TextContentEvent):
             streamblocks_count += 1
             print(f"💬 RawText: {event.content}")
+    # --8<-- [end:example]
 
     print()
     print("Summary:")

@@ -28,6 +28,7 @@ except ImportError:
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# --8<-- [start:imports]
 from hother.streamblocks import (
     BlockContentDeltaEvent,
     BlockEndEvent,
@@ -39,6 +40,8 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     TextContentEvent,
 )
+
+# --8<-- [end:imports]
 from hother.streamblocks_examples.blocks.agent.files import (
     FileContent,
     FileContentContent,
@@ -148,6 +151,7 @@ async def main() -> None:
     print("=" * 60)
     print("\nUsing unified delimiter + frontmatter syntax for all blocks")
 
+    # --8<-- [start:setup]
     # Create a single syntax for all Gemini responses
     syntax = DelimiterFrontmatterSyntax(
         start_delimiter="!!start",
@@ -164,6 +168,7 @@ async def main() -> None:
 
     config = ProcessorConfig(lines_buffer=10)
     processor = StreamBlockProcessor(registry, config=config)
+    # --8<-- [end:setup]
 
     # Example prompts
     example_prompts = [
@@ -217,6 +222,7 @@ async def main() -> None:
 
     # Process the stream
     try:
+        # --8<-- [start:example]
         # Get response and pass directly to processor
         response = await get_gemini_response(user_prompt)
         async for event in processor.process_stream(response):
@@ -247,6 +253,7 @@ async def main() -> None:
 
             elif isinstance(event, BlockErrorEvent):
                 print(f"\nBlock rejected: {event.reason}")
+        # --8<-- [end:example]
 
     except Exception as e:
         print(f"\nError: {e}")

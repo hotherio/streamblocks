@@ -29,9 +29,11 @@ def discover_examples() -> list[Path]:
     for path in EXAMPLES_DIR.rglob("*.py"):
         if path.stem.startswith("_") or path.name == "run_examples.py":
             continue
-        # Skip helper directories
+        # Skip helper directories.
+        # `agent` is excluded until the package is complete: its committed modules
+        # import sibling modules (events, executor, ...) that are not committed yet.
         rel_path = path.relative_to(EXAMPLES_DIR)
-        if rel_path.parts[0] in ("helpers", "tools", "blocks"):
+        if rel_path.parts[0] in ("helpers", "tools", "blocks", "agent"):
             continue
         examples.append(path)
     return sorted(examples)

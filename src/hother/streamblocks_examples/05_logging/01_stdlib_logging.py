@@ -5,6 +5,7 @@ This example demonstrates how to use Python's standard library logging
 with StreamBlocks using the StdlibLoggerAdapter for structured logging.
 """
 
+# --8<-- [start:imports]
 import asyncio
 import logging
 from collections.abc import AsyncIterator
@@ -14,6 +15,8 @@ from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockPr
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.types import BlockEndEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -42,6 +45,7 @@ async def main() -> None:
     """
     print("\n=== Stdlib Logging with Adapter ===")
 
+    # --8<-- [start:example]
     # Configure stdlib logging
     logging.basicConfig(
         level=logging.DEBUG,
@@ -67,6 +71,7 @@ async def main() -> None:
             if block is not None:
                 print("✓ Extracted block:")
                 print(block.model_dump_json(indent=2))
+    # --8<-- [end:example]
 
 
 if __name__ == "__main__":
