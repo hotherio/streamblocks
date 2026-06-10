@@ -109,6 +109,7 @@ doc = [
     "mike>=2.1",
     "mkdocstrings[python]>=0.27",
     "mkdocs-glightbox>=0.4.0",
+    "mkdocs-redirects>=1.2",
 ]
 
 # Ruff Configuration - Comprehensive and Strict

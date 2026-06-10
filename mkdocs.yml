@@ -108,7 +108,7 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets:
-      base_path: ['.', 'examples']
+      base_path: ['.']
       check_paths: true
   - pymdownx.critic
   - pymdownx.caret
@@ -185,14 +185,9 @@ plugins:
             filters: ["!^_", "!^__"]
           inventories:
           - https://docs.python.org/3/objects.inv
-          - http://pandas.pydata.org/pandas-docs/stable/objects.inv
           - https://docs.pydantic.dev/latest/objects.inv
           setup_commands:
             - import sys
             - sys.path.append('../src')
           merge_init_into_class: yes
           show_submodules: no
-
-# Custom hooks for example injection and snippet extraction
-hooks:
-  - docs/.hooks/main.py
