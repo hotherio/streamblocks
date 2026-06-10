@@ -1,199 +1,74 @@
 # API Reference
 
-Complete API documentation for Streamblocks.
-
-## Module Overview
-
-```mermaid
-flowchart TB
-    subgraph Public["Public API (streamblocks)"]
-        Processor[StreamBlockProcessor]
-        Registry[Registry]
-        Events[Event Types]
-        Blocks[Block Models]
-        Syntaxes[Syntaxes]
-        Adapters[Adapters]
-    end
-
-    subgraph Extensions["Extensions"]
-        Gemini[gemini]
-        OpenAI[openai]
-        Anthropic[anthropic]
-        AGUI[agui]
-    end
-
-    Processor --> Registry
-    Processor --> Events
-    Registry --> Blocks
-    Processor --> Syntaxes
-    Processor --> Adapters
-
-    Extensions --> Adapters
-```
-
-## Core Modules
-
-### [Core Components](core.md)
-
-The main processing engine and core types:
-
-| Class | Description |
-|-------|-------------|
-| `StreamBlockProcessor` | Main processing engine for extracting blocks |
-| `Registry` | Block type registry with validation |
-| `StreamState` | Processing state enumeration |
-| `ValidationResult` | Validation outcome with errors |
-
-### [Event Types](events.md)
-
-All events emitted during stream processing:
-
-| Event | Description |
-|-------|-------------|
-| `StreamStartedEvent` | Stream processing began |
-| `StreamFinishedEvent` | Stream processing completed |
-| `BlockStartEvent` | Block opening detected |
-| `BlockEndEvent` | Block successfully extracted |
-| `BlockErrorEvent` | Block extraction failed |
-| `TextDeltaEvent` | Real-time text chunk |
-
-### [Block Models](blocks.md)
-
-Block structure and models:
-
-| Class | Description |
-|-------|-------------|
-| `Block` | Generic block type definition |
-| `ExtractedBlock` | Extracted block with typed content |
-| `BlockCandidate` | Block during parsing |
-| `BaseMetadata` | Base metadata model |
-| `BaseContent` | Base content model |
-
-### [Syntaxes](syntaxes.md)
-
-Block syntax definitions:
-
-| Class | Description |
-|-------|-------------|
-| `DelimiterPreambleSyntax` | `!!id:type` inline syntax |
-| `DelimiterFrontmatterSyntax` | Delimiter with YAML frontmatter |
-| `MarkdownFrontmatterSyntax` | Markdown `---` frontmatter |
-
-### [Adapters](adapters.md)
-
-Stream adapters for AI providers:
-
-| Class | Description |
-|-------|-------------|
-| `InputProtocolAdapter` | Protocol for input adapters |
-| `OutputProtocolAdapter` | Protocol for output adapters |
-| `BidirectionalAdapter` | Combined input/output adapter |
-| `EventCategory` | Event classification enum |
-
-### [Extensions](extensions.md)
-
-Provider-specific extensions:
-
-| Module | Description |
-|--------|-------------|
-| `hother.streamblocks.extensions.gemini` | Google Gemini adapter |
-| `hother.streamblocks.extensions.openai` | OpenAI adapter |
-| `hother.streamblocks.extensions.anthropic` | Anthropic adapter |
-| `hother.streamblocks.extensions.agui` | AG-UI protocol adapters |
-
-## Import Patterns
-
-### Standard Import
+Everything importable from `hother.streamblocks`, grouped by area. All names below are re-exported at the package root:
 
 ```python
-from hother.streamblocks import (
-    StreamBlockProcessor,
-    Registry,
-    EventType,
-    BlockEndEvent,
-    DelimiterPreambleSyntax,
-)
+from hother.streamblocks import Registry, StreamBlockProcessor, BlockEndEvent
 ```
 
-### Extension Import
+## Processors
 
-```python
-# Gemini adapter
-from hother.streamblocks.extensions.gemini import GeminiInputAdapter
+[Processors](processors.md)
 
-# AG-UI adapters
-from hother.streamblocks.extensions.agui import AGUIInputAdapter, AGUIOutputAdapter
-```
+- `StreamBlockProcessor` — single-syntax stream processor (the common case)
+- `ProtocolStreamProcessor` — protocol-event processor with output adaptation
+- `ProcessorConfig` — event-volume and safety-limit configuration
+- `StreamState` — processor stream state
 
-### Type-Only Import
+## Registry & Models
 
-```python
-from typing import TYPE_CHECKING
+[Registry & Models](registry-and-models.md)
 
-if TYPE_CHECKING:
-    from hother.streamblocks import Event, ExtractedBlock
-```
+- `Registry` — maps block types to block classes; owns the syntax
+- `Block[TMetadata, TContent]` — user-facing generic block base
+- `ExtractedBlock` — runtime block with extraction metadata
+- `BlockCandidate` — in-flight block accumulation
+- `BaseMetadata`, `BaseContent` — base Pydantic models for block typing
 
-## Quick Reference
+## Events
 
-### Basic Usage
+[Events](events.md)
 
-```python
-from hother.streamblocks import (
-    StreamBlockProcessor,
-    Registry,
-    DelimiterPreambleSyntax,
-    EventType,
-)
+- `Event` — discriminated union of all event types
+- `EventType`, `BlockState`, `BlockErrorCode` — enums
+- Lifecycle: `StreamStartedEvent`, `StreamFinishedEvent`, `StreamErrorEvent`
+- Text: `TextContentEvent`, `TextDeltaEvent`
+- Block: `BlockStartEvent`, `BlockHeaderDeltaEvent`, `BlockMetadataDeltaEvent`, `BlockContentDeltaEvent`, `BlockMetadataEndEvent`, `BlockContentEndEvent`, `BlockEndEvent`, `BlockErrorEvent`
+- `CustomEvent`, `BaseEvent`
 
-# Create registry and processor
-registry = Registry()
-processor = StreamBlockProcessor(
-    registry=registry,
-    syntaxes=[DelimiterPreambleSyntax()],
-)
+## Syntaxes
 
-# Process stream
-async for event in processor.process_stream(stream):
-    if event.type == EventType.BLOCK_END:
-        print(f"Block: {event.block_type}")
-```
+[Syntaxes](syntaxes.md)
 
-### With Provider Adapter
+- `DelimiterPreambleSyntax`, `DelimiterFrontmatterSyntax`, `MarkdownFrontmatterSyntax`
+- `BaseSyntax` — base class for custom syntaxes
+- `Syntax` — enum for factory-based selection
+- `DetectionResult`, `ParseResult`
 
-```python
-from hother.streamblocks import StreamBlockProcessor, Registry, DelimiterPreambleSyntax
-from hother.streamblocks.extensions.gemini import GeminiInputAdapter
+## Adapters
 
-processor = StreamBlockProcessor(
-    registry=Registry(),
-    syntaxes=[DelimiterPreambleSyntax()],
-    input_adapter=GeminiInputAdapter(),
-)
-```
+[Adapters](adapters.md)
 
-## Type System
+- `InputProtocolAdapter`, `OutputProtocolAdapter`, `BidirectionalAdapter` — protocols
+- `InputAdapterRegistry`, `detect_input_adapter` — auto-detection
+- `EventCategory` — input event categorization
 
-Streamblocks uses Python 3.13+ type system extensively:
+## Parsing & Validation
 
-```python
-from hother.streamblocks import Block, BaseMetadata, BaseContent
-from typing import Literal
+[Parsing & Validation](parsing-and-validation.md)
 
-class TaskMetadata(BaseMetadata):
-    block_type: Literal["task"] = "task"
-    priority: str = "normal"
+- `parse_as_json`, `parse_as_yaml`, `ParseStrategy` — content parsing decorators
+- `ValidationResult`, `MetadataValidationFailureMode` — validation types
 
-class TaskContent(BaseContent):
-    pass
+## Extensions
 
-# Generic block type
-TaskBlock = Block[TaskMetadata, TaskContent]
-```
+[Extensions](extensions.md)
 
-## Related Documentation
+- `hother.streamblocks.extensions.gemini` / `.openai` / `.anthropic` — provider input adapters
+- `hother.streamblocks.extensions.agui` — bidirectional AG-UI adapters and filters
 
-- [Basics](../basics.md) - Core concepts
-- [Events](../events.md) - Event handling
-- [Blocks](../blocks.md) - Block types
-- [Patterns](../patterns.md) - Common patterns
+## Integrations
+
+[Integrations](integrations.md)
+
+- `hother.streamblocks.integrations.pydantic_ai` — `BlockAwareAgent`, `AgentStreamProcessor`
