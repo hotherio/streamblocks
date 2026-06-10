@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
 
-from hother.streamblocks.adapters.categories import EventCategory  # noqa: TC001 - needed at runtime for Protocol
-
 if TYPE_CHECKING:
+    from hother.streamblocks.adapters.categories import EventCategory
     from hother.streamblocks.core.types import BaseEvent
 
 TInput = TypeVar("TInput", contravariant=True)
