@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
+from typing import cast
 
+from hother.streamblocks.core.exceptions import SyntaxConfigError
 from hother.streamblocks.syntaxes.base import BaseSyntax
 from hother.streamblocks.syntaxes.delimiter import (
     DelimiterFrontmatterSyntax,
@@ -35,7 +37,7 @@ def get_syntax_instance(
         A syntax instance inheriting from BaseSyntax
 
     Raises:
-        TypeError: If syntax is neither a Syntax enum nor a BaseSyntax instance
+        SyntaxConfigError: If syntax is neither a Syntax enum nor a BaseSyntax instance
 
     Example:
         >>> # Using built-in syntax
@@ -53,13 +55,8 @@ def get_syntax_instance(
                 return DelimiterPreambleSyntax()
             case Syntax.MARKDOWN_FRONTMATTER:
                 return MarkdownFrontmatterSyntax()
-            case _:  # pragma: no cover - guard for future enum additions
-                error_msg = f"Unhandled Syntax enum value: {syntax}"
-                raise NotImplementedError(error_msg)
 
-    # It's a custom syntax instance - must inherit from BaseSyntax
-    if isinstance(syntax, BaseSyntax):
-        return syntax
-
-    error_msg = f"Expected Syntax enum or BaseSyntax instance, got {type(syntax).__name__}"
-    raise TypeError(error_msg)
+    unchecked = cast("object", syntax)
+    if isinstance(unchecked, BaseSyntax):
+        return unchecked
+    raise SyntaxConfigError(received_type=type(unchecked).__name__)

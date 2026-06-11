@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 from pydantic import ValidationError
@@ -67,7 +67,9 @@ def parse_as_yaml[T: BaseContent](
                     raise
                 return cls_inner(raw_content=raw_text)
 
-        cls.parse = classmethod(parse)  # type: ignore[assignment]
+        # Dynamically override the classmethod; the descriptor swap cannot be
+        # expressed in the type system, so cast rather than suppress.
+        cls.parse = cast("Any", classmethod(parse))
         return cls
 
     return decorator
@@ -118,7 +120,9 @@ def parse_as_json[T: BaseContent](
                     raise
                 return cls_inner(raw_content=raw_text)
 
-        cls.parse = classmethod(parse)  # type: ignore[assignment]
+        # Dynamically override the classmethod; the descriptor swap cannot be
+        # expressed in the type system, so cast rather than suppress.
+        cls.parse = cast("Any", classmethod(parse))
         return cls
 
     return decorator

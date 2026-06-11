@@ -368,22 +368,24 @@ class BlockStateMachine:
     def _create_extracted_block(
         self,
         candidate: BlockCandidate,
-        parse_result: ParseResult[BaseMetadata, BaseContent],
+        metadata: BaseMetadata,
+        content: BaseContent,
         line_number: int,
     ) -> ExtractedBlock[BaseMetadata, BaseContent]:
-        """Create ExtractedBlock from parse result.
+        """Create ExtractedBlock from already-validated metadata and content.
 
         Args:
             candidate: Block candidate
-            parse_result: Successful parse result
+            metadata: Parsed metadata (caller guarantees non-None)
+            content: Parsed content (caller guarantees non-None)
             line_number: Current line number (end of block)
 
         Returns:
             ExtractedBlock with metadata, content, and extraction info
         """
         return ExtractedBlock(
-            metadata=parse_result.metadata,  # type: ignore[arg-type]  # Checked by caller
-            content=parse_result.content,  # type: ignore[arg-type]  # Checked by caller
+            metadata=metadata,
+            content=content,
             syntax_name=get_syntax_name(candidate.syntax),
             raw_text=candidate.raw_text,
             line_start=candidate.start_line,
@@ -524,8 +526,8 @@ class BlockStateMachine:
             )
             return self._create_error_event(candidate, line_number, "Missing metadata or content", error_code)
 
-        # Step 2: Create extracted block
-        block = self._create_extracted_block(candidate, parse_result, line_number)
+        # Step 2: Create extracted block (metadata/content narrowed non-None above)
+        block = self._create_extracted_block(candidate, parse_result.metadata, parse_result.content, line_number)
 
         # Step 3: Validate
         validation_error = self._validate_extracted_block(candidate, block, block_type, line_number)

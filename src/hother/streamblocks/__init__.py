@@ -16,6 +16,12 @@ from hother.streamblocks.adapters import (
     OutputProtocolAdapter,
     detect_input_adapter,
 )
+from hother.streamblocks.core.exceptions import (
+    AdapterDetectionError,
+    AdapterNotConfiguredError,
+    StreamblocksError,
+    SyntaxConfigError,
+)
 from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
 from hother.streamblocks.core.processor import StreamBlockProcessor, StreamState
@@ -56,6 +62,11 @@ from hother.streamblocks.syntaxes import (
 BlockEndEvent.model_rebuild()
 
 __all__ = [
+    # Exceptions
+    "AdapterDetectionError",
+    "AdapterNotConfiguredError",
+    "StreamblocksError",
+    "SyntaxConfigError",
     # Adapters (new bidirectional system)
     "BidirectionalAdapter",
     "EventCategory",
