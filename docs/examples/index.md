@@ -6,22 +6,22 @@ Runnable examples organized as a progressive learning path, from minimal quickst
 
 | Category | Description |
 |----------|-------------|
-| [00_quickstart](quickstart.md) | Ultra-minimal examples (~40-50 lines) — start here |
+| [00_quickstart](quickstart.md) | Ultra-minimal examples (~40-50 lines); start here |
 | [01_basics](basics.md) | Core concepts: processing, errors, structured output, validators |
 | [02_syntaxes](syntaxes.md) | Block syntax formats: markdown, delimiter, decorators, custom syntaxes |
 | [03_adapters](adapters.md) | Input/output adapters for provider streams and event handling |
 | [04_blocks](blocks.md) | Concrete block types: patches, tool calls, memory, visualizations |
-| 05_logging | Logging integration — covered in the [Logging guide](../guides/logging.md) |
+| 05_logging | Logging integration, covered in the [Logging guide](../guides/logging.md) |
 | [06_integrations](integrations.md) | Framework integrations: Pydantic AI, AG-UI |
 | [07_providers](providers.md) | End-to-end AI provider demos (Gemini) |
-| 08_ui | Interactive Textual TUI examples — run locally (see [Providers](providers.md#interactive-ui-examples-08_ui)) |
-| 09_advanced | Performance tuning — covered in the [Performance guide](../guides/performance.md) |
+| 08_ui | Interactive Textual TUI examples; run locally (see [Providers](providers.md#interactive-ui-examples-08_ui)) |
+| 09_advanced | Performance tuning, covered in the [Performance guide](../guides/performance.md) |
 
 The repository also ships supporting packages used throughout the examples:
 
-- [`blocks/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/blocks) — a reusable library of block definitions (file operations, patches, tool calls, memory, visualizations, interactive blocks).
-- [`helpers/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/helpers) — stream simulators and event handlers.
-- [`tools/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/tools) — tool implementations used by agent-style demos.
+- [`blocks/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/blocks): a reusable library of block definitions (file operations, patches, tool calls, memory, visualizations, interactive blocks).
+- [`helpers/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/helpers): stream simulators and event handlers.
+- [`tools/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/tools): tool implementations used by agent-style demos.
 
 ## Running examples
 
@@ -74,4 +74,4 @@ Each example page notes which keys it requires.
 
 ## Logging and performance examples
 
-The `05_logging` and `09_advanced` examples are not duplicated here — they are embedded in their respective guides: see the [Logging guide](../guides/logging.md) and the [Performance guide](../guides/performance.md).
+The `05_logging` and `09_advanced` examples are not duplicated here; they are embedded in their respective guides: see the [Logging guide](../guides/logging.md) and the [Performance guide](../guides/performance.md).

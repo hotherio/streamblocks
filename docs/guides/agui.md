@@ -48,10 +48,10 @@ The `AGUIOutputAdapter` maps StreamBlocks events to AG-UI as follows:
 | StreamBlocks event | AG-UI event |
 | --- | --- |
 | `TextDeltaEvent`, `TextContentEvent` | `TEXT_MESSAGE_CONTENT` |
-| `BlockStartEvent` | `CUSTOM` — `streamblocks.block_start` |
-| `BlockHeaderDeltaEvent`, `BlockMetadataDeltaEvent`, `BlockContentDeltaEvent` | `CUSTOM` — `streamblocks.block_delta` |
-| `BlockEndEvent` | `CUSTOM` — `streamblocks.block_end` |
-| `BlockErrorEvent` | `CUSTOM` — `streamblocks.block_error` |
+| `BlockStartEvent` | `CUSTOM` (`streamblocks.block_start`) |
+| `BlockHeaderDeltaEvent`, `BlockMetadataDeltaEvent`, `BlockContentDeltaEvent` | `CUSTOM` (`streamblocks.block_delta`) |
+| `BlockEndEvent` | `CUSTOM` (`streamblocks.block_end`) |
+| `BlockErrorEvent` | `CUSTOM` (`streamblocks.block_error`) |
 
 Block payloads travel in the event's `value` field (block id, syntax, metadata, content, line range, and so on).
 
@@ -65,9 +65,9 @@ Block payloads travel in the event's `value` field (block id, syntax, metadata, 
 | `BLOCKS_ONLY` | Block lifecycle only: start, end, error. |
 | `BLOCKS_WITH_PROGRESS` | Block lifecycle plus per-section delta events. |
 | `TEXT_AND_FINAL` | Text deltas plus final block results (end, error). |
-| `NONE` | No StreamBlocks events — passthrough only. |
+| `NONE` | No StreamBlocks events; passthrough only. |
 
-Because it is a flag enum, you can also combine the fine-grained members (such as `RAW_TEXT`, `TEXT_DELTA`, and `BLOCK_DELTA`) with `|` to build a custom filter — see the [extensions reference](../reference/extensions.md) for the full list:
+Because it is a flag enum, you can also combine the fine-grained members (such as `RAW_TEXT`, `TEXT_DELTA`, and `BLOCK_DELTA`) with `|` to build a custom filter; see the [extensions reference](../reference/extensions.md) for the full list:
 
 ```python
 processor = create_agui_bidirectional_processor(
@@ -84,6 +84,6 @@ Importing `hother.streamblocks.extensions.agui` registers `AGUIInputAdapter` for
 
 ## Next steps
 
-- [Events](../reference/events.md) — the StreamBlocks events behind each `CUSTOM` mapping.
-- [Extensions reference](../reference/extensions.md) — full API for the AG-UI adapters and filter flags.
-- [Performance Tuning](performance.md) — reduce event volume before it reaches the frontend.
+- [Events](../reference/events.md): the StreamBlocks events behind each `CUSTOM` mapping.
+- [Extensions reference](../reference/extensions.md): full API for the AG-UI adapters and filter flags.
+- [Performance Tuning](performance.md): reduce event volume before it reaches the frontend.

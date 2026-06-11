@@ -67,11 +67,11 @@ stateDiagram-v2
     BLOCK_ERROR --> [*]
 ```
 
-A block can also fail earlier — for example `BLOCK_ERROR` with `UNCLOSED_BLOCK` at end of stream, or with `VALIDATION_FAILED` right after `BLOCK_METADATA_END` when early metadata validation aborts the block.
+A block can also fail earlier, for example `BLOCK_ERROR` with `UNCLOSED_BLOCK` at end of stream, or with `VALIDATION_FAILED` right after `BLOCK_METADATA_END` when early metadata validation aborts the block.
 
 ## Block start: act before content arrives
 
-`BlockStartEvent` fires as soon as the opening marker is detected — before any content. Use it to create UI elements or allocate resources early:
+`BlockStartEvent` fires as soon as the opening marker is detected, before any content. Use it to create UI elements or allocate resources early:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/03_adapters/07_block_opened_event.py:example"
@@ -81,7 +81,7 @@ A block can also fail earlier — for example `BLOCK_ERROR` with `UNCLOSED_BLOCK
 
 ## Text deltas: character-level streaming
 
-`TextDeltaEvent` is emitted immediately as text arrives, before lines complete. Each delta knows whether it is inside a block (`inside_block`, `block_id`) and which `section` it belongs to — ideal for typewriter effects and live UIs:
+`TextDeltaEvent` is emitted immediately as text arrives, before lines complete. Each delta knows whether it is inside a block (`inside_block`, `block_id`) and which `section` it belongs to, ideal for typewriter effects and live UIs:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/03_adapters/06_text_delta_streaming.py:example"
@@ -97,7 +97,7 @@ A block can also fail earlier — for example `BLOCK_ERROR` with `UNCLOSED_BLOCK
 --8<-- "src/hother/streamblocks_examples/03_adapters/15_section_end_events.py:metadata_end"
 ```
 
-Combined with `MetadataValidationFailureMode.ABORT_BLOCK`, a failing metadata validator aborts the block as soon as the metadata section closes — see the [Validation guide](../guides/validation.md).
+Combined with `MetadataValidationFailureMode.ABORT_BLOCK`, a failing metadata validator aborts the block as soon as the metadata section closes; see the [Validation guide](../guides/validation.md).
 
 [View source on GitHub](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/03_adapters/15_section_end_events.py)
 
@@ -119,6 +119,6 @@ See [Performance Tuning](../guides/performance.md) for the trade-offs, and the [
 
 ## Next steps
 
-- [Adapters](adapters.md) — how provider chunks become text and events.
-- [Error Handling](../guides/error-handling.md) — reacting to `BlockErrorEvent` codes.
-- [Events reference](../reference/events.md) — full API of every event class.
+- [Adapters](adapters.md): how provider chunks become text and events.
+- [Error Handling](../guides/error-handling.md): reacting to `BlockErrorEvent` codes.
+- [Events reference](../reference/events.md): full API of every event class.

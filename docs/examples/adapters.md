@@ -4,13 +4,13 @@ Adapters extract text from provider-specific stream chunks (Gemini, OpenAI, Anth
 
 ## Identity Adapter (Plain Text)
 
-The default behavior: plain text streams need no adapter at all — chunks pass straight through to block detection.
+The default behavior: plain text streams need no adapter at all; chunks pass straight through to block detection.
 
 #! src/hother/streamblocks_examples/03_adapters/01_identity_adapter_plain_text.py
 
 ## Gemini Auto-Detect
 
-Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). StreamBlocks automatically detects Gemini chunks and extracts their text — no explicit adapter configuration needed.
+Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). StreamBlocks automatically detects Gemini chunks and extracts their text; no explicit adapter configuration needed.
 
 #! src/hother/streamblocks_examples/03_adapters/02_gemini_auto_detect.py
 
@@ -34,19 +34,19 @@ Handles a stream containing both original provider chunks and StreamBlocks event
 
 ## Text Delta Streaming
 
-Character-by-character streaming with `TextDeltaEvent` — useful for typewriter effects and live progress indicators.
+Character-by-character streaming with `TextDeltaEvent`, useful for typewriter effects and live progress indicators.
 
 #! src/hother/streamblocks_examples/03_adapters/06_text_delta_streaming.py
 
 ## Block Opened Event
 
-Uses `BlockOpenedEvent` to prepare UI elements or resources before any block content arrives — the earliest signal that a block is starting.
+Uses `BlockOpenedEvent` to prepare UI elements or resources before any block content arrives, the earliest signal that a block is starting.
 
 #! src/hother/streamblocks_examples/03_adapters/07_block_opened_event.py
 
 ## Configuration Flags
 
-A tour of `ProcessorConfig` options — `emit_original_events`, `emit_text_deltas`, and `auto_detect_adapter` — and how each changes the emitted event stream.
+A tour of `ProcessorConfig` options, `emit_original_events`, `emit_text_deltas`, and `auto_detect_adapter`, and how each changes the emitted event stream.
 
 #! src/hother/streamblocks_examples/03_adapters/08_configuration_flags.py
 
@@ -58,7 +58,7 @@ Creates a custom input adapter for a proprietary streaming format and registers 
 
 ## Callable Adapter
 
-A simple inline input adapter class for quick custom extraction — handy when a full adapter implementation would be overkill.
+A simple inline input adapter class for quick custom extraction, handy when a full adapter implementation would be overkill.
 
 #! src/hother/streamblocks_examples/03_adapters/10_callable_adapter.py
 
@@ -88,7 +88,7 @@ Uses the section-specific delta events (`BlockHeaderDeltaEvent`, `BlockMetadataD
 
 ## Section End Events
 
-Reacts to `BlockMetadataEndEvent` and `BlockContentEndEvent` to process completed sections early — before the block itself finishes — enabling early validation and resource release.
+Reacts to `BlockMetadataEndEvent` and `BlockContentEndEvent` to process completed sections early, before the block itself finishes, enabling early validation and resource release.
 
 #! src/hother/streamblocks_examples/03_adapters/15_section_end_events.py
 
@@ -100,6 +100,6 @@ Combines input and output adapters in a `ProtocolStreamProcessor` for bidirectio
 
 ## Custom Output Adapter
 
-Writes a custom output adapter that converts StreamBlocks events into a simplified JSON event format — the pattern to follow when feeding events to a frontend or message bus.
+Writes a custom output adapter that converts StreamBlocks events into a simplified JSON event format, the pattern to follow when feeding events to a frontend or message bus.
 
 #! src/hother/streamblocks_examples/03_adapters/17_custom_output_adapter.py

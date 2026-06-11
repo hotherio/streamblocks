@@ -11,7 +11,7 @@ registry = Registry(syntax=syntax, logger=logger)
 processor = StreamBlockProcessor(registry, logger=logger)
 ```
 
-Anything that implements the `Logger` protocol works: an object with `debug`, `info`, `warning`, `error`, and `exception` methods. StreamBlocks passes structured data as **direct keyword arguments** — the native pattern of structlog and loguru:
+Anything that implements the `Logger` protocol works: an object with `debug`, `info`, `warning`, `error`, and `exception` methods. StreamBlocks passes structured data as **direct keyword arguments**, the native pattern of structlog and loguru:
 
 ```python
 logger.info("block_extracted", block_type="files", block_id="abc123")
@@ -31,7 +31,7 @@ Stdlib loggers don't accept arbitrary kwargs, so wrap them in `StdlibLoggerAdapt
 
 ## Structlog
 
-Structlog loggers support direct kwargs natively, so no adapter is needed — configure structlog and pass the bound logger straight in. Install with the `structlog` extra (`pip install streamblocks[structlog]`):
+Structlog loggers support direct kwargs natively, so no adapter is needed; configure structlog and pass the bound logger straight in. Install with the `structlog` extra (`pip install streamblocks[structlog]`):
 
 ```python
 --8<-- "src/hother/streamblocks_examples/05_logging/02_structlog.py:example"
@@ -52,7 +52,7 @@ processor = StreamBlockProcessor(registry, logger=logger)
 
 ## Custom logger
 
-Any object with the five methods satisfies the protocol — no base class required. Accept `**kwargs` to receive the structured fields:
+Any object with the five methods satisfies the protocol; no base class required. Accept `**kwargs` to receive the structured fields:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/05_logging/03_custom_logger.py:logger"
@@ -72,6 +72,6 @@ The registry logs block-type registration and block parsing/validation steps at 
 
 ## Next steps
 
-- [Error Handling](error-handling.md) — turn block errors into events you can act on, not just log lines.
-- [Performance Tuning](performance.md) — processor configuration knobs.
-- [Validation](validation.md) — where validation failures surface.
+- [Error Handling](error-handling.md): turn block errors into events you can act on, not just log lines.
+- [Performance Tuning](performance.md): processor configuration knobs.
+- [Validation](validation.md): where validation failures surface.

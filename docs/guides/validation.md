@@ -27,7 +27,7 @@ ValidationResult.success()
 ValidationResult.failure("ID must start with 'ops-'")
 ```
 
-Because metadata validators fire at the *end of the metadata section*, you can reject a block before its content streams in — useful for skipping large payloads you already know you don't want.
+Because metadata validators fire at the *end of the metadata section*, you can reject a block before its content streams in, useful for skipping large payloads you already know you don't want.
 
 ## Failure modes
 
@@ -45,7 +45,7 @@ What happens after a metadata validation failure is controlled by the registry's
 
 ## Content and block validators
 
-Content validators mirror metadata validators but run on the raw content when the content section ends. Block validators are plain predicates over the final `ExtractedBlock` — returning `False` rejects the block with a `BlockErrorEvent` (`VALIDATION_FAILED`).
+Content validators mirror metadata validators but run on the raw content when the content section ends. Block validators are plain predicates over the final `ExtractedBlock`; returning `False` rejects the block with a `BlockErrorEvent` (`VALIDATION_FAILED`).
 
 ## Composing validators
 
@@ -67,6 +67,6 @@ A block must pass every registered validator to be delivered through `BlockEndEv
 
 ## Next steps
 
-- [Error Handling](error-handling.md) — react to `BlockErrorEvent` and its error codes.
-- [Defining Custom Blocks](define-custom-blocks.md) — parsing, the stage before validation.
-- [Events](../concepts/events.md) — `BlockMetadataEndEvent` and `BlockContentEndEvent` carry the validation outcome.
+- [Error Handling](error-handling.md): react to `BlockErrorEvent` and its error codes.
+- [Defining Custom Blocks](define-custom-blocks.md): parsing, the stage before validation.
+- [Events](../concepts/events.md): `BlockMetadataEndEvent` and `BlockContentEndEvent` carry the validation outcome.

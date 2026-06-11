@@ -8,7 +8,7 @@ The recipe is identical for all providers:
 
 1. Install the provider extra.
 2. Make sure the extension is imported (importing the provider SDK's adapter module registers it).
-3. Pass the SDK's stream object **directly** to `processor.process_stream()` — no wrapper generators.
+3. Pass the SDK's stream object **directly** to `processor.process_stream()`: no wrapper generators.
 
 | Provider | Install | Auto-registration import | Adapter | Factory |
 |----------|---------|--------------------------|---------|---------|
@@ -30,7 +30,7 @@ The examples below use `StreamBlockProcessor` instead, which additionally passes
 
 ## Gemini: auto-detection
 
-With the `google-genai` SDK, hand the stream straight to the processor — the adapter is detected from the first chunk (the SDK's chunk classes live under the registered `google.genai` module prefix):
+With the `google-genai` SDK, hand the stream straight to the processor; the adapter is detected from the first chunk (the SDK's chunk classes live under the registered `google.genai` module prefix):
 
 ```python
 --8<-- "src/hother/streamblocks_examples/03_adapters/02_gemini_auto_detect.py:setup"
@@ -46,7 +46,7 @@ With the `google-genai` SDK, hand the stream straight to the processor — the a
 
 ## OpenAI: explicit adapter
 
-You can skip auto-detection and pass the adapter explicitly — useful when the first chunk may be ambiguous or you want zero detection overhead:
+You can skip auto-detection and pass the adapter explicitly, useful when the first chunk may be ambiguous or you want zero detection overhead:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/03_adapters/03_openai_explicit_adapter.py:imports"
@@ -107,6 +107,6 @@ A fuller Gemini demo registers several block types behind one frontmatter [synta
 
 ## Next steps
 
-- [Adapters](../concepts/adapters.md) — write an adapter for a provider that isn't built in.
-- [Events](../concepts/events.md) — everything your event loop can react to.
-- [Extensions reference](../reference/extensions.md) — full adapter and factory API per provider.
+- [Adapters](../concepts/adapters.md): write an adapter for a provider that isn't built in.
+- [Events](../concepts/events.md): everything your event loop can react to.
+- [Extensions reference](../reference/extensions.md): full adapter and factory API per provider.

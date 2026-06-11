@@ -1,6 +1,6 @@
 # Error Handling
 
-When a block cannot be extracted, the processor does not raise — it emits a `BlockErrorEvent` and keeps processing the stream. This guide covers the event's structure, the error codes, and the size limits that can trigger rejection.
+When a block cannot be extracted, the processor does not raise; it emits a `BlockErrorEvent` and keeps processing the stream. This guide covers the event's structure, the error codes, and the size limits that can trigger rejection.
 
 ## BlockErrorEvent
 
@@ -23,7 +23,7 @@ When a block cannot be extracted, the processor does not raise — it emits a `B
 | `SIZE_EXCEEDED` | Block grew past `max_block_size`; rejected to prevent memory exhaustion |
 | `UNCLOSED_BLOCK` | Block opened but never closed before the stream ended |
 | `UNKNOWN_TYPE` | The syntax extracted a `block_type` that is not registered |
-| `PARSE_FAILED` | Parsing failed — malformed YAML, invalid structure, or a `parse()` exception |
+| `PARSE_FAILED` | Parsing failed: malformed YAML, invalid structure, or a `parse()` exception |
 | `MISSING_METADATA` | Parse succeeded but returned no metadata |
 | `MISSING_CONTENT` | Parse succeeded but returned no content |
 | `SYNTAX_ERROR` | Syntax-specific custom validation failure |
@@ -79,6 +79,6 @@ processor = StreamBlockProcessor(registry, config=config)
 
 ## Next steps
 
-- [Validation](validation.md) — reject bad blocks early, before content accumulates.
-- [Events](../concepts/events.md) — where `BlockErrorEvent` fits in the event stream.
-- [Performance Tuning](performance.md) — the remaining `ProcessorConfig` options.
+- [Validation](validation.md): reject bad blocks early, before content accumulates.
+- [Events](../concepts/events.md): where `BlockErrorEvent` fits in the event stream.
+- [Performance Tuning](performance.md): the remaining `ProcessorConfig` options.

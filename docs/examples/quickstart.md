@@ -1,6 +1,6 @@
 # Quickstart Examples
 
-Three ultra-minimal examples to get a feel for StreamBlocks in a few minutes. Each runs offline against a simulated stream — no API keys required. Continue with the [basics examples](basics.md) afterwards.
+Three ultra-minimal examples to get a feel for StreamBlocks in a few minutes. Each runs offline against a simulated stream; no API keys required. Continue with the [basics examples](basics.md) afterwards.
 
 ## Hello World
 

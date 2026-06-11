@@ -4,7 +4,7 @@ This guide shows three ways to turn raw block content into typed Python objects,
 
 ## Define metadata and content models
 
-A block type is three pieces: a metadata model (inherits `BaseMetadata`), a content model (inherits `BaseContent`), and the `Block` class binding them. Override the `parse()` classmethod on the content model to extract structure from the raw body — always keep `raw_content` populated with the original text:
+A block type is three pieces: a metadata model (inherits `BaseMetadata`), a content model (inherits `BaseContent`), and the `Block` class binding them. Override the `parse()` classmethod on the content model to extract structure from the raw body; always keep `raw_content` populated with the original text:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/02_syntaxes/02_delimiter_frontmatter.py:models"
@@ -16,7 +16,7 @@ Register the block type and process as usual:
 --8<-- "src/hother/streamblocks_examples/02_syntaxes/02_delimiter_frontmatter.py:setup"
 ```
 
-If `parse()` raises, the block is rejected with a `BlockErrorEvent` instead of a `BlockEndEvent` — see [Error Handling](error-handling.md).
+If `parse()` raises, the block is rejected with a `BlockErrorEvent` instead of a `BlockEndEvent`; see [Error Handling](error-handling.md).
 
 ## Parse JSON or YAML with decorators
 
@@ -35,7 +35,7 @@ Both decorators take the same keyword-only arguments:
 
 ### PERMISSIVE: fall back to raw content
 
-With `ParseStrategy.PERMISSIVE`, malformed input never rejects the block — the model is built with only `raw_content` set and your typed fields keep their defaults:
+With `ParseStrategy.PERMISSIVE`, malformed input never rejects the block; the model is built with only `raw_content` set and your typed fields keep their defaults:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/02_syntaxes/03_parsing_decorators.py:yaml_permissive"
@@ -53,7 +53,7 @@ Use STRICT when downstream code depends on the typed fields; use PERMISSIVE when
 
 ### Non-dict content
 
-JSON/YAML bodies are not always mappings. With `handle_non_dict=True` (the default) a scalar or list body is wrapped as `{"value": ...}`, so a `value` field on your model captures it. With `handle_non_dict=False`, non-dict input is discarded — only `raw_content` is set and typed fields keep their defaults:
+JSON/YAML bodies are not always mappings. With `handle_non_dict=True` (the default) a scalar or list body is wrapped as `{"value": ...}`, so a `value` field on your model captures it. With `handle_non_dict=False`, non-dict input is discarded; only `raw_content` is set and typed fields keep their defaults:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/02_syntaxes/03_parsing_decorators.py:non_dict"
@@ -77,10 +77,10 @@ To validate block content against an arbitrary Pydantic schema (the streaming eq
 --8<-- "src/hother/streamblocks_examples/01_basics/04_structured_output.py:yaml_factory"
 ```
 
-The factory lives in the examples package ([`blocks/agent/structured_output.py`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/blocks/agent/structured_output.py)), not the core library — copy it into your project and adapt it.
+The factory lives in the examples package ([`blocks/agent/structured_output.py`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/blocks/agent/structured_output.py)), not the core library; copy it into your project and adapt it.
 
 ## Next steps
 
-- [Validation](validation.md) — add business-rule validators on top of parsing.
-- [Blocks & Registry](../concepts/blocks-and-registry.md) — the `Block` model in depth.
-- [Block examples](../examples/blocks.md) — ready-made block types to copy.
+- [Validation](validation.md): add business-rule validators on top of parsing.
+- [Blocks & Registry](../concepts/blocks-and-registry.md): the `Block` model in depth.
+- [Block examples](../examples/blocks.md): ready-made block types to copy.

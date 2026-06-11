@@ -4,7 +4,7 @@ A *syntax* defines the wire format of a block: how its opening is detected, wher
 
 ## DelimiterPreambleSyntax
 
-The default. Metadata is inline in the opening line — compact and cheap for an LLM to emit:
+The default. Metadata is inline in the opening line, compact and cheap for an LLM to emit:
 
 ```text
 !!<id>:<type>[:param1:param2:...]
@@ -54,7 +54,7 @@ The YAML between the `---` markers is parsed into your metadata model; it must i
 
 ## MarkdownFrontmatterSyntax
 
-Markdown fenced code blocks with optional YAML frontmatter — useful when the stream is rendered as Markdown anyway:
+Markdown fenced code blocks with optional YAML frontmatter, useful when the stream is rendered as Markdown anyway:
 
 ````text
 ```[info_string]
@@ -118,10 +118,10 @@ A custom syntax plugs into the registry like any built-in one:
 --8<-- "src/hother/streamblocks_examples/02_syntaxes/04_custom_syntax.py:setup"
 ```
 
-The full example implements an XML-comment wire format (`<!-- block:type id="..." -->` … `<!-- /block -->`) — see the [custom syntax example](../examples/syntaxes.md) for the complete `XMLBlockSyntax` implementation.
+The full example implements an XML-comment wire format (`<!-- block:type id="..." -->` … `<!-- /block -->`); see the [custom syntax example](../examples/syntaxes.md) for the complete `XMLBlockSyntax` implementation.
 
 ## Next steps
 
-- [Blocks & Registry](blocks-and-registry.md) — how block classes attach to a syntax.
-- [Events](events.md) — what the processor emits while a block accumulates.
-- [Syntax examples](../examples/syntaxes.md) — runnable examples for every built-in syntax.
+- [Blocks & Registry](blocks-and-registry.md): how block classes attach to a syntax.
+- [Events](events.md): what the processor emits while a block accumulates.
+- [Syntax examples](../examples/syntaxes.md): runnable examples for every built-in syntax.

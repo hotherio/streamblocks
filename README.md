@@ -9,7 +9,7 @@
 
 Real-time extraction and processing of structured blocks from text streams.
 
-LLMs often embed structured data in their responses—file operations, code blocks, tool calls. Streamblocks extracts these blocks in real-time as the stream arrives, emitting events like `BLOCK_START`, `BLOCK_CONTENT_DELTA`, and `BLOCK_END`. Process a Gemini stream, detect `!!save:file\npath/to/file.py\n!!end` blocks, and react immediately—no need to wait for the full response.
+LLMs often embed structured data in their responses: file operations, code blocks, tool calls. Streamblocks extracts these blocks in real-time as the stream arrives, emitting events like `BLOCK_START`, `BLOCK_CONTENT_DELTA`, and `BLOCK_END`. Process a Gemini stream, detect `!!save:file\npath/to/file.py\n!!end` blocks, and react immediately, no need to wait for the full response.
 
 <div align="center">
   <a href="https://streamblocks.hother.io/">Documentation</a>
@@ -34,7 +34,7 @@ LLMs often embed structured data in their responses—file operations, code bloc
 - **Pluggable Syntax System**: Define your own block syntaxes or use built-in ones
 - **Async Stream Processing**: Process text streams line-by-line with full async support
 - **AI Provider Adapters**: Automatic adapter detection for Gemini, OpenAI, Anthropic
-- **AG-UI Protocol Support**: Bidirectional adapters for AG-UI—consume AG-UI streams and emit AG-UI events
+- **AG-UI Protocol Support**: Bidirectional adapters that consume AG-UI streams and emit AG-UI events
 - **Type-Safe Models**: Use Pydantic models for block metadata and content
 - **Event-Driven Architecture**: React to block detection, updates, completion, and rejection
 - **Production Ready**: Comprehensive error handling, logging, and validation

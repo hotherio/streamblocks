@@ -11,8 +11,8 @@ class FileOperations(Block[FileOperationsMetadata, FileOperationsContent]):
     """File operations block."""
 ```
 
-- `metadata: TMetadata` — parsed block metadata (from the header or frontmatter section).
-- `content: TContent` — parsed block content (the body between the markers).
+- `metadata: TMetadata`: parsed block metadata (from the header or frontmatter section).
+- `content: TContent`: parsed block content (the body between the markers).
 
 The generic parameters give you type-safe access: `block.metadata.description` and `block.content.operations` are fully typed. See [`blocks/agent/files.py`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/blocks/agent/files.py) for the complete `FileOperations` definition used throughout the examples.
 
@@ -37,7 +37,7 @@ class FileOperationsMetadata(BaseMetadata):
 
 ## Content: BaseContent
 
-Content models inherit from `BaseContent`, which has a single required field, `raw_content: str` — the original unparsed body text, always preserved. Parsing happens in the `parse()` classmethod:
+Content models inherit from `BaseContent`, which has a single required field, `raw_content: str`: the original unparsed body text, always preserved. Parsing happens in the `parse()` classmethod:
 
 ```python
 class BaseContent(BaseModel):
@@ -48,7 +48,7 @@ class BaseContent(BaseModel):
         return cls(raw_content=raw_text)
 ```
 
-The default implementation just stores the raw text. Override `parse()` to turn the body into structured fields — see [Defining Custom Blocks](../guides/define-custom-blocks.md).
+The default implementation just stores the raw text. Override `parse()` to turn the body into structured fields; see [Defining Custom Blocks](../guides/define-custom-blocks.md).
 
 ## Block vs ExtractedBlock
 
@@ -84,7 +84,7 @@ registry = Registry(
 | `syntax` | `Syntax.DELIMITER_PREAMBLE` | A `Syntax` enum member or a `BaseSyntax` instance |
 | `logger` | stdlib logger | Any object with `debug`/`info`/`warning`/`error`/`exception` methods |
 | `blocks` | `None` | Dict of `block_type -> block_class` for bulk registration |
-| `metadata_failure_mode` | `ABORT_BLOCK` | What to do when early metadata validation fails — see [Validation](../guides/validation.md) |
+| `metadata_failure_mode` | `ABORT_BLOCK` | What to do when early metadata validation fails; see [Validation](../guides/validation.md) |
 
 ### Registering block types
 
@@ -98,7 +98,7 @@ A validator is a callable that takes the `ExtractedBlock` and returns `bool`; a 
 
 ### Unregistered block types
 
-You do not have to register anything. A block whose `block_type` has no registered class is still extracted, using plain `BaseMetadata` and `BaseContent` — metadata fields are parsed and the body lands in `raw_content`:
+You do not have to register anything. A block whose `block_type` has no registered class is still extracted, using plain `BaseMetadata` and `BaseContent`; metadata fields are parsed and the body lands in `raw_content`:
 
 ```python
 --8<-- "src/hother/streamblocks_examples/01_basics/02_minimal_api.py:setup"
@@ -108,6 +108,6 @@ This minimal API is handy for prototyping before you commit to typed models. See
 
 ## Next steps
 
-- [Syntaxes](syntaxes.md) — the wire formats a registry can detect.
-- [Defining Custom Blocks](../guides/define-custom-blocks.md) — custom `parse()`, JSON/YAML decorators, structured output.
-- [Validation](../guides/validation.md) — registry validators and failure modes.
+- [Syntaxes](syntaxes.md): the wire formats a registry can detect.
+- [Defining Custom Blocks](../guides/define-custom-blocks.md): custom `parse()`, JSON/YAML decorators, structured output.
+- [Validation](../guides/validation.md): registry validators and failure modes.

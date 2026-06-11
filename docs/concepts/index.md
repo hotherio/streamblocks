@@ -42,13 +42,13 @@ flowchart TB
 
 ## The pipeline, step by step
 
-1. **Adapter detection** — on the first chunk, the input adapter is auto-detected (or you pass one explicitly). Adapters extract text from provider-specific event objects and categorize everything else as passthrough or skip. See [Adapters](adapters.md).
-2. **Line accumulation** — `LineAccumulator` buffers incoming text chunks and yields complete lines. Block detection is line-based.
-3. **Block detection** — `BlockStateMachine` feeds each line to the registry's [syntax](syntaxes.md), which reports openings, closings, and metadata boundaries.
-4. **Candidate accumulation** — between an opening and its closing, lines accumulate in a `BlockCandidate` that tracks the current section (header → metadata → content).
-5. **Parsing** — when the block closes, the syntax's `parse_block()` turns the accumulated lines into the typed metadata and content models registered for that `block_type`. See [Blocks & Registry](blocks-and-registry.md).
-6. **Validation** — registry validators run against metadata, content, or the whole block; failures reject the block with a specific error code. See the [Validation guide](../guides/validation.md).
-7. **Event emission** — every stage emits [events](events.md): block start, per-section deltas, section ends, and finally `BlockEndEvent` (success) or `BlockErrorEvent` (failure). Text outside blocks flows through as text events.
+1. **Adapter detection**: on the first chunk, the input adapter is auto-detected (or you pass one explicitly). Adapters extract text from provider-specific event objects and categorize everything else as passthrough or skip. See [Adapters](adapters.md).
+2. **Line accumulation**: `LineAccumulator` buffers incoming text chunks and yields complete lines. Block detection is line-based.
+3. **Block detection**: `BlockStateMachine` feeds each line to the registry's [syntax](syntaxes.md), which reports openings, closings, and metadata boundaries.
+4. **Candidate accumulation**: between an opening and its closing, lines accumulate in a `BlockCandidate` that tracks the current section (header → metadata → content).
+5. **Parsing**: when the block closes, the syntax's `parse_block()` turns the accumulated lines into the typed metadata and content models registered for that `block_type`. See [Blocks & Registry](blocks-and-registry.md).
+6. **Validation**: registry validators run against metadata, content, or the whole block; failures reject the block with a specific error code. See the [Validation guide](../guides/validation.md).
+7. **Event emission**: every stage emits [events](events.md): block start, per-section deltas, section ends, and finally `BlockEndEvent` (success) or `BlockErrorEvent` (failure). Text outside blocks flows through as text events.
 
 ## Block detection states
 
@@ -105,6 +105,6 @@ See [Performance Tuning](../guides/performance.md) for how these trade off.
 
 ## Next steps
 
-- [Blocks & Registry](blocks-and-registry.md) — the typed block model.
-- [Events](events.md) — everything the processor emits.
-- [Syntaxes](syntaxes.md) — the wire formats.
+- [Blocks & Registry](blocks-and-registry.md): the typed block model.
+- [Events](events.md): everything the processor emits.
+- [Syntaxes](syntaxes.md): the wire formats.

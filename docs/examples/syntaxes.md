@@ -4,7 +4,7 @@ Examples covering the built-in block syntax formats and how to define your own. 
 
 ## Markdown Frontmatter
 
-Extracts blocks written as Markdown code fences with YAML frontmatter using `MarkdownFrontmatterSyntax` — a natural fit for LLMs already fluent in Markdown.
+Extracts blocks written as Markdown code fences with YAML frontmatter using `MarkdownFrontmatterSyntax`, a natural fit for LLMs already fluent in Markdown.
 
 #! src/hother/streamblocks_examples/02_syntaxes/01_markdown_frontmatter.py
 
@@ -22,6 +22,6 @@ Shows the `@parse_as_yaml()` and `@parse_as_json()` decorators that automaticall
 
 ## Custom Syntax
 
-Builds a completely custom syntax from scratch — defining your own open/close detection and section parsing — for when none of the built-in formats match your protocol.
+Builds a completely custom syntax from scratch, defining your own open/close detection and section parsing, for when none of the built-in formats match your protocol.
 
 #! src/hother/streamblocks_examples/02_syntaxes/04_custom_syntax.py

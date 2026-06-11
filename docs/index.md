@@ -2,7 +2,7 @@
 
 **Real-time extraction of structured blocks from AI text streams**
 
-StreamBlocks is a Python library for detecting and extracting structured content blocks from streaming text. Extract semantic blocks as they stream — not after completion — enabling reactive AI agents and real-time processing.
+StreamBlocks is a Python library for detecting and extracting structured content blocks from streaming text. Extract semantic blocks as they stream, not after completion, enabling reactive AI agents and real-time processing.
 
 <div class="grid cards" markdown>
 
@@ -54,7 +54,7 @@ The processor consumes any async text stream and emits [events](concepts/events.
 
 | Feature | Benefit |
 |---------|---------|
-| **LLM Agnostic** | Works with any text stream — no vendor lock-in |
+| **LLM Agnostic** | Works with any text stream, no vendor lock-in |
 | **Real-time Processing** | React to blocks as they stream, don't wait for completion |
 | **Type Safety** | Pydantic models for metadata and content validation |
 | **Extensible** | Custom syntaxes, adapters, and block types |

@@ -16,7 +16,7 @@ The minimal usage of the reusable `Patch` block for streaming code diffs and mod
 
 ## ToolCall Block
 
-The `ToolCall` block for invoking external tools with structured parameters — the StreamBlocks-native way to express tool use in a text stream.
+The `ToolCall` block for invoking external tools with structured parameters, the StreamBlocks-native way to express tool use in a text stream.
 
 #! src/hother/streamblocks_examples/04_blocks/03_toolcall_block.py
 
@@ -28,6 +28,6 @@ The `Memory` block for context storage and recall operations, letting an agent p
 
 ## Visualization Block
 
-The `Visualization` block for charts, diagrams, and tables — structured visual payloads a frontend can render as they complete.
+The `Visualization` block for charts, diagrams, and tables, structured visual payloads a frontend can render as they complete.
 
 #! src/hother/streamblocks_examples/04_blocks/05_visualization_block.py

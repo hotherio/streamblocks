@@ -4,7 +4,7 @@ This page walks you through extracting your first structured block from a text s
 
 ## The idea
 
-LLMs are good at emitting structured blocks inside free-form text when you ask them to. StreamBlocks detects those blocks *while the text streams* and hands you typed, validated Python objects — without waiting for the stream to finish.
+LLMs are good at emitting structured blocks inside free-form text when you ask them to. StreamBlocks detects those blocks *while the text streams* and hands you typed, validated Python objects, without waiting for the stream to finish.
 
 A block in the default delimiter syntax looks like this:
 
@@ -28,7 +28,7 @@ Three steps: create a [`Registry`](../concepts/blocks-and-registry.md), register
 
 [View source on GitHub](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/00_quickstart/01_hello_world.py)
 
-The processor emits an [event](../concepts/events.md) for everything it sees. Here we only react to `BlockEndEvent` — emitted when a block closes successfully — and `event.get_block()` returns the parsed block with typed `metadata` and `content`.
+The processor emits an [event](../concepts/events.md) for everything it sees. Here we only react to `BlockEndEvent`, emitted when a block closes successfully, and `event.get_block()` returns the parsed block with typed `metadata` and `content`.
 
 ## Mixing text and blocks
 
@@ -49,6 +49,6 @@ Real streams interleave prose and blocks. Text outside blocks is emitted as `Tex
 
 ## Next steps
 
-- [Your First Custom Block](first-custom-block.md) — define your own metadata and content models.
-- [Events](../concepts/events.md) — the full event model, including per-section streaming deltas.
-- [Providers guide](../guides/providers.md) — plug in OpenAI, Anthropic, or Gemini streams instead of the simulator.
+- [Your First Custom Block](first-custom-block.md): define your own metadata and content models.
+- [Events](../concepts/events.md): the full event model, including per-section streaming deltas.
+- [Providers guide](../guides/providers.md): plug in OpenAI, Anthropic, or Gemini streams instead of the simulator.

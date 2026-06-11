@@ -23,7 +23,7 @@ Two things to note:
 
 [View source on GitHub](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/00_quickstart/03_custom_block.py)
 
-This example uses the **delimiter frontmatter** syntax — `!!start`, a YAML metadata section between `---` markers, free-form content, then `!!end`:
+This example uses the **delimiter frontmatter** syntax: `!!start`, a YAML metadata section between `---` markers, free-form content, then `!!end`:
 
 ```text
 !!start

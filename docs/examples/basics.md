@@ -10,7 +10,7 @@ A complete tour of the standard workflow: registry setup, stream processing, and
 
 ## Minimal API
 
-Shows the smallest possible setup using default models — no custom metadata or content classes. Useful as a quick-reference template when you just need block extraction without typing.
+Shows the smallest possible setup using default models; no custom metadata or content classes. Useful as a quick-reference template when you just need block extraction without typing.
 
 #! src/hother/streamblocks_examples/01_basics/02_minimal_api.py
 
@@ -28,7 +28,7 @@ Uses the `create_structured_output_block` factory to build type-safe blocks from
 
 ## Metadata Validators
 
-Validates block metadata early — before content streams in — and shows the available `MetadataValidationFailureMode` options for deciding what happens when validation fails.
+Validates block metadata early, before content streams in, and shows the available `MetadataValidationFailureMode` options for deciding what happens when validation fails.
 
 #! src/hother/streamblocks_examples/01_basics/05_metadata_validators.py
 

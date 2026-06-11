@@ -42,13 +42,13 @@ No text deltas  : 357 events in 0.0065s
 Minimal (blocks): 317 events in 0.0049s
 ```
 
-Disabling text deltas alone removed over 80% of events here. The trade-off: without `TextDeltaEvent` you lose character-level updates for live UIs — block events still fire as usual.
+Disabling text deltas alone removed over 80% of events here. The trade-off: without `TextDeltaEvent` you lose character-level updates for live UIs; block events still fire as usual.
 
 ## Size limits
 
 `max_block_size` and `max_line_length` are safety valves against malformed or adversarial streams:
 
-- A block that grows past `max_block_size` is rejected and surfaces as a `BlockErrorEvent` with error code `SIZE_EXCEEDED` — the stream keeps going.
+- A block that grows past `max_block_size` is rejected and surfaces as a `BlockErrorEvent` with error code `SIZE_EXCEEDED`: the stream keeps going.
 - A line longer than `max_line_length` is truncated rather than buffered indefinitely.
 
 Raise them when you legitimately stream large blocks (e.g. whole files as block content):
@@ -66,12 +66,12 @@ Keep them tight for untrusted input to bound memory per block.
 ```
 
 - Start from the minimal config (`emit_text_deltas=False`, `emit_original_events=False`, `emit_section_end_events=False`) for batch processing; enable flags one by one as features need them.
-- Set `auto_detect_adapter=False` when feeding plain `str` chunks — it skips first-chunk detection and uses the identity adapter directly.
+- Set `auto_detect_adapter=False` when feeding plain `str` chunks: it skips first-chunk detection and uses the identity adapter directly.
 - Prefer larger upstream chunks over character-level streaming when latency allows; fewer chunks means fewer delta events and fewer accumulator passes.
 - Keep your event loop body cheap: the `async for` consumer is on the hot path, so defer heavy work (I/O, rendering) to tasks or queues.
 
 ## Next steps
 
-- [Events](../reference/events.md) — exactly which events each flag controls.
-- [Error Handling](error-handling.md) — handling `SIZE_EXCEEDED` and other block errors.
-- [Logging](logging.md) — observe processor behavior without adding events.
+- [Events](../reference/events.md): exactly which events each flag controls.
+- [Error Handling](error-handling.md): handling `SIZE_EXCEEDED` and other block errors.
+- [Logging](logging.md): observe processor behavior without adding events.
