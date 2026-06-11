@@ -310,8 +310,6 @@ class ProtocolStreamProcessor[TInput, TOutput]:
             Individual events
         """
         if isinstance(output, list):
-            # TOutput is unbounded so pyright widens list narrowing to list[Unknown];
-            # the declared parameter guarantees the element type.
             for item in cast("list[TOutput]", output):
                 yield item
         else:

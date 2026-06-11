@@ -56,9 +56,6 @@ def get_syntax_instance(
             case Syntax.MARKDOWN_FRONTMATTER:
                 return MarkdownFrontmatterSyntax()
 
-    # A custom instance must inherit from BaseSyntax. Validate against ``object``
-    # rather than the declared type: callers may be untyped and pass an
-    # unsupported value (or a future, unhandled Syntax member), which must raise.
     unchecked = cast("object", syntax)
     if isinstance(unchecked, BaseSyntax):
         return unchecked

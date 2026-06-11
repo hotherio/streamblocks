@@ -208,9 +208,6 @@ class StreamBlockProcessor:
         # Extract text from chunk
         if self._adapter is None:
             raise AdapterNotConfiguredError(context="process_chunk")
-        # Earlier isinstance checks narrow self._adapter to a union whose
-        # IdentityInputAdapter arm types extract_text as str-only; cast back to the
-        # declared protocol so an arbitrary chunk type is accepted.
         text = cast("InputProtocolAdapter[Any]", self._adapter).extract_text(chunk)
 
         if not text:
@@ -390,8 +387,6 @@ class StreamBlockProcessor:
             # Extract text from chunk
             if self._adapter is None:
                 raise AdapterNotConfiguredError(context="process_stream")
-            # See process_chunk: cast back to the declared protocol type so the
-            # narrowed IdentityInputAdapter arm does not constrain extract_text to str.
             text = cast("InputProtocolAdapter[Any]", self._adapter).extract_text(chunk)
 
             if not text:

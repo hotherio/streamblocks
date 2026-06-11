@@ -333,7 +333,7 @@ line-ending = "auto"
 max-complexity = 10
 
 # Type checking with basedpyright
-[tool.pyright]
+[tool.basedpyright]
 include = ["src", "examples"]
 exclude = ["**/__pycache__", "**/migrations", ".venv", "tests", "src/hother/streamblocks_examples"]
 ignore = [

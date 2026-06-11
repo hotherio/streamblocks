@@ -345,13 +345,3 @@ sandbox/
 
 # Auto Claude data directory
 .auto-claude/
-
-# ICML/BFCL benchmark datasets and prompt-comparison artifacts (research scratch,
-# kept out of the repo root; move large data under sandbox/ instead)
-/simple.json
-/multiple.json
-/parallel.json
-/parallel_multiple.json
-/relevance.json
-/irrelevance.json
-/prompt_comparison/
