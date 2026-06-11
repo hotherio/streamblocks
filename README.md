@@ -203,6 +203,8 @@ uv sync --group doc
 uv run mkdocs serve
 ```
 
+The documentation is served at <http://127.0.0.1:7227>.
+
 ## Development
 
 ### Dependency Groups

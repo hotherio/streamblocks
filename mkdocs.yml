@@ -2,6 +2,7 @@ site_name: Streamblocks
 repo_url: https://github.com/hotherio/streamblocks
 repo_name: hotherio/streamblocks
 edit_uri: ""
+dev_addr: 127.0.0.1:7227
 site_dir: "static/docs"
 nav:
   - StreamBlocks: index.md
