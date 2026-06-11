@@ -4,40 +4,35 @@ StreamBlocks turns a raw text stream into typed, validated blocks through a fixe
 
 ## System overview
 
-```mermaid
-flowchart TB
-    subgraph Providers["LLM Providers"]
-        Gemini[Google Gemini]
-        OpenAI[OpenAI]
-        Anthropic[Anthropic Claude]
-        Custom[Custom Sources]
-    end
+```d2
+direction: right
 
-    subgraph Adapters["Adapter Layer"]
-        InputAdapters[Input Adapters]
-        OutputAdapters[Output Adapters]
-    end
+providers: LLM Providers {
+  gemini: Gemini
+  openai: OpenAI
+  anthropic: Anthropic
+  custom: Custom source
+}
 
-    subgraph Core["Core Library"]
-        Processor[StreamBlockProcessor]
-        Accumulator[LineAccumulator]
-        StateMachine[BlockStateMachine]
-        Registry[Registry + Syntax]
-        Validation[Validation]
-    end
+input: Input Adapters
 
-    Gemini --> InputAdapters
-    OpenAI --> InputAdapters
-    Anthropic --> InputAdapters
-    Custom --> InputAdapters
+core: StreamBlockProcessor {
+  accumulator: LineAccumulator
+  machine: BlockStateMachine
+  registry: Registry + Syntax
+  validation: Validation
+  accumulator -> machine -> registry -> validation
+}
 
-    InputAdapters --> Processor
-    Processor --> Accumulator
-    Accumulator --> StateMachine
-    StateMachine --> Registry
-    Registry --> Validation
-    Processor --> Events[Events]
-    Events --> OutputAdapters
+events: Events
+output: Output Adapters
+app: Your application
+
+providers -> input: provider chunks
+input -> core: text
+core -> events
+events -> output
+output -> app
 ```
 
 ## The pipeline, step by step
@@ -54,18 +49,24 @@ flowchart TB
 
 Internally, a candidate moves through `BlockState`:
 
-```mermaid
-stateDiagram-v2
-    [*] --> SEARCHING
-    SEARCHING --> HEADER_DETECTED: opening marker
-    HEADER_DETECTED --> ACCUMULATING_METADATA: metadata section starts
-    HEADER_DETECTED --> ACCUMULATING_CONTENT: no metadata section
-    ACCUMULATING_METADATA --> ACCUMULATING_CONTENT: metadata boundary
-    ACCUMULATING_CONTENT --> CLOSING_DETECTED: closing marker
-    CLOSING_DETECTED --> COMPLETED: parsed + validated
-    CLOSING_DETECTED --> REJECTED: parse/validation failure
-    COMPLETED --> [*]
-    REJECTED --> [*]
+```d2
+direction: down
+
+searching: SEARCHING
+header: HEADER_DETECTED
+metadata: ACCUMULATING_METADATA
+content: ACCUMULATING_CONTENT
+closing: CLOSING_DETECTED
+completed: COMPLETED
+rejected: REJECTED
+
+searching -> header: opening marker
+header -> metadata: metadata section starts
+header -> content: no metadata section
+metadata -> content: metadata boundary
+content -> closing: closing marker
+closing -> completed: parsed + validated
+closing -> rejected: parse or validation failure
 ```
 
 Which sections exist depends on the syntax: the delimiter preamble syntax carries metadata inline in the opening line, while the frontmatter syntaxes have a dedicated YAML metadata section.

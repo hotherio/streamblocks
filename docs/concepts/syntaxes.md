@@ -2,6 +2,28 @@
 
 A *syntax* defines the wire format of a block: how its opening is detected, where metadata lives, and what closes it. Each [`Registry`](blocks-and-registry.md) holds exactly one syntax instance. StreamBlocks ships three built-in syntaxes and lets you implement your own.
 
+Every block has the same anatomy regardless of syntax: an opening marker, an optional metadata section, the content, and a closing marker. Here it is for `DelimiterFrontmatterSyntax`:
+
+```d2
+direction: down
+
+block: Delimiter frontmatter block {
+  open: Opening marker {
+    code: "!!start" {style.font: mono}
+  }
+  meta: Metadata section (YAML) {
+    code: "---\nid: plan01\nblock_type: task\n---" {style.font: mono}
+  }
+  content: Content section {
+    code: "Refactor the parser module" {style.font: mono}
+  }
+  close: Closing marker {
+    code: "!!end" {style.font: mono}
+  }
+  open -> meta -> content -> close
+}
+```
+
 ## DelimiterPreambleSyntax
 
 The default. Metadata is inline in the opening line, compact and cheap for an LLM to emit:

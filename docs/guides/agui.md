@@ -37,6 +37,22 @@ The input adapter extracts text from `TEXT_MESSAGE_CONTENT` and `TEXT_MESSAGE_CH
 
 Use this when the output goes back to an AG-UI frontend. StreamBlocks events are converted to AG-UI `CUSTOM` events (emitted as dicts, so `ag-ui-protocol` is not needed at runtime on the consumer side), while original AG-UI events pass through unchanged:
 
+```d2
+direction: right
+
+agui_in: AG-UI stream
+input: AGUIInputAdapter
+proc: StreamBlockProcessor
+output: AGUIOutputAdapter
+agui_out: AG-UI events
+
+agui_in -> input: TEXT_MESSAGE_CONTENT
+input -> proc: extracted text
+input -> output: passthrough (non-text events) {style.stroke-dash: 3}
+proc -> output: StreamBlocks events
+output -> agui_out: "CUSTOM streamblocks.*"
+```
+
 ```python
 --8<-- "src/hother/streamblocks_examples/06_integrations/02_agui_integration.py:bidirectional"
 ```

@@ -55,6 +55,32 @@ For objects where the text simply lives in one attribute, skip the custom class 
 
 When no adapter is passed (and `auto_detect_adapter=True`, the default), `InputAdapterRegistry.detect()` inspects the first chunk and picks an adapter in this order:
 
+```d2
+direction: down
+
+chunk: First chunk arrives
+s1: Is it a str? {shape: diamond}
+s2: Module prefix match? {shape: diamond}
+s3: Attribute pattern match? {shape: diamond}
+s4: Has text or content attr? {shape: diamond}
+
+identity: IdentityInputAdapter
+registered: "Registered adapter (OpenAI, Gemini, ...)"
+pattern: Pattern-registered adapter
+attribute: AttributeInputAdapter
+none: "None: no adapter"
+
+chunk -> s1
+s1 -> identity: yes
+s1 -> s2: no
+s2 -> registered: yes
+s2 -> s3: no
+s3 -> pattern: yes
+s3 -> s4: no
+s4 -> attribute: yes
+s4 -> none: no
+```
+
 1. `str` → `IdentityInputAdapter`
 2. **Module prefix match**: the chunk class's `__module__` is matched against registered prefixes (e.g. `"openai.types"`, `"google.genai"`, `"anthropic."`)
 3. **Attribute pattern match**: registered duck-typing patterns (e.g. `["text", "candidates"]` for Gemini)

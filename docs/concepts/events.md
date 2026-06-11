@@ -50,21 +50,24 @@ All values of the `EventType` enum, with the event class that carries each:
 
 For each block, events arrive in a fixed order. Which sections appear depends on the [syntax](syntaxes.md): frontmatter syntaxes have a metadata section, the preamble syntax carries metadata inline in the header.
 
-```mermaid
-stateDiagram-v2
-    [*] --> BLOCK_START: opening marker
-    BLOCK_START --> BLOCK_HEADER_DELTA
-    BLOCK_HEADER_DELTA --> BLOCK_METADATA_DELTA: metadata section (frontmatter)
-    BLOCK_METADATA_DELTA --> BLOCK_METADATA_DELTA: more metadata lines
-    BLOCK_METADATA_DELTA --> BLOCK_METADATA_END: metadata boundary
-    BLOCK_METADATA_END --> BLOCK_CONTENT_DELTA
-    BLOCK_HEADER_DELTA --> BLOCK_CONTENT_DELTA: no metadata section
-    BLOCK_CONTENT_DELTA --> BLOCK_CONTENT_DELTA: more content lines
-    BLOCK_CONTENT_DELTA --> BLOCK_CONTENT_END: closing marker
-    BLOCK_CONTENT_END --> BLOCK_END: parsed + validated
-    BLOCK_CONTENT_END --> BLOCK_ERROR: parse/validation failure
-    BLOCK_END --> [*]
-    BLOCK_ERROR --> [*]
+```d2
+shape: sequence_diagram
+
+llm: LLM stream
+proc: Processor
+app: Your app
+
+llm -> proc: "!!plan01:task"
+proc -> app: BLOCK_START
+proc -> app: BLOCK_HEADER_DELTA
+llm -> proc: metadata lines
+proc -> app: BLOCK_METADATA_DELTA
+proc -> app: "BLOCK_METADATA_END (parsed, validated)"
+llm -> proc: content lines
+proc -> app: BLOCK_CONTENT_DELTA
+proc -> app: BLOCK_CONTENT_END
+llm -> proc: "!!end"
+proc -> app: "BLOCK_END (typed block)"
 ```
 
 A block can also fail earlier, for example `BLOCK_ERROR` with `UNCLOSED_BLOCK` at end of stream, or with `VALIDATION_FAILED` right after `BLOCK_METADATA_END` when early metadata validation aborts the block.
