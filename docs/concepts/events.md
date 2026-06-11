@@ -14,39 +14,18 @@ All events are immutable Pydantic models deriving from `BaseEvent`. The `Event` 
 
 Every event shares three fields from `BaseEvent`:
 
-| Field | Type | Meaning |
-|-------|------|---------|
+| Field | Type | Description |
+|-------|------|-------------|
 | `timestamp` | `int` | Unix timestamp in milliseconds, auto-generated |
 | `event_id` | `str` | Unique identifier (UUID), auto-generated |
 | `raw_event` | `Any \| None` | Original provider event, preserved by [adapters](adapters.md) |
 
+The per-event tables below list only the fields each event adds.
+
 !!! note "Native provider events in the stream"
     `StreamBlockProcessor.process_stream()` yields `TChunk | Event`: when `emit_original_events=True` (the default), the original provider chunks are interleaved with StreamBlocks events. Use `processor.is_native_event(event)` to tell them apart without coupling to a provider.
 
-## Event catalog
-
-All values of the `EventType` enum, with the event class that carries each:
-
-| `EventType` | Event class | Emitted when |
-|-------------|-------------|--------------|
-| `STREAM_STARTED` | `StreamStartedEvent` | Stream processing begins |
-| `STREAM_FINISHED` | `StreamFinishedEvent` | Stream completes; carries `blocks_extracted`, `blocks_rejected`, `total_events`, `duration_ms` |
-| `STREAM_ERROR` | `StreamErrorEvent` | Stream processing fails |
-| `TEXT_CONTENT` | `TextContentEvent` | A complete line outside any block |
-| `TEXT_DELTA` | `TextDeltaEvent` | A raw text chunk, in real time, before line completion |
-| `BLOCK_START` | `BlockStartEvent` | Block opening marker detected |
-| `BLOCK_HEADER_DELTA` | `BlockHeaderDeltaEvent` | Content added to the header section; may carry `inline_metadata` |
-| `BLOCK_METADATA_DELTA` | `BlockMetadataDeltaEvent` | Content added to the metadata section; `is_boundary` flags boundary lines |
-| `BLOCK_CONTENT_DELTA` | `BlockContentDeltaEvent` | Content added to the content section |
-| `BLOCK_METADATA_END` | `BlockMetadataEndEvent` | Metadata section complete and parsed, before content begins |
-| `BLOCK_CONTENT_END` | `BlockContentEndEvent` | Content section complete and parsed, before final extraction |
-| `BLOCK_END` | `BlockEndEvent` | Block extracted and validated; `get_block()` returns the typed `ExtractedBlock` |
-| `BLOCK_ERROR` | `BlockErrorEvent` | Block extraction failed; `error_code` is a `BlockErrorCode` |
-| `CUSTOM` | `CustomEvent` | Application-specific events (`name` + `value` dict) |
-
-`BlockErrorEvent.error_code` values (`VALIDATION_FAILED`, `SIZE_EXCEEDED`, `UNCLOSED_BLOCK`, `UNKNOWN_TYPE`, `PARSE_FAILED`, `MISSING_METADATA`, `MISSING_CONTENT`, `SYNTAX_ERROR`) are covered in the [Error Handling guide](../guides/error-handling.md).
-
-## Block lifecycle ordering
+## Event flow for one block
 
 For each block, events arrive in a fixed order. Which sections appear depends on the [syntax](syntaxes.md): frontmatter syntaxes have a metadata section, the preamble syntax carries metadata inline in the header.
 
@@ -72,19 +51,79 @@ proc -> app: "BLOCK_END (typed block)"
 
 A block can also fail earlier, for example `BLOCK_ERROR` with `UNCLOSED_BLOCK` at end of stream, or with `VALIDATION_FAILED` right after `BLOCK_METADATA_END` when early metadata validation aborts the block.
 
-## Block start: act before content arrives
+## Overview
 
-`BlockStartEvent` fires as soon as the opening marker is detected, before any content. Use it to create UI elements or allocate resources early:
+| `EventType` | Event class | Emitted when |
+|-------------|-------------|--------------|
+| `STREAM_STARTED` | [`StreamStartedEvent`](#streamstartedevent) | Stream processing begins |
+| `STREAM_FINISHED` | [`StreamFinishedEvent`](#streamfinishedevent) | Stream completes |
+| `STREAM_ERROR` | [`StreamErrorEvent`](#streamerrorevent) | Stream processing fails |
+| `TEXT_CONTENT` | [`TextContentEvent`](#textcontentevent) | A complete line outside any block |
+| `TEXT_DELTA` | [`TextDeltaEvent`](#textdeltaevent) | A raw text chunk, before line completion |
+| `BLOCK_START` | [`BlockStartEvent`](#blockstartevent) | Block opening marker detected |
+| `BLOCK_HEADER_DELTA` | [`BlockHeaderDeltaEvent`](#section-delta-events) | Content added to the header section |
+| `BLOCK_METADATA_DELTA` | [`BlockMetadataDeltaEvent`](#section-delta-events) | Content added to the metadata section |
+| `BLOCK_CONTENT_DELTA` | [`BlockContentDeltaEvent`](#section-delta-events) | Content added to the content section |
+| `BLOCK_METADATA_END` | [`BlockMetadataEndEvent`](#blockmetadataendevent) | Metadata section complete and parsed |
+| `BLOCK_CONTENT_END` | [`BlockContentEndEvent`](#blockcontentendevent) | Content section complete and parsed |
+| `BLOCK_END` | [`BlockEndEvent`](#blockendevent) | Block extracted and validated |
+| `BLOCK_ERROR` | [`BlockErrorEvent`](#blockerrorevent) | Block extraction failed |
+| `CUSTOM` | [`CustomEvent`](#customevent) | Application-specific events |
 
-```python
---8<-- "src/hother/streamblocks_examples/03_adapters/07_block_opened_event.py:example"
-```
+## Lifecycle events
 
-[View source on GitHub](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/03_adapters/07_block_opened_event.py)
+### StreamStartedEvent
 
-## Text deltas: character-level streaming
+First event of every stream.
 
-`TextDeltaEvent` is emitted immediately as text arrives, before lines complete. Each delta knows whether it is inside a block (`inside_block`, `block_id`) and which `section` it belongs to, ideal for typewriter effects and live UIs:
+| Field | Type | Description |
+|-------|------|-------------|
+| `stream_id` | `str` | Identifier of this stream |
+| `registry_name` | `str \| None` | Name of the registry in use |
+
+### StreamFinishedEvent
+
+Last event of a successful stream, with summary counters.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `stream_id` | `str` | Identifier of this stream |
+| `blocks_extracted` | `int` | Successfully extracted blocks |
+| `blocks_rejected` | `int` | Rejected blocks |
+| `total_events` | `int` | Total events emitted |
+| `duration_ms` | `int \| None` | Processing duration |
+
+### StreamErrorEvent
+
+Stream-level failure (not a single block failing).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `stream_id` | `str` | Identifier of this stream |
+| `error` | `str` | Error description |
+| `error_code` | `str \| None` | Optional machine-readable code |
+
+## Text events
+
+### TextContentEvent
+
+A complete line of text outside any block. Nothing in the stream is lost: prose between blocks arrives here.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `content` | `str` | The line content |
+| `line_number` | `int` | Line position in the stream |
+
+### TextDeltaEvent
+
+Emitted immediately as text arrives, before lines complete. Each delta knows whether it is inside a block and which section it belongs to, ideal for typewriter effects and live UIs:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `delta` | `str` | The raw text chunk |
+| `inside_block` | `bool` | Whether the chunk falls inside a block |
+| `block_id` | `str \| None` | Owning block, if inside one |
+| `section` | `str \| None` | `"header"`, `"metadata"`, or `"content"` |
 
 ```python
 --8<-- "src/hother/streamblocks_examples/03_adapters/06_text_delta_streaming.py:example"
@@ -92,17 +131,118 @@ A block can also fail earlier, for example `BLOCK_ERROR` with `UNCLOSED_BLOCK` a
 
 [View source on GitHub](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/03_adapters/06_text_delta_streaming.py)
 
-## Section end events: early validation
+## Block events
 
-`BlockMetadataEndEvent` and `BlockContentEndEvent` fire when a section completes, carrying the raw and parsed section plus `validation_passed` / `validation_error`. This lets you validate metadata and react before the block finishes streaming:
+### BlockStartEvent
+
+Fires as soon as the opening marker is detected, before any content. Use it to create UI elements or allocate resources early:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `block_id` | `str` | Block identifier |
+| `block_type` | `str \| None` | Type, if already known from the opening line |
+| `syntax` | `str` | Detecting syntax name |
+| `start_line` | `int` | Line where the block opened |
+| `inline_metadata` | `dict \| None` | Metadata parsed from the opening line (preamble syntax) |
+
+```python
+--8<-- "src/hother/streamblocks_examples/03_adapters/07_block_opened_event.py:example"
+```
+
+[View source on GitHub](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/03_adapters/07_block_opened_event.py)
+
+### Section delta events
+
+`BlockHeaderDeltaEvent`, `BlockMetadataDeltaEvent`, and `BlockContentDeltaEvent` stream a block's three sections as they accumulate. All three share:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `block_id` | `str` | Owning block |
+| `delta` | `str` | Text added to the section |
+| `syntax` | `str` | Detecting syntax name |
+| `current_line` | `int` | Current line number |
+| `accumulated_size` | `int` | Bytes accumulated so far (drives `max_block_size`) |
+
+Per-event extras:
+
+| Event | Extra field | Description |
+|-------|-------------|-------------|
+| `BlockHeaderDeltaEvent` | `inline_metadata: dict \| None` | Metadata parsed from the header line |
+| `BlockMetadataDeltaEvent` | `is_boundary: bool` | Whether this delta is a `---` boundary line |
+| `BlockContentDeltaEvent` | none | |
+
+### BlockMetadataEndEvent
+
+Fires when the metadata section completes, before content begins. This enables early validation: combined with `MetadataValidationFailureMode.ABORT_BLOCK`, a failing metadata validator aborts the block before its content streams in (see the [Validation guide](../guides/validation.md)).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `block_id` | `str` | Owning block |
+| `syntax` | `str` | Detecting syntax name |
+| `start_line` / `end_line` | `int` | Section bounds |
+| `raw_metadata` | `str` | Raw metadata text |
+| `parsed_metadata` | `dict \| None` | Parsed metadata |
+| `validation_passed` | `bool` | Early validation outcome |
+| `validation_error` | `str \| None` | Failure detail |
 
 ```python
 --8<-- "src/hother/streamblocks_examples/03_adapters/15_section_end_events.py:metadata_end"
 ```
 
-Combined with `MetadataValidationFailureMode.ABORT_BLOCK`, a failing metadata validator aborts the block as soon as the metadata section closes; see the [Validation guide](../guides/validation.md).
-
 [View source on GitHub](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/03_adapters/15_section_end_events.py)
+
+### BlockContentEndEvent
+
+Mirror of the metadata end event for the content section, emitted just before final extraction.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `block_id` | `str` | Owning block |
+| `syntax` | `str` | Detecting syntax name |
+| `start_line` / `end_line` | `int` | Section bounds |
+| `raw_content` | `str` | Raw content text |
+| `parsed_content` | `dict \| None` | Parsed content |
+| `validation_passed` | `bool` | Early validation outcome |
+| `validation_error` | `str \| None` | Failure detail |
+
+### BlockEndEvent
+
+The block was extracted and validated. `get_block()` returns the typed `ExtractedBlock`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `block_id` | `str` | Block identifier |
+| `block_type` | `str` | Registered block type |
+| `syntax` | `str` | Detecting syntax name |
+| `start_line` / `end_line` | `int` | Block bounds in the stream |
+| `metadata` | `dict` | Extracted metadata (serializable form) |
+| `content` | `dict` | Extracted content (serializable form) |
+| `raw_content` | `str` | Original unparsed body |
+| `hash_id` | `str` | Stable hash for deduplication/caching |
+
+### BlockErrorEvent
+
+Block extraction failed; the stream keeps processing. `error_code` values are covered in the [Error Handling guide](../guides/error-handling.md).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `block_id` | `str \| None` | Block identifier, if known |
+| `reason` | `str` | Human-readable failure reason |
+| `error_code` | `BlockErrorCode \| None` | `VALIDATION_FAILED`, `SIZE_EXCEEDED`, `UNCLOSED_BLOCK`, ... |
+| `syntax` | `str` | Detecting syntax name |
+| `start_line` / `end_line` | `int` / `int \| None` | Block bounds |
+| `exception` | `Exception \| None` | Original exception (excluded from serialization) |
+
+## Custom events
+
+### CustomEvent
+
+Application-specific events, also used by the [AG-UI output adapter](../guides/agui.md) to wrap block events.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `str` | Event name (e.g. `streamblocks.block_end`) |
+| `value` | `dict` | Arbitrary payload |
 
 ## Controlling event volume
 
