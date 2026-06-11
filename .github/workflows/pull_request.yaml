@@ -79,6 +79,11 @@ jobs:
       with:
         dependency-groups: doc
 
+    - name: Install d2
+      run: |
+        curl -fsSL https://d2lang.com/install.sh | sh -s -- --version v0.7.1
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
     - name: Build docs
       run: |
         source .venv/bin/activate

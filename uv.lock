@@ -1122,6 +1122,21 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-d2-plugin"
+version = "1.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mkdocs" },
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "pymdown-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b3/26/17e92ae5f577eefe6fd9b15fb80e03c8e672b5477eb5501ce66277ea69a8/mkdocs_d2_plugin-1.7.0.tar.gz", hash = "sha256:607462a3bf3d28b0574214d400820f86c0c9f43466fdf73243e7f9f2e3d21584", size = 8373, upload-time = "2026-04-09T20:30:34.235Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/3b/002528206eb503287cb320ca9ac34f16159d41d9b77dd7ec594ebc2e4cae/mkdocs_d2_plugin-1.7.0-py3-none-any.whl", hash = "sha256:1c40092738c77d4b8b03880f01f4ef433de07fb8c4bbf9540819e161b6440e3f", size = 8789, upload-time = "2026-04-09T20:30:33.013Z" },
+]
+
+[[package]]
 name = "mkdocs-get-deps"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2354,6 +2369,7 @@ dev = [
 doc = [
     { name = "mike" },
     { name = "mkdocs" },
+    { name = "mkdocs-d2-plugin" },
     { name = "mkdocs-glightbox" },
     { name = "mkdocs-material" },
     { name = "mkdocs-material-extensions" },
@@ -2405,6 +2421,7 @@ dev = [
 doc = [
     { name = "mike", specifier = ">=2.1" },
     { name = "mkdocs", specifier = ">=1.6" },
+    { name = "mkdocs-d2-plugin", specifier = ">=1.7" },
     { name = "mkdocs-glightbox", specifier = ">=0.4.0" },
     { name = "mkdocs-material", specifier = ">=9.5" },
     { name = "mkdocs-material-extensions", specifier = ">=1.3" },

@@ -41,6 +41,8 @@ cd streamblocks
 uv sync --all-groups
 ```
 
+To build the documentation you also need the [d2](https://d2lang.com) diagram renderer (`brew install d2`).
+
 ## Next step
 
 Continue with the [Quickstart](quickstart.md).

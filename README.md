@@ -200,6 +200,7 @@ To build and serve the documentation locally:
 
 ```bash
 uv sync --group doc
+brew install d2  # diagrams are rendered with d2 at build time
 uv run mkdocs serve
 ```
 
