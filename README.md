@@ -200,8 +200,7 @@ To build and serve the documentation locally:
 
 ```bash
 uv sync --group doc
-source .venv/bin/activate
-mkdocs serve
+uv run mkdocs serve
 ```
 
 ## Development
