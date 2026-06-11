@@ -1,12 +1,6 @@
 # Quickstart
 
-This page walks you through extracting your first structured block from a text stream.
-
-## The idea
-
-LLMs are good at emitting structured blocks inside free-form text when you ask them to. StreamBlocks detects those blocks *while the text streams* and hands you typed, validated Python objects, without waiting for the stream to finish.
-
-A block in the default delimiter syntax looks like this:
+Extract your first structured block from a text stream. A block in the default delimiter syntax looks like this:
 
 ```text
 !!block01:files_operations
@@ -14,7 +8,7 @@ src/main.py:C
 !!end
 ```
 
-The opening line carries the block `id` (`block01`) and `block_type` (`files_operations`); everything until `!!end` is the block content.
+The opening line carries the block `id` and `block_type`; everything until `!!end` is the content.
 
 ## Hello, block
 

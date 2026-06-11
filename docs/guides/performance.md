@@ -8,17 +8,7 @@ All knobs live on `ProcessorConfig`, passed to the processor at construction tim
 --8<-- "src/hother/streamblocks_examples/09_advanced/01_performance_tuning.py:imports"
 ```
 
-## ProcessorConfig at a glance
-
-| Field | Default | Effect |
-| --- | --- | --- |
-| `lines_buffer` | `5` | Number of recent lines kept for context in debugging and error messages. |
-| `max_line_length` | `16_384` | Maximum line length in bytes; longer lines are truncated to prevent memory issues. |
-| `max_block_size` | `1_048_576` (1 MB) | Maximum block size in bytes; larger blocks are rejected with a `SIZE_EXCEEDED` error. |
-| `emit_original_events` | `True` | Pass through original provider events. Set `False` to emit only StreamBlocks events. |
-| `emit_text_deltas` | `True` | Emit `TextDeltaEvent` per chunk for real-time streaming. Disable to cut event volume. |
-| `emit_section_end_events` | `True` | Emit `BlockMetadataEndEvent` / `BlockContentEndEvent` for early validation. |
-| `auto_detect_adapter` | `True` | Detect the input adapter from the first chunk. Set `False` to skip detection when the input is plain text. |
+The full field-by-field table lives in the [architecture overview](../concepts/index.md#configuration); this guide focuses on the trade-offs.
 
 ## Measure the impact of event flags
 

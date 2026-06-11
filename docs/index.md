@@ -1,8 +1,8 @@
 # StreamBlocks
 
-**Real-time extraction of structured blocks from AI text streams**
+StreamBlocks is a Python library that extracts structured, typed blocks from text streams *while they stream*, not after completion.
 
-StreamBlocks is a Python library for detecting and extracting structured content blocks from streaming text. Extract semantic blocks as they stream, not after completion, enabling reactive AI agents and real-time processing.
+LLMs are good at embedding structured content (file operations, tool calls, plans) inside free-form text. StreamBlocks detects those blocks as the tokens arrive and hands you validated Pydantic objects in real time, enabling reactive agents and live UIs.
 
 <div class="grid cards" markdown>
 
@@ -52,13 +52,10 @@ The processor consumes any async text stream and emits [events](concepts/events.
 
 ## Why StreamBlocks?
 
-| Feature | Benefit |
-|---------|---------|
-| **LLM Agnostic** | Works with any text stream, no vendor lock-in |
-| **Real-time Processing** | React to blocks as they stream, don't wait for completion |
-| **Type Safety** | Pydantic models for metadata and content validation |
-| **Extensible** | Custom syntaxes, adapters, and block types |
-| **Framework Compatible** | Integrates with Pydantic AI, AG-UI, and others |
+- **Any stream**: plain strings or native OpenAI/Anthropic/Gemini chunks, no vendor lock-in.
+- **Real time**: react to a block the moment it completes, while the rest is still streaming.
+- **Typed**: metadata and content are Pydantic models, validated on extraction.
+- **Extensible**: custom syntaxes, adapters, block types, and framework integrations (Pydantic AI, AG-UI).
 
 ## Installation
 
@@ -66,13 +63,7 @@ The processor consumes any async text stream and emits [events](concepts/events.
 pip install streamblocks
 ```
 
-With provider support:
-
-```bash
-pip install streamblocks[all-providers]
-```
-
-See [Installation](getting-started/installation.md) for all extras.
+See [Installation](getting-started/installation.md) for provider extras.
 
 [Get Started :material-arrow-right:](getting-started/quickstart.md){ .md-button .md-button--primary }
 [View Examples](examples/index.md){ .md-button }

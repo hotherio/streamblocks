@@ -26,79 +26,95 @@ block: Delimiter frontmatter block {
 
 ## DelimiterPreambleSyntax
 
-The default. Metadata is inline in the opening line, compact and cheap for an LLM to emit:
+The default. Metadata is inline in the opening line, compact and cheap for an LLM to emit.
 
-```text
-!!<id>:<type>[:param1:param2:...]
-Content lines here
-!!end
-```
+=== "Wire format"
 
-The opening delimiter carries the block `id` and `block_type` (both required, alphanumeric). Optional colon-separated parameters are stored in metadata as `param_0`, `param_1`, and so on:
+    ```text
+    !!<id>:<type>[:param1:param2:...]
+    Content lines here
+    !!end
+    ```
 
-```text
-!!file123:operation:create:urgent
-Create new config file
-!!end
-```
+    The opening delimiter carries the block `id` and `block_type` (both required, alphanumeric).
 
-produces metadata `{"id": "file123", "block_type": "operation", "param_0": "create", "param_1": "urgent"}`.
+=== "Usage"
+
+    ```python
+    --8<-- "src/hother/streamblocks_examples/00_quickstart/01_hello_world.py:example"
+    ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `delimiter` | `"!!"` | Marker prefix for the opening line and the `!!end` closing line |
 
+??? note "Extra parameters in the opening line"
+
+    Optional colon-separated parameters are stored in metadata as `param_0`, `param_1`, and so on:
+
+    ```text
+    !!file123:operation:create:urgent
+    Create new config file
+    !!end
+    ```
+
+    produces metadata `{"id": "file123", "block_type": "operation", "param_0": "create", "param_1": "urgent"}`.
+
 ## DelimiterFrontmatterSyntax
 
-Delimiter markers with a YAML frontmatter section for richer metadata:
+Delimiter markers with a YAML frontmatter section for richer metadata. The YAML is parsed into your metadata model (it must include `id` and `block_type` when using `BaseMetadata`); nested YAML is supported.
 
-```text
-!!start
----
-id: block_001
-block_type: example
-custom_field: value
----
-Content lines here
-!!end
-```
+=== "Wire format"
 
-The YAML between the `---` markers is parsed into your metadata model; it must include `id` and `block_type` when using `BaseMetadata`. Nested YAML (lists, mappings) is supported.
+    ```text
+    !!start
+    ---
+    id: block_001
+    block_type: example
+    custom_field: value
+    ---
+    Content lines here
+    !!end
+    ```
+
+=== "Usage"
+
+    ```python
+    --8<-- "src/hother/streamblocks_examples/02_syntaxes/02_delimiter_frontmatter.py:setup"
+    ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `start_delimiter` | `"!!start"` | Opening marker |
 | `end_delimiter` | `"!!end"` | Closing marker |
 
-```python
---8<-- "src/hother/streamblocks_examples/02_syntaxes/02_delimiter_frontmatter.py:setup"
-```
-
 ## MarkdownFrontmatterSyntax
 
-Markdown fenced code blocks with optional YAML frontmatter, useful when the stream is rendered as Markdown anyway:
+Markdown fenced code blocks with optional YAML frontmatter, useful when the stream is rendered as Markdown anyway. When frontmatter is absent (or has no `block_type`), the info string is the fallback `block_type` and all lines become content.
 
-````text
-```[info_string]
----
-id: block_001
-block_type: example
-custom_field: value
----
-Content lines here
-```
-````
+=== "Wire format"
 
-Both the info string and the frontmatter are optional. When frontmatter is absent (or has no `block_type`), the info string is used as the fallback `block_type` and all lines become content.
+    ````text
+    ```[info_string]
+    ---
+    id: block_001
+    block_type: example
+    custom_field: value
+    ---
+    Content lines here
+    ```
+    ````
+
+=== "Usage"
+
+    ```python
+    --8<-- "src/hother/streamblocks_examples/02_syntaxes/01_markdown_frontmatter.py:setup"
+    ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `fence` | `` "```" `` | Fence string |
 | `info_string` | `None` | Restricts detection to fences with this info string; also the fallback `block_type` |
-
-```python
---8<-- "src/hother/streamblocks_examples/02_syntaxes/01_markdown_frontmatter.py:setup"
-```
 
 ## How a syntax is chosen
 
@@ -106,7 +122,7 @@ Pass either a `Syntax` enum member or a configured instance to the registry:
 
 ```python
 from hother.streamblocks import Registry, DelimiterFrontmatterSyntax
-from hother.streamblocks.syntaxes.models import Syntax
+from hother.streamblocks.syntaxes.factory import Syntax
 
 # Enum: built-in syntax with default options
 registry = Registry(syntax=Syntax.DELIMITER_FRONTMATTER)
