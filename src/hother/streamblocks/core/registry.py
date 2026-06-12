@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
+from hother.streamblocks.prompts.builder import build_block_context
+from hother.streamblocks.prompts.manager import TemplateManager
 from hother.streamblocks.syntaxes.factory import get_syntax_instance
 from hother.streamblocks.syntaxes.models import Syntax
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.models import Block, ExtractedBlock
     from hother.streamblocks.syntaxes.base import BaseSyntax
@@ -105,6 +110,7 @@ class Registry:
         self._metadata_validators: dict[BlockType, list[MetadataValidatorFunc]] = {}
         self._content_validators: dict[BlockType, list[ContentValidatorFunc]] = {}
         self._metadata_failure_mode = metadata_failure_mode
+        self._template_manager: TemplateManager | None = None
         self.logger = logger or StdlibLoggerAdapter(logging.getLogger(__name__))
 
         # Bulk register blocks if provided
@@ -116,6 +122,56 @@ class Registry:
     def syntax(self) -> BaseSyntax:
         """Get the syntax instance."""
         return self._syntax
+
+    @property
+    def registered_blocks(self) -> Mapping[str, type[Block[Any, Any]]]:
+        """Read-only view of registered block types mapped to block classes."""
+        return MappingProxyType(self._block_classes)
+
+    def to_prompt(self, *, include_examples: bool = True, template_version: str = "default") -> str:
+        """Generate an LLM system prompt documenting all registered blocks.
+
+        The prompt describes this registry's syntax format and, for each
+        registered block type, its description, metadata fields, content
+        format, and (optionally) serialized examples.
+
+        Args:
+            include_examples: Whether to render each block's examples.
+            template_version: Template version for A/B testing.
+
+        Returns:
+            The rendered system prompt.
+        """
+        blocks = [
+            build_block_context(block_class, self._syntax, include_examples=include_examples)
+            for block_class in self._block_classes.values()
+        ]
+        context: dict[str, Any] = {
+            "syntax_name": type(self._syntax).__name__,
+            "syntax_format": self._syntax.describe_format(),
+            "blocks": blocks,
+        }
+        return self._get_template_manager().render(context, template_version, mode="registry")
+
+    def register_template(self, version: str, template: str | Path, mode: str = "both") -> None:
+        """Register a custom prompt template for this registry.
+
+        Args:
+            version: Version identifier used by ``to_prompt(template_version=...)``.
+            template: Template string, or a Path to a template file.
+            mode: "registry", "single", or "both".
+        """
+        self._get_template_manager().register_template(version, template, mode)
+
+    def serialize_block(self, block: Block[Any, Any]) -> str:
+        """Serialize a block instance using this registry's syntax."""
+        return self._syntax.serialize_block(block)
+
+    def _get_template_manager(self) -> TemplateManager:
+        """Lazily create the per-registry template manager."""
+        if self._template_manager is None:
+            self._template_manager = TemplateManager()
+        return self._template_manager
 
     def register(
         self,

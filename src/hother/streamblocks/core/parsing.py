@@ -70,6 +70,7 @@ def parse_as_yaml[T: BaseContent](
         # Dynamically override the classmethod; the descriptor swap cannot be
         # expressed in the type system, so cast rather than suppress.
         cls.parse = cast("Any", classmethod(parse))
+        cls.__content_format__ = "yaml"
         return cls
 
     return decorator
@@ -123,6 +124,7 @@ def parse_as_json[T: BaseContent](
         # Dynamically override the classmethod; the descriptor swap cannot be
         # expressed in the type system, so cast rather than suppress.
         cls.parse = cast("Any", classmethod(parse))
+        cls.__content_format__ = "json"
         return cls
 
     return decorator

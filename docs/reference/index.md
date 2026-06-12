@@ -19,11 +19,19 @@ from hother.streamblocks import Registry, StreamBlockProcessor, BlockEndEvent
 
 [Registry & Models](registry-and-models.md)
 
-- `Registry`: maps block types to block classes; owns the syntax
-- `Block[TMetadata, TContent]`: user-facing generic block base
+- `Registry`: maps block types to block classes; owns the syntax. `to_prompt()`, `register_template()`, `serialize_block()`, and `registered_blocks` support prompt generation
+- `Block[TMetadata, TContent]`: user-facing generic block base; `__examples__` + `get_examples()` feed prompts
 - `ExtractedBlock`: runtime block with extraction metadata
 - `BlockCandidate`: in-flight block accumulation
 - `BaseMetadata`, `BaseContent`: base Pydantic models for block typing
+
+## Prompts
+
+[Prompts](prompts.md)
+
+- `generate_block_prompt`: build an instruction prompt for a single block type
+- `TemplateManager`: Jinja2 template management for prompt A/B versioning
+- See also `Registry.to_prompt()` and the [Generating Prompts](../guides/generate-prompts.md) guide
 
 ## Events
 

@@ -3017,6 +3017,7 @@ name = "streamblocks"
 version = "0.3.6"
 source = { editable = "." }
 dependencies = [
+    { name = "jinja2" },
     { name = "pydantic" },
     { name = "pydantic-ai" },
     { name = "pyyaml" },
@@ -3089,6 +3090,7 @@ requires-dist = [
     { name = "google-genai", marker = "extra == 'all-providers'", specifier = ">=1.38.0" },
     { name = "google-genai", marker = "extra == 'gemini'", specifier = ">=1.38.0" },
     { name = "hother-cancelable", marker = "extra == 'examples'", specifier = ">=0.1.0" },
+    { name = "jinja2", specifier = ">=3.1.0" },
     { name = "loguru", marker = "extra == 'loguru'", specifier = ">=0.7.0" },
     { name = "openai", marker = "extra == 'all-providers'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },

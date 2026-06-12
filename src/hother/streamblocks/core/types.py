@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Self
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, Self
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -78,6 +78,11 @@ class BaseContent(BaseModel):
     """
 
     raw_content: str = Field(..., description="Raw unparsed content from the block")
+
+    # Format marker set by the @parse_as_json / @parse_as_yaml decorators.
+    # Used by prompt generation to describe the expected content format without
+    # fragile source/bytecode introspection. None means "no declared format".
+    __content_format__: ClassVar[str | None] = None
 
     @classmethod
     def parse(cls, raw_text: str) -> Self:

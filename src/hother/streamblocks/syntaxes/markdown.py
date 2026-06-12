@@ -5,12 +5,14 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
+import yaml
+
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult, SectionType
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
+    from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 
 
 class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
@@ -198,3 +200,44 @@ class MarkdownFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     def validate_block(self, _block: ExtractedBlock[BaseMetadata, BaseContent]) -> bool:
         """Additional validation after parsing."""
         return True
+
+    def serialize_block(self, block: Block[BaseMetadata, BaseContent]) -> str:
+        """Serialize a block to markdown frontmatter format.
+
+        Produces the round-trip form of this syntax::
+
+            ```[info_string]
+            ---
+            <yaml metadata>
+            ---
+            <raw content>
+            ```
+
+        Args:
+            block: Block instance to serialize
+
+        Returns:
+            The block rendered in markdown frontmatter format
+        """
+        metadata_yaml = yaml.dump(block.metadata.model_dump(), default_flow_style=False, sort_keys=False)
+        opening = f"{self.fence}{self.info_string}" if self.info_string else self.fence
+        return f"{opening}\n---\n{metadata_yaml}---\n{block.content.raw_content}\n{self.fence}"
+
+    def describe_format(self) -> str:
+        """Describe the markdown frontmatter format for prompts."""
+        info_str_desc = f"{self.info_string}" if self.info_string else "[info_string]"
+        return (
+            "Markdown Frontmatter Syntax\n\n"
+            "Format:\n"
+            f"{self.fence}{info_str_desc}\n"
+            "---\n"
+            "key: value\n"
+            "---\n"
+            "content lines\n"
+            f"{self.fence}\n\n"
+            "Components:\n"
+            f"- Opening fence: {self.fence} with optional info string\n"
+            "- Metadata section: YAML frontmatter between --- delimiters\n"
+            "- Content: any text after the metadata section\n"
+            f"- Closing fence: {self.fence}"
+        )
