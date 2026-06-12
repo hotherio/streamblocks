@@ -5,12 +5,14 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+import yaml
+
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult, SectionType
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
+    from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 
 # Minimum lines required for a block (header + closing delimiter)
 _MIN_BLOCK_LINES = 2
@@ -197,6 +199,50 @@ class DelimiterPreambleSyntax(BaseSyntax):
         raw_content = "\n".join(content_lines)
         return {"raw_content": raw_content}
 
+    def serialize_block(self, block: Block[BaseMetadata, BaseContent]) -> str:
+        """Serialize a block to delimiter preamble format.
+
+        Produces the round-trip form of this syntax::
+
+            !!<id>:<type>[:<param_0>:<param_1>...]
+            <raw content>
+            !!end
+
+        Args:
+            block: Block instance to serialize
+
+        Returns:
+            The block rendered in delimiter preamble format
+        """
+        metadata = block.metadata
+        opening = f"{self.delimiter}{metadata.id}:{metadata.block_type}"
+
+        # Re-emit positional params (param_0, param_1, ...) if present
+        params: list[str] = []
+        index = 0
+        while hasattr(metadata, f"param_{index}"):
+            params.append(str(getattr(metadata, f"param_{index}")))
+            index += 1
+        if params:
+            opening += ":" + ":".join(params)
+
+        return f"{opening}\n{block.content.raw_content}\n{self.delimiter}end"
+
+    def describe_format(self) -> str:
+        """Describe the delimiter preamble format for prompts."""
+        return (
+            "Delimiter Preamble Syntax\n\n"
+            "Format:\n"
+            f"{self.delimiter}<id>:<type>[:<param1>:<param2>...]\n"
+            "content lines\n"
+            f"{self.delimiter}end\n\n"
+            "Components:\n"
+            f"- Opening line: {self.delimiter}<id>:<type> where id is unique and type identifies the block\n"
+            "- Optional parameters: additional colon-separated values after type\n"
+            "- Content: any text between the opening and closing markers\n"
+            f"- Closing line: {self.delimiter}end"
+        )
+
 
 class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     """Syntax: Delimiter markers with YAML frontmatter.
@@ -357,3 +403,42 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         """
         raw_content = "\n".join(candidate.content_lines)
         return {"raw_content": raw_content}
+
+    def serialize_block(self, block: Block[BaseMetadata, BaseContent]) -> str:
+        """Serialize a block to delimiter frontmatter format.
+
+        Produces the round-trip form of this syntax::
+
+            !!start
+            ---
+            <yaml metadata>
+            ---
+            <raw content>
+            !!end
+
+        Args:
+            block: Block instance to serialize
+
+        Returns:
+            The block rendered in delimiter frontmatter format
+        """
+        metadata_yaml = yaml.dump(block.metadata.model_dump(), default_flow_style=False, sort_keys=False)
+        return f"{self.start_delimiter}\n---\n{metadata_yaml}---\n{block.content.raw_content}\n{self.end_delimiter}"
+
+    def describe_format(self) -> str:
+        """Describe the delimiter frontmatter format for prompts."""
+        return (
+            "Delimiter Frontmatter Syntax\n\n"
+            "Format:\n"
+            f"{self.start_delimiter}\n"
+            "---\n"
+            "key: value\n"
+            "---\n"
+            "content lines\n"
+            f"{self.end_delimiter}\n\n"
+            "Components:\n"
+            f"- Opening marker: {self.start_delimiter}\n"
+            "- Metadata section: YAML frontmatter between --- delimiters\n"
+            "- Content: any text after the metadata section\n"
+            f"- Closing marker: {self.end_delimiter}"
+        )

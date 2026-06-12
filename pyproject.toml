@@ -15,6 +15,7 @@ classifiers = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "jinja2>=3.1.0",
     "pydantic-ai>=1.0.9",
     "pydantic>=2.12.4",
     "pyyaml>=6.0",
@@ -312,9 +313,15 @@ line-ending = "auto"
 ]
 "src/hother/streamblocks/core/models.py" = [
     "UP046",   # Type annotation can be modernized
+    "PLC0415", # Import not at top-level (needed to avoid circular imports with syntaxes)
 ]
 "src/hother/streamblocks/syntaxes/markdown.py" = [
     "TRY300",   # Conflicts with RET505 - allow simple return after if
+]
+"src/hother/streamblocks/prompts/manager.py" = [
+    # Prompts are plain text / markdown for LLMs, not HTML. Autoescaping would
+    # corrupt example content (e.g. quotes in JSON), so it is intentionally off.
+    "S701",
 ]
 "src/hother/streamblocks/adapters/**/*" = [
     "PLC0105",  # TypeVar contravariance naming - TChunk is clear enough

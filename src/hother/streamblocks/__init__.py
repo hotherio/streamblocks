@@ -52,6 +52,7 @@ from hother.streamblocks.core.types import (
     TextContentEvent,
     TextDeltaEvent,
 )
+from hother.streamblocks.prompts import TemplateManager, generate_block_prompt
 from hother.streamblocks.syntaxes import (
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
@@ -115,9 +116,11 @@ __all__ = [
     "StreamFinishedEvent",
     "StreamStartedEvent",
     "StreamState",
+    "TemplateManager",
     "TextContentEvent",
     "TextDeltaEvent",
     "ValidationResult",
+    "generate_block_prompt",
     "parse_as_json",
     "parse_as_yaml",
 ]

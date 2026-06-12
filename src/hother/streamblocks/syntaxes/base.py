@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from hother.streamblocks.core.types import BaseMetadata, ParseResult
 
 if TYPE_CHECKING:
-    from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
+    from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, DetectionResult
 
 # Module-level logger for debugging YAML parsing failures
@@ -295,3 +295,37 @@ class BaseSyntax(ABC):
             or failed
         """
         return None
+
+    # Serialization and documentation (used by prompt generation)
+
+    def serialize_block(self, block: Block[BaseMetadata, BaseContent]) -> str:
+        """Serialize a block instance back to this syntax's textual form.
+
+        Used by prompt generation to render examples in the exact format the
+        model is expected to produce. The shipped syntaxes override this.
+        Custom syntaxes that want example rendering in prompts should override
+        it as well.
+
+        Args:
+            block: Block instance to serialize
+
+        Returns:
+            The block rendered in this syntax's text format
+
+        Raises:
+            NotImplementedError: If the concrete syntax does not implement it
+        """
+        msg = f"{type(self).__name__} does not implement serialize_block()"
+        raise NotImplementedError(msg)
+
+    def describe_format(self) -> str:
+        """Return a human-readable description of this syntax's block format.
+
+        Used in generated prompts to teach the model the block format. The
+        default returns a minimal description; shipped syntaxes override it
+        with a concrete format specification.
+
+        Returns:
+            A description of the block format for this syntax
+        """
+        return f"{type(self).__name__}: no format description available."
