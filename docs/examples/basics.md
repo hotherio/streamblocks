@@ -37,3 +37,9 @@ Validates block metadata early, before content streams in, and shows the availab
 Chains multiple validators (metadata, content, and general block validators) on a single block type, showing how validation responsibilities compose.
 
 #! src/hother/streamblocks_examples/01_basics/06_validator_composition.py
+
+## Prompt Generation
+
+Builds an LLM system prompt from a registry with `Registry.to_prompt()` and `generate_block_prompt()` — the syntax format, block docstrings, content-format hints, and serialized examples — entirely offline. See the [Generating Prompts](../guides/generate-prompts.md) guide.
+
+#! src/hother/streamblocks_examples/01_basics/07_prompt_generation.py

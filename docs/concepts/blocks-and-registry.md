@@ -106,6 +106,10 @@ You do not have to register anything. A block whose `block_type` has no register
 
 This minimal API is handy for prototyping before you commit to typed models. See the full example in [Basics examples](../examples/basics.md).
 
+## The block round-trip
+
+Block definitions are *self-describing*: the docstring, metadata fields, content format, and `__examples__` carry everything needed to explain the block to a model. `Registry.to_prompt()` turns the registry into instructions telling the model which blocks to emit and in what format; the model streams that text back; and the **same** registry parses it into typed [`ExtractedBlock`](#block-vs-extractedblock) instances. Because both directions are driven by one set of definitions, the prompt and the parser never drift apart. See [Generating Prompts](../guides/generate-prompts.md) for the how-to.
+
 ## Next steps
 
 - [Syntaxes](syntaxes.md): the wire formats a registry can detect.
