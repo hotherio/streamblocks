@@ -5,6 +5,7 @@ This example shows how to create a custom input adapter for a proprietary
 streaming format and register it for auto-detection.
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -19,7 +20,10 @@ from hother.streamblocks import (
 )
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
 
+# --8<-- [end:imports]
 
+
+# --8<-- [start:models]
 # Custom streaming format
 class ProprietaryChunk:
     """Custom chunk format from proprietary API."""
@@ -31,6 +35,10 @@ class ProprietaryChunk:
         self.meta = meta or {}  # Metadata in 'meta'
 
 
+# --8<-- [end:models]
+
+
+# --8<-- [start:adapter]
 # Custom adapter implementing the InputProtocolAdapter protocol
 class ProprietaryInputAdapter:
     """Input adapter for proprietary streaming format."""
@@ -57,6 +65,9 @@ class ProprietaryInputAdapter:
         return None
 
 
+# --8<-- [end:adapter]
+
+
 async def proprietary_stream() -> AsyncGenerator[ProprietaryChunk]:
     """Simulate proprietary API stream."""
     chunks = [
@@ -78,6 +89,7 @@ async def main() -> None:
     print("=" * 60)
     print()
 
+    # --8<-- [start:register]
     # Register custom adapter for auto-detection
     print("Registering custom adapter...")
     InputAdapterRegistry.register_module(
@@ -85,6 +97,7 @@ async def main() -> None:
         ProprietaryInputAdapter,
     )
     print("Registered for module: mycompany.streaming.*")
+    # --8<-- [end:register]
     print()
 
     # Setup
@@ -96,6 +109,7 @@ async def main() -> None:
     print("Processing proprietary stream (auto-detecting custom adapter)...")
     print()
 
+    # --8<-- [start:example]
     async for event in processor.process_stream(proprietary_stream()):
         # Original chunks
         if isinstance(event, ProprietaryChunk):
@@ -111,6 +125,7 @@ async def main() -> None:
             print("\nBlock Extracted:")
             print(block.model_dump_json(indent=2))
             print()
+    # --8<-- [end:example]
 
     # Cleanup - remove from registry
     del InputAdapterRegistry._type_registry["mycompany.streaming"]

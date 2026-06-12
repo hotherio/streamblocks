@@ -5,6 +5,7 @@ This example shows how PydanticAI agents can transparently generate
 StreamBlocks-compatible output that is extracted in real-time.
 """
 
+# --8<-- [start:imports]
 import asyncio
 import os
 from collections.abc import AsyncIterator
@@ -14,17 +15,21 @@ from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBloc
 from hother.streamblocks.core.types import BlockEndEvent, TextContentEvent
 from hother.streamblocks_examples.blocks.agent.files import FileContent, FileOperations
 
+# --8<-- [end:imports]
+
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, BaseMetadata
 
 # Check if pydantic-ai is installed
 try:
+    # --8<-- [start:integration_imports]
     from pydantic_ai import Agent
     from pydantic_ai.models.google import GoogleModel
 
     from hother.streamblocks.integrations.pydantic_ai import AgentStreamProcessor
 
+    # --8<-- [end:integration_imports]
     pydantic_ai_available = True
 except ImportError:
     Agent = None
@@ -223,6 +228,7 @@ async def advanced_example_with_standard_agent() -> None:
         print("⚠️  PydanticAI is not available")
         return
 
+    # --8<-- [start:agent]
     # Create a standard PydanticAI agent
     model = GoogleModel("gemini-2.5-flash")
     agent = Agent(
@@ -244,7 +250,9 @@ another/file:C
 Mix explanatory text with structured blocks.
 """,
     )
+    # --8<-- [end:agent]
 
+    # --8<-- [start:setup]
     # Create StreamBlocks components
     syntax = DelimiterFrontmatterSyntax(
         start_delimiter="!!start",
@@ -253,12 +261,14 @@ Mix explanatory text with structured blocks.
     registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     processor = AgentStreamProcessor(registry)
+    # --8<-- [end:setup]
 
     prompt = "Create a README.md and setup.py for a Python package called 'example'."
 
     print("\n🔄 Standard PydanticAI Agent + StreamBlocks Processor")
     print("=" * 60)
 
+    # --8<-- [start:process]
     # Stream from agent
     async def get_agent_stream() -> AsyncIterator[str]:
         async with agent.run_stream(prompt) as result:
@@ -278,6 +288,7 @@ Mix explanatory text with structured blocks.
                 continue
             print("\n📦 BLOCK:")
             print(block.model_dump_json(indent=2))
+    # --8<-- [end:process]
 
 
 async def main() -> None:
@@ -288,10 +299,10 @@ async def main() -> None:
         print("Install with: pip install pydantic-ai")
         return
 
-    # Check for API key
-    if not os.getenv("OPENAI_API_KEY"):
-        print("\n⚠️  Please set OPENAI_API_KEY environment variable")
-        print("Or use a different model like 'anthropic:claude-3-5-sonnet-latest'")
+    # Check for API key (examples use GoogleModel)
+    if not os.getenv("GOOGLE_API_KEY") and not os.getenv("GEMINI_API_KEY"):
+        print("\n⚠️  Please set GOOGLE_API_KEY (or GEMINI_API_KEY) environment variable")
+        print("Or edit the examples to use a different model like 'openai:gpt-4o'")
         return
 
     print("StreamBlocks + PydanticAI Integration Examples")

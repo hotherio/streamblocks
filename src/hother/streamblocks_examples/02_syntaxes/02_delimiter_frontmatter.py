@@ -23,6 +23,7 @@ from hother.streamblocks.core.types import (
 from hother.streamblocks_examples.helpers.simulator import simulated_stream
 
 
+# --8<-- [start:models]
 # Custom content models for this example
 class TaskMetadata(BaseMetadata):
     """Metadata for task blocks."""
@@ -63,12 +64,14 @@ class TaskContent(BaseContent):
 
 # Create the block type
 TaskBlock = Block[TaskMetadata, TaskContent]
+# --8<-- [end:models]
 
 
 async def main() -> None:
     """Main example function."""
     print("=== DelimiterFrontmatterSyntax Example ===\n")
 
+    # --8<-- [start:setup]
     # Create delimiter frontmatter syntax for tasks
     # Using standard !!start/!!end delimiters
     task_syntax = DelimiterFrontmatterSyntax(
@@ -79,6 +82,7 @@ async def main() -> None:
     # Create type-specific registry and register block
     registry = Registry(syntax=task_syntax)
     registry.register("task", TaskBlock)
+    # --8<-- [end:setup]
 
     # Add validators
     def validate_task_priority(block: ExtractedBlock[TaskMetadata, TaskContent]) -> bool:

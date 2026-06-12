@@ -32,6 +32,7 @@ except ImportError:
     print("Or: pip install google-genai")
     sys.exit(1)
 
+# --8<-- [start:imports]
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
@@ -40,6 +41,8 @@ from hother.streamblocks import (
     TextDeltaEvent,
 )
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def get_gemini_response(prompt: str | None = None) -> AsyncIterator[Any]:
@@ -107,6 +110,7 @@ async def example_basic_manual_processing() -> None:
     chunk_count = 0
     event_count = 0
 
+    # --8<-- [start:example]
     async for chunk in response:  # type: ignore[var-annotated]
         chunk_count += 1
 
@@ -151,6 +155,7 @@ async def example_basic_manual_processing() -> None:
             print("📝 Finalize: Text delta (processing remaining text)")
         else:
             print(f"⚠️  Finalize: {event.type}")
+    # --8<-- [end:example]
 
     print()
     print(f"Processed {chunk_count} chunks → {event_count} events")

@@ -5,6 +5,7 @@ This example shows character-by-character streaming with TextDeltaEvent.
 Perfect for typewriter effects or live progress indicators.
 """
 
+# --8<-- [start:imports]
 import asyncio
 import sys
 from collections.abc import AsyncGenerator
@@ -18,6 +19,8 @@ from hother.streamblocks import (
     TextDeltaEvent,
 )
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def character_stream() -> AsyncGenerator[str]:
@@ -54,6 +57,7 @@ async def main() -> None:
     print("Streaming text in real-time:")
     print("-" * 40)
 
+    # --8<-- [start:example]
     async for event in processor.process_stream(character_stream()):
         if isinstance(event, TextDeltaEvent):
             # Print each character immediately (typewriter effect)
@@ -76,6 +80,7 @@ async def main() -> None:
                 continue
             print("\n[Block extracted:]")
             print(block.model_dump_json(indent=2))
+    # --8<-- [end:example]
 
     print("-" * 40)
     print()

@@ -1,19 +1,15 @@
-# Integration Examples
+# Integrations Examples
 
-These examples show integration with other libraries and frameworks.
+Examples showing StreamBlocks working alongside other frameworks. See also the dedicated guides for [Pydantic AI](../guides/pydantic-ai.md) and the [AG-UI protocol](../guides/agui.md).
 
-## PydanticAI
+## Pydantic AI Integration
 
-### 01_pydantic_ai_integration.py
+Requires `OPENAI_API_KEY` and the `pydantic-ai` package. A PydanticAI agent transparently generates StreamBlocks-compatible output which is extracted in real time as the agent streams.
 
-Integration with PydanticAI for structured agent responses:
+#! src/hother/streamblocks_examples/06_integrations/01_pydantic_ai_integration.py
 
-!!! note "Requires API Key"
-    Set appropriate API keys for the model you're using.
+## AG-UI Integration
 
-#! examples/06_integrations/01_pydantic_ai_integration.py
+Requires the `ag-ui` package (`pip install streamblocks[agui]`); no API key needed. Bridges StreamBlocks events to the AG-UI protocol for agent-to-frontend communication.
 
-## Next Steps
-
-- [API Reference](../reference/index.md) - Detailed API documentation
-- [Patterns](../patterns.md) - Common usage patterns
+#! src/hother/streamblocks_examples/06_integrations/02_agui_integration.py

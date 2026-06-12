@@ -16,15 +16,20 @@ import sys
 
 # Check for Gemini SDK
 try:
+    # --8<-- [start:imports]
     from google import genai
+    # --8<-- [end:imports]
 except ImportError:
     print("Error: google-genai package not installed.")
     print("Install it with: pip install streamblocks[gemini]")
     print("Or: pip install google-genai")
     sys.exit(1)
 
+# --8<-- [start:imports_streamblocks]
 from hother.streamblocks import BlockEndEvent, Registry, StreamBlockProcessor, TextDeltaEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports_streamblocks]
 
 
 async def main() -> None:
@@ -43,6 +48,7 @@ async def main() -> None:
         )
         raise ValueError(msg)
 
+    # --8<-- [start:setup]
     # Setup processor
     registry = Registry()
     registry.register("files_operations", FileOperations)
@@ -50,6 +56,7 @@ async def main() -> None:
 
     # Create Gemini client
     client = genai.Client(api_key=api_key)  # type: ignore[attr-defined]
+    # --8<-- [end:setup]
 
     # Create prompt
     prompt = """Create a simple project structure with these files:
@@ -70,6 +77,7 @@ IMPORTANT:
 """
 
     try:
+        # --8<-- [start:example]
         # Get stream from Gemini and pass directly to processor
         response = await client.aio.models.generate_content_stream(  # type: ignore[attr-defined]
             model="gemini-2.5-flash",
@@ -107,6 +115,7 @@ IMPORTANT:
                 print("\n✅ Block Extracted:")
                 print(block.model_dump_json(indent=2))
                 print()
+        # --8<-- [end:example]
 
     except ValueError as e:
         print(f"\n❌ Error: {e}")

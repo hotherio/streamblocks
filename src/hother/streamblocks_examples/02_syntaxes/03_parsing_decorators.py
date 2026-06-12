@@ -36,6 +36,7 @@ from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockEndEv
 # ============================================================================
 
 
+# --8<-- [start:yaml_permissive]
 @parse_as_yaml(strategy=ParseStrategy.PERMISSIVE)
 class ConfigContent(BaseContent):
     """Configuration content parsed from YAML.
@@ -59,6 +60,7 @@ class ConfigMetadata(BaseMetadata):
 
 # Create the block type
 ConfigBlock = Block[ConfigMetadata, ConfigContent]
+# --8<-- [end:yaml_permissive]
 
 
 async def example_1_basic_yaml_parsing() -> None:
@@ -124,6 +126,7 @@ async def example_1_basic_yaml_parsing() -> None:
 # ============================================================================
 
 
+# --8<-- [start:json_strict]
 @parse_as_json(strategy=ParseStrategy.STRICT)
 class APIResponseContent(BaseContent):
     """API response parsed from JSON.
@@ -146,6 +149,7 @@ class APIMetadata(BaseMetadata):
 
 # Create the block type
 APIBlock = Block[APIMetadata, APIResponseContent]
+# --8<-- [end:json_strict]
 
 
 async def example_2_strict_json_parsing() -> None:
@@ -250,6 +254,7 @@ async def example_2_strict_json_parsing() -> None:
 # ============================================================================
 
 
+# --8<-- [start:non_dict]
 @parse_as_yaml(strategy=ParseStrategy.PERMISSIVE, handle_non_dict=True)
 class ScalarWrapperContent(BaseContent):
     """Content that wraps scalar YAML values in {'value': ...}."""
@@ -262,6 +267,9 @@ class ScalarNoWrapContent(BaseContent):
     """Content that doesn't wrap scalar values (will fail on scalars)."""
 
     message: str | None = None
+
+
+# --8<-- [end:non_dict]
 
 
 class ScalarMetadata(BaseMetadata):

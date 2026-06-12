@@ -1,92 +1,77 @@
 # Examples
 
-Streamblocks comes with a comprehensive collection of examples organized by topic.
+Runnable examples organized as a progressive learning path, from minimal quickstarts to full provider demos. All examples live in [`src/hother/streamblocks_examples/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples) and are rendered in full on the pages below.
 
-## Running Examples
+## Learning path
+
+| Category | Description |
+|----------|-------------|
+| [00_quickstart](quickstart.md) | Ultra-minimal examples (~40-50 lines); start here |
+| [01_basics](basics.md) | Core concepts: processing, errors, structured output, validators |
+| [02_syntaxes](syntaxes.md) | Block syntax formats: markdown, delimiter, decorators, custom syntaxes |
+| [03_adapters](adapters.md) | Input/output adapters for provider streams and event handling |
+| [04_blocks](blocks.md) | Concrete block types: patches, tool calls, memory, visualizations |
+| 05_logging | Logging integration, covered in the [Logging guide](../guides/logging.md) |
+| [06_integrations](integrations.md) | Framework integrations: Pydantic AI, AG-UI |
+| [07_providers](providers.md) | End-to-end AI provider demos (Gemini) |
+| 08_ui | Interactive Textual TUI examples; run locally (see [Providers](providers.md#interactive-ui-examples-08_ui)) |
+| 09_advanced | Performance tuning, covered in the [Performance guide](../guides/performance.md) |
+
+The repository also ships supporting packages used throughout the examples:
+
+- [`blocks/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/blocks): a reusable library of block definitions (file operations, patches, tool calls, memory, visualizations, interactive blocks).
+- [`helpers/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/helpers): stream simulators and event handlers.
+- [`tools/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/tools): tool implementations used by agent-style demos.
+
+## Running examples
+
+Run any example directly:
 
 ```bash
-# Run all examples (skip API-dependent ones)
-uv run python examples/run_examples.py --skip-api
-
-# Run specific category
-uv run python examples/run_examples.py --category 00_basics
-
-# Dry run to see what would be executed
-uv run python examples/run_examples.py --dry-run
+uv run python src/hother/streamblocks_examples/00_quickstart/01_hello_world.py
 ```
 
-## Example Categories
+### Example runner
 
-### [00_basics](basic.md) - Getting Started
+A runner script executes all examples with filtering and reporting:
 
-Foundational examples covering core concepts:
+```bash
+uv run python -m hother.streamblocks_examples.run_examples [OPTIONS]
+```
 
-- Basic usage and core concepts
-- Minimal API examples
-- Error handling patterns
-- Structured output
+| Flag | Description |
+|------|-------------|
+| `--category <name>` | Run only examples from a specific category (e.g. `03_adapters`) |
+| `--skip-api` | Skip examples that require API keys |
+| `--include-ui` | Include TUI examples (they will likely fail without interaction) |
+| `--dry-run` | Show what would be executed without running |
+| `--parallel` | Run examples in parallel (faster but harder to debug) |
+| `--timeout <seconds>` | Timeout per example (default: 30) |
+| `--verbose`, `-v` | Show stdout/stderr for all examples, not just failures |
+| `--output <text\|json>` | Output format: colored text (default) or machine-readable JSON |
 
-### [01_syntaxes](syntaxes.md) - Syntax Formats
+A common invocation that needs no API keys:
 
-Different block syntax formats:
+```bash
+uv run python -m hother.streamblocks_examples.run_examples --skip-api
+```
 
-- Markdown frontmatter
-- Delimiter frontmatter
-- Parsing decorators
+## API keys
 
-### [02_adapters](adapters.md) - Stream Adapters
+Most examples run offline against simulated streams. Provider-backed examples need one of the following environment variables:
 
-Working with different AI providers:
+| Provider | Environment variable | Where to get a key |
+|----------|---------------------|--------------------|
+| Google Gemini | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | <https://aistudio.google.com/apikey> |
+| OpenAI | `OPENAI_API_KEY` | <https://platform.openai.com/api-keys> |
+| Anthropic | `ANTHROPIC_API_KEY` | <https://console.anthropic.com/settings/keys> |
 
-- Identity adapter (plain text)
-- Gemini adapter
-- OpenAI adapter
-- Anthropic adapter
-- Custom adapters
+```bash
+export GEMINI_API_KEY="your-key-here"  # pragma: allowlist secret
+```
 
-### [03_content](../patterns.md) - Content Processing
+Each example page notes which keys it requires.
 
-Content manipulation and processing:
+## Logging and performance examples
 
-- Patch content operations
-
-### [04_logging](../advanced.md#logging-integration) - Logging
-
-Different logging approaches:
-
-- stdlib logging
-- structlog integration
-- Custom loggers
-
-### [05_integrations](integrations.md) - Framework Integration
-
-Integration with other libraries:
-
-- PydanticAI integration
-
-### [06_providers](../advanced.md#stream-adapters) - AI Providers
-
-Complete examples with AI providers:
-
-- Gemini demos
-- Multi-call examples
-
-### [07_ui](../advanced.md) - User Interface
-
-Building interactive applications:
-
-- Interactive blocks (CLI)
-- Textual TUI demo
-
-## Learning Path
-
-For the best learning experience:
-
-1. Start with **00_basics** to understand core concepts
-2. Explore **01_syntaxes** for different block formats
-3. Learn **02_adapters** for provider integration
-4. See **05_integrations** for framework usage
-
-## API Keys
-
-Some examples require API keys. See [API Keys](../installation.md) for setup instructions.
+The `05_logging` and `09_advanced` examples are not duplicated here; they are embedded in their respective guides: see the [Logging guide](../guides/logging.md) and the [Performance guide](../guides/performance.md).

@@ -6,6 +6,7 @@ with StreamBlocks. Any object with the required methods (debug, info,
 warning, error, exception) can be used as a logger.
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncIterator
 from textwrap import dedent
@@ -14,6 +15,8 @@ from typing import Any
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -35,6 +38,7 @@ async def example_stream() -> AsyncIterator[str]:
         await asyncio.sleep(0.01)
 
 
+# --8<-- [start:logger]
 class CustomLogger:
     """Custom logger that implements the Logger protocol.
 
@@ -67,10 +71,14 @@ class CustomLogger:
         print(f"[{self.prefix} EXCEPTION] {msg} {kwargs}")
 
 
+# --8<-- [end:logger]
+
+
 async def main() -> None:
     """Use a custom logger implementation."""
     print("\n=== Custom Logger ===")
 
+    # --8<-- [start:example]
     logger = CustomLogger(prefix="MY_APP")
 
     syntax = DelimiterPreambleSyntax()
@@ -88,6 +96,7 @@ async def main() -> None:
             if block is not None:
                 print("✓ Extracted block:")
                 print(block.model_dump_json(indent=2))
+    # --8<-- [end:example]
 
 
 if __name__ == "__main__":

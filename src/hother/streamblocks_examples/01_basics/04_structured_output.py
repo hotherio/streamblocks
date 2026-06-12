@@ -13,7 +13,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from hother.streamblocks import Registry, StreamBlockProcessor
+from hother.streamblocks import DelimiterFrontmatterSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
     BlockEndEvent,
@@ -29,6 +29,7 @@ from hother.streamblocks_examples.helpers.simulator import simulated_stream
 # ============================================================================
 
 
+# --8<-- [start:schema]
 class PersonSchema(BaseModel):
     """Simple person data schema."""
 
@@ -38,8 +39,12 @@ class PersonSchema(BaseModel):
     city: str
 
 
+# --8<-- [end:schema]
+
+
 async def example_1_basic_person() -> None:
     """Basic example with a simple person schema."""
+    # --8<-- [start:factory]
     # Create the specialized block type
     PersonBlock = create_structured_output_block(  # noqa: N806
         schema_model=PersonSchema,
@@ -50,11 +55,12 @@ async def example_1_basic_person() -> None:
 
     # Create syntax and registry
     # The syntax will extract metadata and content classes from the block automatically
-    registry = Registry()
+    registry = Registry(syntax=DelimiterFrontmatterSyntax())
     registry.register("person", PersonBlock)
 
     # Create processor
     processor = StreamBlockProcessor(registry)
+    # --8<-- [end:factory]
 
     # Example text with person data
     text = dedent("""
@@ -79,6 +85,7 @@ async def example_1_basic_person() -> None:
         That's the profile data.
     """)
 
+    # --8<-- [start:process]
     # Process the stream
     async for event in processor.process_stream(simulated_stream(text)):
         if isinstance(event, BlockEndEvent):
@@ -91,6 +98,7 @@ async def example_1_basic_person() -> None:
         elif isinstance(event, TextContentEvent):
             if event.content.strip():
                 print(f"[TEXT] {event.content.strip()}")
+    # --8<-- [end:process]
 
 
 # ============================================================================
@@ -129,7 +137,7 @@ async def example_2_task_list() -> None:
     )
 
     # Setup
-    registry = Registry()
+    registry = Registry(syntax=DelimiterFrontmatterSyntax())
     registry.register("task", TaskBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -248,7 +256,7 @@ async def example_3_nested_schema() -> None:
     )
 
     # Setup
-    registry = Registry()
+    registry = Registry(syntax=DelimiterFrontmatterSyntax())
     registry.register("detailed_person", DetailedPersonBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -313,6 +321,7 @@ class ConfigSchema(BaseModel):
 async def example_4_yaml_format() -> None:
     """Example using YAML format instead of JSON."""
 
+    # --8<-- [start:yaml_factory]
     # Create the block with YAML parsing
     ConfigBlock = create_structured_output_block(  # noqa: N806
         schema_model=ConfigSchema,
@@ -320,9 +329,10 @@ async def example_4_yaml_format() -> None:
         format="yaml",  # Using YAML!
         strict=True,
     )
+    # --8<-- [end:yaml_factory]
 
     # Setup
-    registry = Registry()
+    registry = Registry(syntax=DelimiterFrontmatterSyntax())
     registry.register("config", ConfigBlock)
     processor = StreamBlockProcessor(registry)
 
@@ -394,7 +404,7 @@ async def example_5_llm_simulation() -> None:
     )
 
     # Setup
-    registry = Registry()
+    registry = Registry(syntax=DelimiterFrontmatterSyntax())
     registry.register("analysis", AnalysisBlock)
     processor = StreamBlockProcessor(registry)
 

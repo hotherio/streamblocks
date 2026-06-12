@@ -1,105 +1,105 @@
-# Adapter Examples
+# Adapters Examples
 
-These examples demonstrate stream adapters for different AI providers.
+Adapters extract text from provider-specific stream chunks (Gemini, OpenAI, Anthropic, or your own format) and shape what events the processor emits. See the [Adapters concept page](../concepts/adapters.md) for background. Most examples here run offline; the ones hitting real provider APIs are flagged with the required key.
 
-## Plain Text
+## Identity Adapter (Plain Text)
 
-### 01_identity_adapter_plain_text.py
+The default behavior: plain text streams need no adapter at all; chunks pass straight through to block detection.
 
-Processing plain text streams without adaptation:
+#! src/hother/streamblocks_examples/03_adapters/01_identity_adapter_plain_text.py
 
-#! examples/03_adapters/01_identity_adapter_plain_text.py
+## Gemini Auto-Detect
 
-## Provider Adapters
+Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). StreamBlocks automatically detects Gemini chunks and extracts their text; no explicit adapter configuration needed.
 
-### 02_gemini_auto_detect.py
+#! src/hother/streamblocks_examples/03_adapters/02_gemini_auto_detect.py
 
-Gemini with automatic adapter detection:
+## OpenAI Explicit Adapter
 
-!!! note "Requires API Key"
-    Set `GEMINI_API_KEY` environment variable.
+Requires `OPENAI_API_KEY`. Configures an explicit adapter for OpenAI streams and shows how to access provider fields like `finish_reason` from the original chunks.
 
-#! examples/03_adapters/02_gemini_auto_detect.py
+#! src/hother/streamblocks_examples/03_adapters/03_openai_explicit_adapter.py
 
-### 03_openai_explicit_adapter.py
+## Anthropic Adapter
 
-OpenAI with explicit adapter configuration:
+Requires `ANTHROPIC_API_KEY`. Handles Anthropic's event-based streaming format, where different event types (`content_block_delta`, `message_stop`, ...) are preserved alongside extraction.
 
-!!! note "Requires API Key"
-    Set `OPENAI_API_KEY` environment variable.
+#! src/hother/streamblocks_examples/03_adapters/04_anthropic_adapter.py
 
-#! examples/03_adapters/03_openai_explicit_adapter.py
+## Mixed Event Stream
 
-### 04_anthropic_adapter.py
+Handles a stream containing both original provider chunks and StreamBlocks events, with `isinstance`-based type-checking patterns to route each kind.
 
-Anthropic event stream handling:
+#! src/hother/streamblocks_examples/03_adapters/05_mixed_event_stream.py
 
-!!! note "Requires API Key"
-    Set `ANTHROPIC_API_KEY` environment variable.
+## Text Delta Streaming
 
-#! examples/03_adapters/04_anthropic_adapter.py
+Character-by-character streaming with `TextDeltaEvent`, useful for typewriter effects and live progress indicators.
 
-## Event Handling
+#! src/hother/streamblocks_examples/03_adapters/06_text_delta_streaming.py
 
-### 05_mixed_event_stream.py
+## Block Opened Event
 
-Working with mixed event streams:
+Uses `BlockOpenedEvent` to prepare UI elements or resources before any block content arrives, the earliest signal that a block is starting.
 
-#! examples/03_adapters/05_mixed_event_stream.py
+#! src/hother/streamblocks_examples/03_adapters/07_block_opened_event.py
 
-### 06_text_delta_streaming.py
+## Configuration Flags
 
-Real-time text delta events:
+A tour of `ProcessorConfig` options, `emit_original_events`, `emit_text_deltas`, and `auto_detect_adapter`, and how each changes the emitted event stream.
 
-#! examples/03_adapters/06_text_delta_streaming.py
+#! src/hother/streamblocks_examples/03_adapters/08_configuration_flags.py
 
-### 07_block_opened_event.py
+## Custom Adapter
 
-Detecting block opening:
+Creates a custom input adapter for a proprietary streaming format and registers it for auto-detection, so downstream code never sees the raw chunks.
 
-#! examples/03_adapters/07_block_opened_event.py
+#! src/hother/streamblocks_examples/03_adapters/09_custom_adapter.py
 
-## Configuration
+## Callable Adapter
 
-### 08_configuration_flags.py
+A simple inline input adapter class for quick custom extraction, handy when a full adapter implementation would be overkill.
 
-Processor configuration options:
+#! src/hother/streamblocks_examples/03_adapters/10_callable_adapter.py
 
-#! examples/03_adapters/08_configuration_flags.py
+## Attribute Adapter (Generic)
 
-## Custom Adapters
+Uses `AttributeInputAdapter` to handle any object exposing a text-like attribute, without writing adapter code at all.
 
-### 09_custom_adapter.py
+#! src/hother/streamblocks_examples/03_adapters/11_attribute_adapter_generic.py
 
-Creating custom adapters:
+## Disable Original Events
 
-#! examples/03_adapters/09_custom_adapter.py
+Disables original event passthrough for a lightweight, extraction-only event stream with minimal overhead.
 
-### 10_callable_adapter.py
+#! src/hother/streamblocks_examples/03_adapters/12_disable_original_events.py
 
-Using callable adapters:
+## Manual Chunk Processing
 
-#! examples/03_adapters/10_callable_adapter.py
+Requires `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). Processes chunks manually with `process_chunk()` instead of `process_stream()`, giving fine-grained control for custom buffering, multiple sources, or batch pipelines.
 
-### 11_attribute_adapter_generic.py
+#! src/hother/streamblocks_examples/03_adapters/13_manual_chunk_processing.py
 
-Generic attribute adapters:
+## Section Delta Events
 
-#! examples/03_adapters/11_attribute_adapter_generic.py
+Uses the section-specific delta events (`BlockHeaderDeltaEvent`, `BlockMetadataDeltaEvent`, `BlockContentDeltaEvent`) for type-safe handling of each block section as it streams.
 
-## Advanced
+#! src/hother/streamblocks_examples/03_adapters/14_section_delta_events.py
 
-### 12_disable_original_events.py
+## Section End Events
 
-Controlling event emission:
+Reacts to `BlockMetadataEndEvent` and `BlockContentEndEvent` to process completed sections early, before the block itself finishes, enabling early validation and resource release.
 
-#! examples/03_adapters/12_disable_original_events.py
+#! src/hother/streamblocks_examples/03_adapters/15_section_end_events.py
 
-### 13_manual_chunk_processing.py
+## Bidirectional Protocol
 
-Manual chunk processing:
+Combines input and output adapters in a `ProtocolStreamProcessor` for bidirectional protocol processing, with `EventCategory`-based filtering of what gets emitted.
 
-!!! note "Requires API Key"
-    Set `GEMINI_API_KEY` environment variable.
+#! src/hother/streamblocks_examples/03_adapters/16_bidirectional_protocol.py
 
-#! examples/03_adapters/13_manual_chunk_processing.py
+## Custom Output Adapter
+
+Writes a custom output adapter that converts StreamBlocks events into a simplified JSON event format, the pattern to follow when feeding events to a frontend or message bus.
+
+#! src/hother/streamblocks_examples/03_adapters/17_custom_output_adapter.py

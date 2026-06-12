@@ -7,6 +7,7 @@ This example demonstrates all processor configuration options using ProcessorCon
 - auto_detect_adapter
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncGenerator
 
@@ -20,6 +21,8 @@ from hother.streamblocks import (
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks.extensions.gemini import GeminiInputAdapter
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 # Mock Gemini chunk
@@ -81,6 +84,7 @@ async def main() -> None:
     print("Example 08: Configuration Options")
     print("=" * 60)
 
+    # --8<-- [start:example]
     # Default configuration
     await demo_config(
         "Default (All Enabled)",
@@ -131,6 +135,7 @@ async def main() -> None:
             auto_detect_adapter=True,
         ),
     )
+    # --8<-- [end:example]
 
     print("\n" + "=" * 60)
     print("Configuration Summary:")

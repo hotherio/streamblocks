@@ -7,6 +7,7 @@ with StreamBlocks. Structlog is an optional dependency.
 Install with: uv pip install structlog
 """
 
+# --8<-- [start:imports]
 import asyncio
 import logging
 from collections.abc import AsyncIterator
@@ -15,6 +16,8 @@ from textwrap import dedent
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.types import BlockEndEvent
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def example_stream() -> AsyncIterator[str]:
@@ -47,6 +50,7 @@ async def main() -> None:
         print("   Skipping this example.")
         return
 
+    # --8<-- [start:example]
     # Configure structlog
     structlog.configure(
         processors=[
@@ -79,6 +83,7 @@ async def main() -> None:
             if block is not None:
                 print("✓ Extracted block:")
                 print(block.model_dump_json(indent=2))
+    # --8<-- [end:example]
 
 
 if __name__ == "__main__":

@@ -1,237 +1,26 @@
-# Provider Examples
+# Providers Examples
 
-Examples for working with different LLM providers.
+End-to-end demos against real AI providers. Both examples require a Gemini key: set `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) and install the extra with `pip install streamblocks[gemini]`. For adapter-level provider examples (OpenAI, Anthropic), see the [Adapters examples](adapters.md) and the [providers guide](../guides/providers.md).
 
-## Google Gemini
+## Gemini Simple Demo
 
-### Basic Usage
+Requires `GEMINI_API_KEY`. A simple end-to-end demo: one delimiter-frontmatter syntax for all block types, with Gemini generating blocks that are extracted live from the response stream.
 
-```python
-import asyncio
-import google.generativeai as genai
-from streamblocks import StreamBlockProcessor, BlockRegistry, Syntax, EventType
+#! src/hother/streamblocks_examples/07_providers/01_gemini_simple_demo.py
 
-async def gemini_example():
-    genai.configure(api_key="your-api-key")  # pragma: allowlist secret  # pragma: allowlist secret
-    model = genai.GenerativeModel("gemini-pro")
+## Gemini Architect
 
-    prompt = """
-    Create a task list:
+Requires `GEMINI_API_KEY`. An AI software architect that mixes multiple block types in a single response, file operations, patches, tool calls, memory, and visualizations, showing how a realistic multi-block agent protocol comes together.
 
-    !!task01:task
-    Review code changes
-    !!end
+#! src/hother/streamblocks_examples/07_providers/02_gemini_architect.py
 
-    !!task02:task
-    Update documentation
-    !!end
-    """
+## Interactive UI examples (08_ui)
 
-    response = model.generate_content(prompt, stream=True)
+The `08_ui` category contains interactive examples that need a terminal to run, so they are not rendered here; run them locally instead:
 
-    processor = StreamBlockProcessor(
-        registry=BlockRegistry(),
-        syntax=Syntax.DELIMITER_PREAMBLE,
-        input_adapter="auto",
-    )
+- [`01_interactive_blocks.py`](https://github.com/hotherio/streamblocks/blob/main/src/hother/streamblocks_examples/08_ui/01_interactive_blocks.py): demonstrates all interactive block types (choices, confirmations, forms) with CLI output.
+- [`02_interactive_ui_demo.py`](https://github.com/hotherio/streamblocks/blob/main/src/hother/streamblocks_examples/08_ui/02_interactive_ui_demo.py): a full [Textual](https://textual.textualize.io/) TUI that renders streaming blocks and lets you respond to them interactively.
 
-    async for event in processor.process_stream(response):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            print(f"Task: {event.block.content.raw_content}")
-
-asyncio.run(gemini_example())
+```bash
+uv run python src/hother/streamblocks_examples/08_ui/02_interactive_ui_demo.py
 ```
-
-### With Explicit Adapter
-
-```python
-from streamblocks.ext.gemini import GeminiInputAdapter
-
-processor = StreamBlockProcessor(
-    registry=BlockRegistry(),
-    syntax=Syntax.DELIMITER_PREAMBLE,
-    input_adapter=GeminiInputAdapter(),
-)
-```
-
-## OpenAI
-
-### Basic Usage
-
-```python
-import asyncio
-from openai import OpenAI
-from streamblocks import StreamBlockProcessor, BlockRegistry, Syntax, EventType
-from streamblocks.ext.openai import OpenAIInputAdapter
-
-async def openai_example():
-    client = OpenAI(api_key="your-api-key")  # pragma: allowlist secret
-
-    prompt = """
-    Create a task list using:
-    !!id:task
-    description
-    !!end
-    """
-
-    stream = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        stream=True,
-    )
-
-    processor = StreamBlockProcessor(
-        registry=BlockRegistry(),
-        syntax=Syntax.DELIMITER_PREAMBLE,
-        input_adapter=OpenAIInputAdapter(),
-    )
-
-    async for event in processor.process_stream(stream):
-        if event.type == EventType.BLOCK_EXTRACTED:
-            print(f"Task: {event.block.content.raw_content}")
-
-asyncio.run(openai_example())
-```
-
-### Streaming Text Display
-
-```python
-processor = StreamBlockProcessor(
-    registry=BlockRegistry(),
-    syntax=Syntax.DELIMITER_PREAMBLE,
-    input_adapter=OpenAIInputAdapter(),
-    emit_text_deltas=True,
-)
-
-async for event in processor.process_stream(stream):
-    match event.type:
-        case EventType.TEXT_DELTA:
-            print(event.text, end="", flush=True)
-        case EventType.BLOCK_EXTRACTED:
-            print(f"\n[Block: {event.block.metadata.id}]")
-```
-
-## Anthropic
-
-### Basic Usage
-
-```python
-import asyncio
-import anthropic
-from streamblocks import StreamBlockProcessor, BlockRegistry, Syntax, EventType
-from streamblocks.ext.anthropic import AnthropicInputAdapter
-
-async def anthropic_example():
-    client = anthropic.Anthropic(api_key="your-api-key")  # pragma: allowlist secret
-
-    prompt = """
-    Create a task list using:
-    !!id:task
-    description
-    !!end
-    """
-
-    processor = StreamBlockProcessor(
-        registry=BlockRegistry(),
-        syntax=Syntax.DELIMITER_PREAMBLE,
-        input_adapter=AnthropicInputAdapter(),
-    )
-
-    with client.messages.stream(
-        model="claude-3-opus",
-        max_tokens=1024,
-        messages=[{"role": "user", "content": prompt}],
-    ) as stream:
-        async for event in processor.process_stream(stream):
-            if event.type == EventType.BLOCK_EXTRACTED:
-                print(f"Task: {event.block.content.raw_content}")
-
-asyncio.run(anthropic_example())
-```
-
-## Plain Text Streams
-
-### Identity Adapter
-
-For plain text without LLM-specific formatting:
-
-```python
-from streamblocks.adapters import IdentityAdapter
-
-async def plain_text_stream():
-    yield "!!task01:task\n"
-    yield "Do something\n"
-    yield "!!end\n"
-
-processor = StreamBlockProcessor(
-    registry=BlockRegistry(),
-    syntax=Syntax.DELIMITER_PREAMBLE,
-    input_adapter=IdentityAdapter(),
-)
-
-async for event in processor.process_stream(plain_text_stream()):
-    if event.type == EventType.BLOCK_EXTRACTED:
-        print(event.block)
-```
-
-### No Adapter
-
-Strings work directly:
-
-```python
-async def string_stream():
-    yield "!!task01:task\nDo something\n!!end\n"
-
-async for event in processor.process_stream(string_stream()):
-    if event.type == EventType.BLOCK_EXTRACTED:
-        print(event.block)
-```
-
-## Auto-Detection
-
-Let Streamblocks detect the provider:
-
-```python
-processor = StreamBlockProcessor(
-    registry=BlockRegistry(),
-    syntax=Syntax.DELIMITER_PREAMBLE,
-    input_adapter="auto",  # Detects from first event
-)
-
-# Works with any supported provider
-async for event in processor.process_stream(any_stream):
-    handle_event(event)
-```
-
-## Error Handling
-
-### Provider Errors
-
-```python
-import google.api_core.exceptions
-
-try:
-    async for event in processor.process_stream(gemini_stream):
-        handle_event(event)
-except google.api_core.exceptions.ResourceExhausted:
-    print("Rate limit exceeded")
-    await asyncio.sleep(60)
-except google.api_core.exceptions.InvalidArgument as e:
-    print(f"Invalid request: {e}")
-```
-
-### Block Rejections
-
-```python
-async for event in processor.process_stream(stream):
-    if event.type == EventType.BLOCK_REJECTED:
-        print(f"Block rejected: {event.rejection.reason}")
-    elif event.type == EventType.BLOCK_EXTRACTED:
-        print(f"Block extracted: {event.block.metadata.id}")
-```
-
-## Next Steps
-
-- [Basic Examples](basic.md) - Core concepts
-- [Adapter Examples](adapters.md) - Adapter details
-- [Integration Examples](integrations.md) - Framework usage

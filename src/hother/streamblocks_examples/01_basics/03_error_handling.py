@@ -27,6 +27,7 @@ async def main() -> None:
     # Suppress library logging to stderr (we handle errors programmatically)
     logging.getLogger("hother.streamblocks").setLevel(logging.CRITICAL)
 
+    # --8<-- [start:setup]
     # Setup registry with basic syntax - no custom block types needed
     registry = Registry(
         syntax=Syntax.DELIMITER_FRONTMATTER,
@@ -34,6 +35,7 @@ async def main() -> None:
 
     # Create processor
     processor = StreamBlockProcessor(registry)
+    # --8<-- [end:setup]
 
     # Test stream with various error scenarios
     test_stream = dedent("""
@@ -77,6 +79,7 @@ async def main() -> None:
     extracted_blocks: list[ExtractedBlock[BaseMetadata, BaseContent]] = []
     rejected_blocks: list[BlockErrorEvent[BaseMetadata, BaseContent]] = []
 
+    # --8<-- [start:handling]
     async for event in processor.process_stream(simulated_stream(test_stream)):
         if isinstance(event, BlockEndEvent):
             block = event.get_block()
@@ -126,6 +129,7 @@ async def main() -> None:
             # Show block_id if available
             if event.block_id:
                 print(f"   Block ID: {event.block_id}")
+        # --8<-- [end:handling]
 
         elif isinstance(event, TextContentEvent):
             # Normal text outside blocks

@@ -96,9 +96,11 @@ class ExampleRunner:
             # Skip __init__.py, this script, and helper modules
             if path.stem.startswith("_") or path.name == "run_examples.py":
                 continue
-            # Skip helper and tools directories
+            # Skip helper and tools directories.
+            # `agent` is excluded until the package is complete: its committed modules
+            # import sibling modules (events, executor, ...) that are not committed yet.
             rel_path = path.relative_to(self.examples_dir)
-            if rel_path.parts[0] in ("helpers", "tools", "blocks"):
+            if rel_path.parts[0] in ("helpers", "tools", "blocks", "agent"):
                 continue
 
             # Determine category from folder structure

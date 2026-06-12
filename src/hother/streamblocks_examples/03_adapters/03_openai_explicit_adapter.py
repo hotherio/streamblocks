@@ -22,15 +22,18 @@ except ImportError:
     print("Or: pip install openai")
     sys.exit(1)
 
+# --8<-- [start:imports]
 from hother.streamblocks import (
     BlockEndEvent,
     DelimiterPreambleSyntax,
-    OpenAIAdapter,
     Registry,
     StreamBlockProcessor,
     TextDeltaEvent,
 )
+from hother.streamblocks.extensions.openai import OpenAIInputAdapter
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def main() -> None:
@@ -46,15 +49,17 @@ async def main() -> None:
         msg = "Please set OPENAI_API_KEY environment variable.\nGet your key at: https://platform.openai.com/api-keys"
         raise ValueError(msg)
 
+    # --8<-- [start:setup]
     # Setup processor with explicit adapter
     syntax = DelimiterPreambleSyntax()
     registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
-    adapter = OpenAIAdapter()
+    adapter = OpenAIInputAdapter()
 
     # Create OpenAI client
     client = AsyncOpenAI(api_key=api_key)
+    # --8<-- [end:setup]
 
     # Create prompt
     prompt = """Create files for a simple app using this EXACT format (DO NOT use markdown code fences):
@@ -74,6 +79,7 @@ IMPORTANT:
     print()
 
     try:
+        # --8<-- [start:example]
         # Get stream from OpenAI and pass directly to processor with explicit adapter
         stream = await client.chat.completions.create(
             model="gpt-5-nano-2025-08-07",
@@ -110,6 +116,7 @@ IMPORTANT:
                 print("\n✅ Block Extracted:")
                 print(block.model_dump_json(indent=2))
                 print()
+        # --8<-- [end:example]
 
     except ValueError as e:
         print(f"\n❌ Error: {e}")

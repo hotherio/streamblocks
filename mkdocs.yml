@@ -2,53 +2,51 @@ site_name: Streamblocks
 repo_url: https://github.com/hotherio/streamblocks
 repo_name: hotherio/streamblocks
 edit_uri: ""
-dev_addr: 0.0.0.0:1234
+dev_addr: 127.0.0.1:7227
 site_dir: "static/docs"
 nav:
-  - Streamblocks: index.md
-  - Installation: installation.md
-  - Getting Started: getting_started.md
-  - Documentation:
-    - Basics: basics.md
-    - Stream Processing: processing.md
-    - Syntaxes: syntaxes.md
-    - Adapters: adapters.md
-    - Block Types: blocks.md
-    - Validation: validation.md
-    - Events: events.md
-    - Error Handling: errors.md
-    - Common Patterns: patterns.md
-    - Performance: performance.md
-  - Architecture:
-    - Overview: architecture/index.md
-    - Extension System: architecture/extensions.md
-    - State Machine: architecture/state-machine.md
-    - Adapter Protocol: architecture/adapters.md
+  - StreamBlocks: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - Quickstart: getting-started/quickstart.md
+    - Your First Custom Block: getting-started/first-custom-block.md
+  - Concepts:
+    - concepts/index.md
+    - Blocks & Registry: concepts/blocks-and-registry.md
+    - Events: concepts/events.md
+    - Syntaxes: concepts/syntaxes.md
+    - Adapters: concepts/adapters.md
+  - Guides:
+    - guides/index.md
+    - Defining Custom Blocks: guides/define-custom-blocks.md
+    - Validation: guides/validation.md
+    - Error Handling: guides/error-handling.md
+    - OpenAI, Anthropic & Gemini: guides/providers.md
+    - AG-UI Protocol: guides/agui.md
+    - Pydantic AI: guides/pydantic-ai.md
+    - Logging: guides/logging.md
+    - Performance Tuning: guides/performance.md
   - Examples:
-    - Setup: examples/setup.md
-    - Overview: examples/index.md
-    - Basic Patterns: examples/basic.md
+    - examples/index.md
+    - Quickstart: examples/quickstart.md
+    - Basics: examples/basics.md
     - Syntaxes: examples/syntaxes.md
     - Adapters: examples/adapters.md
-    - Provider Examples: examples/providers.md
+    - Blocks: examples/blocks.md
     - Integrations: examples/integrations.md
-  - Integrations:
-    - Overview: integrations/index.md
-    - PydanticAI: integrations/pydantic_ai.md
-    - AG-UI Protocol: integrations/agui.md
+    - Providers: examples/providers.md
   - Reference:
-    - Overview: reference/index.md
-    - Core: reference/core.md
+    - reference/index.md
+    - Processors: reference/processors.md
+    - Registry & Models: reference/registry-and-models.md
+    - Events: reference/events.md
     - Syntaxes: reference/syntaxes.md
     - Adapters: reference/adapters.md
-    - Blocks: reference/blocks.md
-    - Events: reference/events.md
+    - Parsing & Validation: reference/parsing-and-validation.md
     - Extensions: reference/extensions.md
-  - Help:
-    - Troubleshooting: troubleshooting.md
-    - FAQ: faq.md
-    - Community: community.md
-    - Contributing: contributing.md
+    - Integrations: reference/integrations.md
+  - Contributing: contributing.md
 theme:
   name: material
   language: en
@@ -108,8 +106,9 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets:
-      base_path: ['.', 'examples']
+      base_path: ['.']
       check_paths: true
+      dedent_subsections: true
   - pymdownx.critic
   - pymdownx.caret
   - pymdownx.keys
@@ -121,11 +120,7 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.arithmatex:
@@ -140,8 +135,6 @@ extra_javascript:
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-  - javascripts/mermaid.js
-  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
 extra:
   version:
     provider: mike
@@ -163,6 +156,39 @@ plugins:
       lang: en
   - autorefs
   - glightbox
+  - d2:
+      layout: elk
+      theme: 0
+      dark_theme: 200
+      pad: 32
+  - redirects:
+      redirect_maps:
+        getting_started.md: getting-started/quickstart.md
+        installation.md: getting-started/installation.md
+        basics.md: concepts/index.md
+        processing.md: concepts/index.md
+        syntaxes.md: concepts/syntaxes.md
+        adapters.md: concepts/adapters.md
+        events.md: concepts/events.md
+        blocks.md: guides/define-custom-blocks.md
+        validation.md: guides/validation.md
+        errors.md: guides/error-handling.md
+        patterns.md: guides/index.md
+        performance.md: guides/performance.md
+        troubleshooting.md: guides/index.md
+        faq.md: index.md
+        community.md: index.md
+        architecture/index.md: concepts/index.md
+        architecture/extensions.md: concepts/adapters.md
+        architecture/state-machine.md: concepts/index.md
+        architecture/adapters.md: concepts/adapters.md
+        integrations/index.md: guides/index.md
+        integrations/pydantic_ai.md: guides/pydantic-ai.md
+        integrations/agui.md: guides/agui.md
+        examples/basic.md: examples/basics.md
+        examples/setup.md: examples/index.md
+        reference/core.md: reference/processors.md
+        reference/blocks.md: reference/registry-and-models.md
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -185,14 +211,9 @@ plugins:
             filters: ["!^_", "!^__"]
           inventories:
           - https://docs.python.org/3/objects.inv
-          - http://pandas.pydata.org/pandas-docs/stable/objects.inv
           - https://docs.pydantic.dev/latest/objects.inv
           setup_commands:
             - import sys
             - sys.path.append('../src')
           merge_init_into_class: yes
           show_submodules: no
-
-# Custom hooks for example injection and snippet extraction
-hooks:
-  - docs/.hooks/main.py

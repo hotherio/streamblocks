@@ -22,6 +22,7 @@ except ImportError:
     print("Or: pip install anthropic")
     sys.exit(1)
 
+# --8<-- [start:imports]
 # Enable auto-detection for Anthropic streams
 import hother.streamblocks.extensions.anthropic
 from hother.streamblocks import (
@@ -32,6 +33,8 @@ from hother.streamblocks import (
     TextDeltaEvent,
 )
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 async def main() -> None:
@@ -50,6 +53,7 @@ async def main() -> None:
         )
         raise ValueError(msg)
 
+    # --8<-- [start:setup]
     # Setup processor - auto-detection handles Anthropic streams
     syntax = DelimiterPreambleSyntax()
     registry = Registry(syntax=syntax)
@@ -58,6 +62,7 @@ async def main() -> None:
 
     # Create Anthropic client
     client = AsyncAnthropic(api_key=api_key)
+    # --8<-- [end:setup]
 
     # Create prompt
     prompt = """Create a simple Python application with these files:
@@ -82,6 +87,7 @@ IMPORTANT:
     print()
 
     try:
+        # --8<-- [start:example]
         # Get stream from Anthropic - auto-detection handles the format
         async with client.messages.stream(
             model="claude-sonnet-4-5-20250929",
@@ -111,6 +117,7 @@ IMPORTANT:
                     print("\n✅ Block Extracted:")
                     print(block.model_dump_json(indent=2))
                     print()
+        # --8<-- [end:example]
 
     except ValueError as e:
         print(f"\n❌ Error: {e}")

@@ -5,6 +5,7 @@ This example shows how to use AttributeInputAdapter to handle any object
 with a text-like attribute, without writing custom adapter code.
 """
 
+# --8<-- [start:imports]
 import asyncio
 from collections.abc import AsyncGenerator
 
@@ -16,6 +17,8 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.adapters.input import AttributeInputAdapter
 from hother.streamblocks_examples.blocks.agent.files import FileOperations
+
+# --8<-- [end:imports]
 
 
 # Generic chunk classes
@@ -58,6 +61,7 @@ async def main() -> None:
     print("=" * 60)
     print()
 
+    # --8<-- [start:example]
     # Create adapter for 'message' attribute
     adapter = AttributeInputAdapter(text_attr="message")
 
@@ -66,6 +70,7 @@ async def main() -> None:
     registry = Registry(syntax=syntax)
     registry.register("files_operations", FileOperations)
     processor = StreamBlockProcessor(registry)
+    # --8<-- [end:example]
 
     print("Processing stream with AttributeInputAdapter (text_attr='message')...")
     print()
