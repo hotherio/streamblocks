@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 _DEFAULT_PARSE_MARKER = "Default parse method that just stores raw content"
 _DOCSTRING_SECTION_HEADERS = ("args:", "returns:", "raises:", "example:", "examples:")
 _USAGE_PREFIX = "usage:"
-_USAGE_KEYWORDS = ("use this", "use when", "for ")
 _JSON_FORMAT = "json"
 _YAML_FORMAT = "yaml"
 
@@ -19,9 +18,9 @@ _YAML_FORMAT = "yaml"
 def parse_block_docstring(block_class: type) -> tuple[str, str | None]:
     """Split a block class docstring into (description, usage).
 
-    The first paragraph is the description. Usage is taken from a paragraph
-    starting with "Usage:" or "Use this", falling back to the second paragraph
-    when it reads like usage guidance.
+    The first paragraph is the description. Usage is taken from a paragraph that
+    explicitly starts with ``Usage:`` (case-insensitive); there is no implicit
+    detection, so block authors opt in to usage guidance via that convention.
     """
     docstring = inspect.getdoc(block_class)
     if not docstring:
@@ -48,18 +47,10 @@ def _split_paragraphs(text: str) -> list[str]:
 
 
 def _find_usage(paragraphs: list[str]) -> str | None:
-    """Locate the usage paragraph among non-leading paragraphs."""
+    """Return the explicit ``Usage:`` paragraph (without its prefix), if any."""
     for paragraph in paragraphs[1:]:
-        lowered = paragraph.lower()
-        if lowered.startswith(_USAGE_PREFIX):
+        if paragraph.lower().startswith(_USAGE_PREFIX):
             return paragraph[len(_USAGE_PREFIX) :].strip()
-        if lowered.startswith("use this"):
-            return paragraph
-
-    if len(paragraphs) > 1:
-        second = paragraphs[1]
-        if any(keyword in second.lower() for keyword in _USAGE_KEYWORDS):
-            return second
     return None
 
 

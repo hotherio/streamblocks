@@ -31,7 +31,7 @@ class GreetContent(BaseContent):
 class Greet(Block[GreetMeta, GreetContent]):
     """Greet someone.
 
-    Use this block to greet a person by name.
+    Usage: greet a person by name.
     """
 
     __examples__ = [
@@ -59,7 +59,7 @@ def test_build_block_context_includes_examples_and_format() -> None:
     context = build_block_context(Greet, DelimiterPreambleSyntax())
     assert context["name"] == "greet"
     assert context["description"] == "Greet someone."
-    assert context["usage"] == "Use this block to greet a person by name."
+    assert context["usage"] == "greet a person by name."
     assert context["content_format"] is not None
     assert context["metadata_schema"]["properties"].keys() == {"tone"}
     assert context["examples"] == ["!!g1:greet\nname: Ada\n!!end"]

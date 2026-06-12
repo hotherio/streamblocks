@@ -66,19 +66,15 @@ def test_parse_docstring_usage_prefix() -> None:
     assert usage == "do the thing carefully."
 
 
-def test_parse_docstring_use_this() -> None:
+def test_parse_docstring_use_this_is_not_implicit_usage() -> None:
+    # Only an explicit "Usage:" paragraph counts; "Use this..." is not detected.
     _, usage = parse_block_docstring(UseThis)
-    assert usage == "Use this when you need the thing."
-
-
-def test_parse_docstring_keyword_fallback() -> None:
-    _, usage = parse_block_docstring(KeywordFallback)
-    assert usage == "For advanced scenarios only."
-
-
-def test_parse_docstring_second_without_keyword_has_no_usage() -> None:
-    _, usage = parse_block_docstring(SecondNoKeyword)
     assert usage is None
+
+
+def test_parse_docstring_non_usage_paragraph_has_no_usage() -> None:
+    assert parse_block_docstring(KeywordFallback)[1] is None
+    assert parse_block_docstring(SecondNoKeyword)[1] is None
 
 
 @parse_as_json()
