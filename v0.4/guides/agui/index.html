@@ -1,0 +1,2158 @@
+<!DOCTYPE html><html lang="en" class="no-js"><head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../providers/">
+      
+      
+        <link rel="next" href="../pydantic-ai/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
+    
+    
+      
+        <title>AG-UI Protocol - Streamblocks</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+  
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+  
+  <style>:root{--md-admonition-icon--note:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M1%207.775V2.75C1%201.784%201.784%201%202.75%201h5.025c.464%200%20.91.184%201.238.513l6.25%206.25a1.75%201.75%200%200%201%200%202.474l-5.026%205.026a1.75%201.75%200%200%201-2.474%200l-6.25-6.25A1.75%201.75%200%200%201%201%207.775m1.5%200c0%20.066.026.13.073.177l6.25%206.25a.25.25%200%200%200%20.354%200l5.025-5.025a.25.25%200%200%200%200-.354l-6.25-6.25a.25.25%200%200%200-.177-.073H2.75a.25.25%200%200%200-.25.25ZM6%205a1%201%200%201%201%200%202%201%201%200%200%201%200-2%22/%3E%3C/svg%3E');--md-admonition-icon--abstract:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M2.5%201.75v11.5c0%20.138.112.25.25.25h3.17a.75.75%200%200%201%200%201.5H2.75A1.75%201.75%200%200%201%201%2013.25V1.75C1%20.784%201.784%200%202.75%200h8.5C12.216%200%2013%20.784%2013%201.75v7.736a.75.75%200%200%201-1.5%200V1.75a.25.25%200%200%200-.25-.25h-8.5a.25.25%200%200%200-.25.25m13.274%209.537zl-4.557%204.45a.75.75%200%200%201-1.055-.008l-1.943-1.95a.75.75%200%200%201%201.062-1.058l1.419%201.425%204.026-3.932a.75.75%200%201%201%201.048%201.074M4.75%204h4.5a.75.75%200%200%201%200%201.5h-4.5a.75.75%200%200%201%200-1.5M4%207.75A.75.75%200%200%201%204.75%207h2a.75.75%200%200%201%200%201.5h-2A.75.75%200%200%201%204%207.75%22/%3E%3C/svg%3E');--md-admonition-icon--info:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M0%208a8%208%200%201%201%2016%200A8%208%200%200%201%200%208m8-6.5a6.5%206.5%200%201%200%200%2013%206.5%206.5%200%200%200%200-13M6.5%207.75A.75.75%200%200%201%207.25%207h1a.75.75%200%200%201%20.75.75v2.75h.25a.75.75%200%200%201%200%201.5h-2a.75.75%200%200%201%200-1.5h.25v-2h-.25a.75.75%200%200%201-.75-.75M8%206a1%201%200%201%201%200-2%201%201%200%200%201%200%202%22/%3E%3C/svg%3E');--md-admonition-icon--tip:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M3.499.75a.75.75%200%200%201%201.5%200v.996C5.9%202.903%206.793%203.65%207.662%204.376l.24.202c-.036-.694.055-1.422.426-2.163C9.1.873%2010.794-.045%2012.622.26%2014.408.558%2016%201.94%2016%204.25c0%201.278-.954%202.575-2.44%202.734l.146.508.065.22c.203.701.412%201.455.476%202.226.142%201.707-.4%203.03-1.487%203.898C11.714%2014.671%2010.27%2015%208.75%2015h-6a.75.75%200%200%201%200-1.5h1.376a4.5%204.5%200%200%201-.563-1.191%203.84%203.84%200%200%201-.05-2.063%204.65%204.65%200%200%201-2.025-.293.75.75%200%200%201%20.525-1.406c1.357.507%202.376-.006%202.698-.318l.009-.01a.747.747%200%200%201%201.06%200%20.75.75%200%200%201-.012%201.074c-.912.92-.992%201.835-.768%202.586.221.74.745%201.337%201.196%201.621H8.75c1.343%200%202.398-.296%203.074-.836.635-.507%201.036-1.31.928-2.602-.05-.603-.216-1.224-.422-1.93l-.064-.221c-.12-.407-.246-.84-.353-1.29a2.4%202.4%200%200%201-.507-.441%203.1%203.1%200%200%201-.633-1.248.75.75%200%200%201%201.455-.364c.046.185.144.436.31.627.146.168.353.305.712.305.738%200%201.25-.615%201.25-1.25%200-1.47-.95-2.315-2.123-2.51-1.172-.196-2.227.387-2.706%201.345-.46.92-.27%201.774.019%203.062l.042.19.01.05c.348.443.666.949.94%201.553a.75.75%200%201%201-1.365.62c-.553-1.217-1.32-1.94-2.3-2.768L6.7%205.527c-.814-.68-1.75-1.462-2.692-2.619a3.7%203.7%200%200%200-1.023.88c-.406.495-.663%201.036-.722%201.508.116.122.306.21.591.239.388.038.797-.06%201.032-.19a.75.75%200%200%201%20.728%201.31c-.515.287-1.23.439-1.906.373-.682-.067-1.473-.38-1.879-1.193L.75%205.677V5.5c0-.984.48-1.94%201.077-2.664.46-.559%201.05-1.055%201.673-1.353z%22/%3E%3C/svg%3E');--md-admonition-icon--success:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M13.78%204.22a.75.75%200%200%201%200%201.06l-7.25%207.25a.75.75%200%200%201-1.06%200L2.22%209.28a.75.75%200%200%201%20.018-1.042.75.75%200%200%201%201.042-.018L6%2010.94l6.72-6.72a.75.75%200%200%201%201.06%200%22/%3E%3C/svg%3E');--md-admonition-icon--question:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M0%208a8%208%200%201%201%2016%200A8%208%200%200%201%200%208m8-6.5a6.5%206.5%200%201%200%200%2013%206.5%206.5%200%200%200%200-13M6.92%206.085h.001a.749.749%200%201%201-1.342-.67c.169-.339.436-.701.849-.977C6.845%204.16%207.369%204%208%204a2.76%202.76%200%200%201%201.637.525c.503.377.863.965.863%201.725%200%20.448-.115.83-.329%201.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6%206%200%200%200-.26.16%201%201%200%200%200-.276.245.75.75%200%200%201-1.248-.832c.184-.264.42-.489.692-.661q.154-.1.313-.195l.007-.004c.1-.061.182-.11.258-.161a1%201%200%200%200%20.277-.245C8.96%206.514%209%206.427%209%206.25a.61.61%200%200%200-.262-.525A1.27%201.27%200%200%200%208%205.5c-.369%200-.595.09-.74.187a1%201%200%200%200-.34.398M9%2011a1%201%200%201%201-2%200%201%201%200%200%201%202%200%22/%3E%3C/svg%3E');--md-admonition-icon--warning:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M6.457%201.047c.659-1.234%202.427-1.234%203.086%200l6.082%2011.378A1.75%201.75%200%200%201%2014.082%2015H1.918a1.75%201.75%200%200%201-1.543-2.575Zm1.763.707a.25.25%200%200%200-.44%200L1.698%2013.132a.25.25%200%200%200%20.22.368h12.164a.25.25%200%200%200%20.22-.368Zm.53%203.996v2.5a.75.75%200%200%201-1.5%200v-2.5a.75.75%200%200%201%201.5%200M9%2011a1%201%200%201%201-2%200%201%201%200%200%201%202%200%22/%3E%3C/svg%3E');--md-admonition-icon--failure:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M2.344%202.343za8%208%200%200%201%2011.314%2011.314A8.002%208.002%200%200%201%20.234%2010.089a8%208%200%200%201%202.11-7.746m1.06%2010.253a6.5%206.5%200%201%200%209.108-9.275%206.5%206.5%200%200%200-9.108%209.275M6.03%204.97%208%206.94l1.97-1.97a.749.749%200%200%201%201.275.326.75.75%200%200%201-.215.734L9.06%208l1.97%201.97a.749.749%200%200%201-.326%201.275.75.75%200%200%201-.734-.215L8%209.06l-1.97%201.97a.749.749%200%200%201-1.275-.326.75.75%200%200%201%20.215-.734L6.94%208%204.97%206.03a.75.75%200%200%201%20.018-1.042.75.75%200%200%201%201.042-.018%22/%3E%3C/svg%3E');--md-admonition-icon--danger:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M9.504.43a1.516%201.516%200%200%201%202.437%201.713L10.415%205.5h2.123c1.57%200%202.346%201.909%201.22%203.004l-7.34%207.142a1.25%201.25%200%200%201-.871.354h-.302a1.25%201.25%200%200%201-1.157-1.723L5.633%2010.5H3.462c-1.57%200-2.346-1.909-1.22-3.004zm1.047%201.074L3.286%208.571A.25.25%200%200%200%203.462%209H6.75a.75.75%200%200%201%20.694%201.034l-1.713%204.188%206.982-6.793A.25.25%200%200%200%2012.538%207H9.25a.75.75%200%200%201-.683-1.06l2.008-4.418.003-.006-.004-.009-.006-.006-.008-.001q-.005%200-.009.004%22/%3E%3C/svg%3E');--md-admonition-icon--bug:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4.72.22a.75.75%200%200%201%201.06%200l1%20.999a3.5%203.5%200%200%201%202.441%200l.999-1a.748.748%200%200%201%201.265.332.75.75%200%200%201-.205.729l-.775.776c.616.63.995%201.493.995%202.444v.327q0%20.15-.025.292c.408.14.764.392%201.029.722l1.968-.787a.75.75%200%200%201%20.556%201.392L13%207.258V9h2.25a.75.75%200%200%201%200%201.5H13v.5q-.002.615-.141%201.186l2.17.868a.75.75%200%200%201-.557%201.392l-2.184-.873A5%205%200%200%201%208%2016a5%205%200%200%201-4.288-2.427l-2.183.873a.75.75%200%200%201-.558-1.392l2.17-.868A5%205%200%200%201%203%2011v-.5H.75a.75.75%200%200%201%200-1.5H3V7.258L.971%206.446a.75.75%200%200%201%20.558-1.392l1.967.787c.265-.33.62-.583%201.03-.722a1.7%201.7%200%200%201-.026-.292V4.5c0-.951.38-1.814.995-2.444L4.72%201.28a.75.75%200%200%201%200-1.06m.53%206.28a.75.75%200%200%200-.75.75V11a3.5%203.5%200%201%200%207%200V7.25a.75.75%200%200%200-.75-.75ZM6.173%205h3.654A.17.17%200%200%200%2010%204.827V4.5a2%202%200%201%200-4%200v.327c0%20.096.077.173.173.173%22/%3E%3C/svg%3E');--md-admonition-icon--example:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M5%205.782V2.5h-.25a.75.75%200%200%201%200-1.5h6.5a.75.75%200%200%201%200%201.5H11v3.282l3.666%205.76C15.619%2013.04%2014.543%2015%2012.767%2015H3.233c-1.776%200-2.852-1.96-1.899-3.458Zm-2.4%206.565a.75.75%200%200%200%20.633%201.153h9.534a.75.75%200%200%200%20.633-1.153L12.225%2010.5h-8.45ZM9.5%202.5h-3V6c0%20.143-.04.283-.117.403L4.73%209h6.54L9.617%206.403A.75.75%200%200%201%209.5%206Z%22/%3E%3C/svg%3E');--md-admonition-icon--quote:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M1.75%202.5h10.5a.75.75%200%200%201%200%201.5H1.75a.75.75%200%200%201%200-1.5m4%205h8.5a.75.75%200%200%201%200%201.5h-8.5a.75.75%200%200%201%200-1.5m0%205h8.5a.75.75%200%200%201%200%201.5h-8.5a.75.75%200%200%201%200-1.5M2.5%207.75v6a.75.75%200%200%201-1.5%200v-6a.75.75%200%200%201%201.5%200%22/%3E%3C/svg%3E');}</style>
+
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/mkdocs_d2_plugin.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            .gscrollbar-fixer { padding-right: 15px; }
+            .gdesc-inner { font-size: 0.75rem; }
+            body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color); }
+            body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color); }
+            body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color); }
+        </style></head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ag-ui-protocol" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Streamblocks" class="md-header__button md-logo" aria-label="Streamblocks" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Streamblocks
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              AG-UI Protocol
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="pink" aria-label="Switch to dark mode" type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange" aria-label="Switch to light mode" type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"></path></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"></path></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hotherio/streamblocks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    hotherio/streamblocks
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Streamblocks" class="md-nav__button md-logo" aria-label="Streamblocks" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    Streamblocks
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hotherio/streamblocks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    hotherio/streamblocks
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    StreamBlocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../getting-started/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/first-custom-block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Your First Custom Block
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../concepts/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/blocks-and-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blocks &amp; Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/events/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Events
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/syntaxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Syntaxes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adapters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Guides
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../define-custom-blocks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Defining Custom Blocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generate-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generating Prompts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../error-handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error Handling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenAI, Anthropic &amp; Gemini
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    AG-UI Protocol
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    AG-UI Protocol
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#choose-a-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Choose a direction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unidirectional-ag-ui-in-streamblocks-events-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unidirectional: AG-UI in, StreamBlocks events out
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bidirectional-ag-ui-in-ag-ui-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bidirectional: AG-UI in, AG-UI out
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filtering-with-aguieventfilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filtering with AGUIEventFilter
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auto-detection
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pydantic-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pydantic AI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Performance Tuning
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../examples/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Basics
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/syntaxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Syntaxes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adapters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/blocks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integrations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Providers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../reference/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/processors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Processors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/registry-and-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Registry &amp; Models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prompts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/events/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Events
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/syntaxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Syntaxes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adapters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/parsing-and-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Parsing &amp; Validation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extensions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integrations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#choose-a-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Choose a direction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unidirectional-ag-ui-in-streamblocks-events-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unidirectional: AG-UI in, StreamBlocks events out
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bidirectional-ag-ui-in-ag-ui-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bidirectional: AG-UI in, AG-UI out
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#filtering-with-aguieventfilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filtering with AGUIEventFilter
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auto-detection
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="ag-ui-protocol">AG-UI Protocol</h1>
+<p>Consume and emit <a href="https://docs.ag-ui.com/">AG-UI</a> protocol events with bidirectional adapters.</p>
+<p>AG-UI is an event-based protocol for agent-to-frontend communication. The <code>hother.streamblocks.extensions.agui</code> extension lets you run an AG-UI event stream through StreamBlocks: text events are scanned for blocks, every other event (lifecycle, tool calls, state) passes through untouched.</p>
+<p>The extension requires the <code>ag-ui-protocol</code> package:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio"><input id="__tabbed_1_2" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="__tabbed_1_1">uv</label><label for="__tabbed_1_2">pip</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>add<span class="w"> </span>ag-ui-protocol
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>ag-ui-protocol
+</code></pre></div>
+</div>
+</div>
+</div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">textwrap</span><span class="w"> </span><span class="kn">import</span> <span class="n">dedent</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">DelimiterFrontmatterSyntax</span><span class="p">,</span> <span class="n">Registry</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks.core.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEndEvent</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks_examples.blocks.agent.files</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileOperations</span>
+</code></pre></div>
+<h2 id="choose-a-direction">Choose a direction</h2>
+<table>
+<thead>
+<tr>
+<th>Factory</th>
+<th>Input</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>create_agui_processor(registry)</code></td>
+<td>AG-UI events</td>
+<td>Native StreamBlocks events</td>
+</tr>
+<tr>
+<td><code>create_agui_bidirectional_processor(registry, event_filter=...)</code></td>
+<td>AG-UI events</td>
+<td>AG-UI events (dicts)</td>
+</tr>
+</tbody>
+</table>
+<p>Both factories return a pre-configured <code>ProtocolStreamProcessor</code> wired with <code>AGUIInputAdapter</code> on the input side.</p>
+<h2 id="unidirectional-ag-ui-in-streamblocks-events-out">Unidirectional: AG-UI in, StreamBlocks events out</h2>
+<p>Use this when your own code sits at the end of the pipeline and wants typed StreamBlocks events:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Mode 1: Unidirectional - AG-UI in, StreamBlocks events out</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"=== Unidirectional (AG-UI → StreamBlocks) ==="</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">processor</span> <span class="o">=</span> <span class="n">create_agui_processor</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">text</span> <span class="o">=</span> <span class="n">dedent</span><span class="p">(</span><span class="s2">"""</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="s2">    !!start</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="s2">    ---</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="s2">    id: ops001</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="s2">    block_type: files_operations</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="s2">    ---</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="s2">    src/main.py:C</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="s2">    !!end</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="s2">"""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">agui_stream</span><span class="p">():</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="k">yield</span> <span class="n">RunStartedEvent</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="s2">"thread-1"</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="s2">"run-1"</span><span class="p">)</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="k">yield</span> <span class="n">TextMessageContentEvent</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">message_id</span><span class="o">=</span><span class="s2">"msg-1"</span><span class="p">)</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="k">yield</span> <span class="n">RunFinishedEvent</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="s2">"thread-1"</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="s2">"run-1"</span><span class="p">)</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">processor</span><span class="o">.</span><span class="n">process_stream</span><span class="p">(</span><span class="n">agui_stream</span><span class="p">()):</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockEndEvent</span><span class="p">):</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>        <span class="n">block</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_block</span><span class="p">()</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>        <span class="k">if</span> <span class="n">block</span><span class="p">:</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>            <span class="nb">print</span><span class="p">(</span><span class="s2">"Block extracted:"</span><span class="p">)</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>            <span class="nb">print</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div>
+<p>The input adapter extracts text from <code>TEXT_MESSAGE_CONTENT</code> and <code>TEXT_MESSAGE_CHUNK</code> events and treats <code>RUN_FINISHED</code> as end of stream.</p>
+<h2 id="bidirectional-ag-ui-in-ag-ui-out">Bidirectional: AG-UI in, AG-UI out</h2>
+<p>Use this when the output goes back to an AG-UI frontend. StreamBlocks events are converted to AG-UI <code>CUSTOM</code> events (emitted as dicts, so <code>ag-ui-protocol</code> is not needed at runtime on the consumer side), while original AG-UI events pass through unchanged:</p>
+<div class="d2"><div class="d2-light"><svg data-d2-version="v0.7.1" preserveAspectRatio="xMinYMin meet" viewBox="0 0 2056 173" role="img" aria-label="Diagram"><svg class="d2-3ffad75652b542e9b602375b7ce710b0 d2-svg" width="2056" height="173" viewBox="-21 -21 2056 173"><rect x="-21.000000" y="-21.000000" width="2056.000000" height="173.000000" rx="0.000000" fill="#FFFFFF" class=" fill-N7" stroke-width="0"></rect><style type="text/css">
+.d2-3ffad75652b542e9b602375b7ce710b0 .text-bold {
+	font-family: "d2-3ffad75652b542e9b602375b7ce710b0-font-bold";
+}
+@font-face {
+	font-family: d2-3ffad75652b542e9b602375b7ce710b0-font-bold;
+	src: url("data:application/font-woff;base64,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");
+}
+.d2-3ffad75652b542e9b602375b7ce710b0 .text-italic {
+	font-family: "d2-3ffad75652b542e9b602375b7ce710b0-font-italic";
+}
+@font-face {
+	font-family: d2-3ffad75652b542e9b602375b7ce710b0-font-italic;
+	src: url("data:application/font-woff;base64,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");
+}</style><style type="text/css">.shape {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+}
+.connection {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blend {
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-N1{fill:#0A0F25;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-N2{fill:#676C7E;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-N3{fill:#9499AB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-N4{fill:#CFD2DD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-N5{fill:#DEE1EB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-N6{fill:#EEF1F8;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-N7{fill:#FFFFFF;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-B1{fill:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-B2{fill:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-B3{fill:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-B4{fill:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-B5{fill:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-B6{fill:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-AA2{fill:#4A6FF3;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-AA4{fill:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-AA5{fill:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-AB4{fill:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .fill-AB5{fill:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-N1{stroke:#0A0F25;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-N2{stroke:#676C7E;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-N3{stroke:#9499AB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-N4{stroke:#CFD2DD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-N5{stroke:#DEE1EB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-N6{stroke:#EEF1F8;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-N7{stroke:#FFFFFF;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-B1{stroke:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-B2{stroke:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-B3{stroke:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-B4{stroke:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-B5{stroke:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-B6{stroke:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-AA2{stroke:#4A6FF3;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-AA4{stroke:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-AA5{stroke:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-AB4{stroke:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .stroke-AB5{stroke:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-N1{background-color:#0A0F25;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-N2{background-color:#676C7E;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-N3{background-color:#9499AB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-N4{background-color:#CFD2DD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-N5{background-color:#DEE1EB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-N6{background-color:#EEF1F8;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-N7{background-color:#FFFFFF;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-B1{background-color:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-B2{background-color:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-B3{background-color:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-B4{background-color:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-B5{background-color:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-B6{background-color:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-AA2{background-color:#4A6FF3;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-AA4{background-color:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-AA5{background-color:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-AB4{background-color:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .background-color-AB5{background-color:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-N1{color:#0A0F25;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-N2{color:#676C7E;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-N3{color:#9499AB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-N4{color:#CFD2DD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-N5{color:#DEE1EB;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-N6{color:#EEF1F8;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-N7{color:#FFFFFF;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-B1{color:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-B2{color:#0D32B2;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-B3{color:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-B4{color:#E3E9FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-B5{color:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-B6{color:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-AA2{color:#4A6FF3;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-AA4{color:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-AA5{color:#F7F8FE;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-AB4{color:#EDF0FD;}
+		.d2-3ffad75652b542e9b602375b7ce710b0 .color-AB5{color:#F7F8FE;}.appendix text.text{fill:#0A0F25}.md{--color-fg-default:#0A0F25;--color-fg-muted:#676C7E;--color-fg-subtle:#9499AB;--color-canvas-default:#FFFFFF;--color-canvas-subtle:#EEF1F8;--color-border-default:#0D32B2;--color-border-muted:#0D32B2;--color-neutral-muted:#EEF1F8;--color-accent-fg:#0D32B2;--color-accent-emphasis:#0D32B2;--color-attention-subtle:#676C7E;--color-danger-fg:red;}.sketch-overlay-B1{fill:url(#streaks-darker-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:lighten}.sketch-overlay-B2{fill:url(#streaks-darker-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:lighten}.sketch-overlay-B3{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-B4{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-B5{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-B6{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-AA2{fill:url(#streaks-dark-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:overlay}.sketch-overlay-AA4{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-AA5{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-AB4{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-AB5{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-N1{fill:url(#streaks-darker-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:lighten}.sketch-overlay-N2{fill:url(#streaks-dark-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:overlay}.sketch-overlay-N3{fill:url(#streaks-normal-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:color-burn}.sketch-overlay-N4{fill:url(#streaks-normal-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:color-burn}.sketch-overlay-N5{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-N6{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.sketch-overlay-N7{fill:url(#streaks-bright-d2-3ffad75652b542e9b602375b7ce710b0);mix-blend-mode:darken}.light-code{display: block}.dark-code{display: none}</style><g class="YWd1aV9pbg=="><g class="shape"><rect x="12.000000" y="44.000000" width="139.000000" height="66.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="81.500000" y="82.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AG-UI stream</text></g><g class="aW5wdXQ="><g class="shape"><rect x="464.000000" y="37.000000" width="177.000000" height="80.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="552.500000" y="82.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AGUIInputAdapter</text></g><g class="cHJvYw=="><g class="shape"><rect x="883.000000" y="12.000000" width="207.000000" height="66.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="986.500000" y="50.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">StreamBlockProcessor</text></g><g class="b3V0cHV0"><g class="shape"><rect x="1377.000000" y="37.000000" width="189.000000" height="80.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="1471.500000" y="82.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AGUIOutputAdapter</text></g><g class="YWd1aV9vdXQ="><g class="shape"><rect x="1865.000000" y="44.000000" width="137.000000" height="66.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="1933.500000" y="82.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AG-UI events</text></g><g class="KGFndWlfaW4gLSZndDsgaW5wdXQpWzBd"><marker id="mk-d2-3ffad75652b542e9b602375b7ce710b0-3488378134" markerWidth="10.000000" markerHeight="12.000000" refX="7.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0.000000,0.000000 10.000000,6.000000 0.000000,12.000000" fill="#0D32B2" class="connection fill-B1" stroke-width="2"></polygon> </marker><path d="M 153.000000 77.000000 L 460.000000 77.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3ffad75652b542e9b602375b7ce710b0-3488378134)" mask="url(#d2-3ffad75652b542e9b602375b7ce710b0)"></path><text x="307.500000" y="83.000000" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">TEXT_MESSAGE_CONTENT</text></g><g class="KGlucHV0IC0mZ3Q7IHByb2MpWzBd"><path d="M 643.000000 63.666000 L 879.000000 63.666000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3ffad75652b542e9b602375b7ce710b0-3488378134)" mask="url(#d2-3ffad75652b542e9b602375b7ce710b0)"></path><text x="762.000000" y="69.000000" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">extracted text</text></g><g class="KGlucHV0IC0mZ3Q7IG91dHB1dClbMF0="><marker id="mk-d2-3ffad75652b542e9b602375b7ce710b0-2177206569" markerWidth="10.000000" markerHeight="12.000000" refX="7.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0.000000,0.000000 10.000000,6.000000 0.000000,12.000000" fill="#0D32B2" class="connection fill-B2" stroke-width="2"></polygon> </marker><path d="M 643.000000 90.333000 L 671.666500 90.333000 C 690.333500 90.333000 671.666500 109.000000 690.333500 109.000000 L 1327.666500 109.000000 C 1346.333500 109.000000 1327.666500 90.333000 1346.333500 90.333000 L 1373.000000 90.333000" stroke="#0D32B2" fill="none" class="connection stroke-B2" style="stroke-width:2;stroke-dasharray:6.000000,5.919384;" marker-end="url(#mk-d2-3ffad75652b542e9b602375b7ce710b0-2177206569)" mask="url(#d2-3ffad75652b542e9b602375b7ce710b0)"></path><text x="1009.500000" y="115.000000" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">passthrough (non-text events)</text></g><g class="KHByb2MgLSZndDsgb3V0cHV0KVswXQ=="><path d="M 1092.000000 63.666000 L 1373.000000 63.666000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3ffad75652b542e9b602375b7ce710b0-3488378134)" mask="url(#d2-3ffad75652b542e9b602375b7ce710b0)"></path><text x="1233.500000" y="69.000000" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">StreamBlocks events</text></g><g class="KG91dHB1dCAtJmd0OyBhZ3VpX291dClbMF0="><path d="M 1568.000000 77.000000 L 1861.000000 77.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3ffad75652b542e9b602375b7ce710b0-3488378134)" mask="url(#d2-3ffad75652b542e9b602375b7ce710b0)"></path><text x="1715.500000" y="83.000000" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">CUSTOM streamblocks.*</text></g><mask id="d2-3ffad75652b542e9b602375b7ce710b0" maskUnits="userSpaceOnUse" x="-21" y="-21" width="2056" height="173">
+<rect x="-21" y="-21" width="2056" height="173" fill="white"></rect>
+<rect x="219.000000" y="67.000000" width="177" height="21" fill="black"></rect>
+<rect x="714.000000" y="53.000000" width="96" height="21" fill="black"></rect>
+<rect x="909.000000" y="99.000000" width="201" height="21" fill="black"></rect>
+<rect x="1163.000000" y="53.000000" width="141" height="21" fill="black"></rect>
+<rect x="1634.000000" y="67.000000" width="163" height="21" fill="black"></rect>
+</mask></svg></svg></div><div class="d2-dark"><svg data-d2-version="v0.7.1" preserveAspectRatio="xMinYMin meet" viewBox="0 0 2056 173" role="img" aria-label="Diagram"><svg class="d2-4c771c0edcf5434fae8fedfbba10122d d2-svg" width="2056" height="173" viewBox="-21 -21 2056 173"><rect x="-21.000000" y="-21.000000" width="2056.000000" height="173.000000" rx="0.000000" fill="#1E1E2E" class=" fill-N7" stroke-width="0"></rect><style type="text/css">
+.d2-4c771c0edcf5434fae8fedfbba10122d .text-bold {
+	font-family: "d2-4c771c0edcf5434fae8fedfbba10122d-font-bold";
+}
+@font-face {
+	font-family: d2-4c771c0edcf5434fae8fedfbba10122d-font-bold;
+	src: url("data:application/font-woff;base64,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");
+}
+.d2-4c771c0edcf5434fae8fedfbba10122d .text-italic {
+	font-family: "d2-4c771c0edcf5434fae8fedfbba10122d-font-italic";
+}
+@font-face {
+	font-family: d2-4c771c0edcf5434fae8fedfbba10122d-font-italic;
+	src: url("data:application/font-woff;base64,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");
+}</style><style type="text/css">.shape {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+}
+.connection {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blend {
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-N1{fill:#CDD6F4;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-N2{fill:#BAC2DE;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-N3{fill:#A6ADC8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-N4{fill:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-N5{fill:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-N6{fill:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-N7{fill:#1E1E2E;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-B1{fill:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-B2{fill:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-B3{fill:#6C7086;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-B4{fill:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-B5{fill:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-B6{fill:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-AA2{fill:#f38BA8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-AA4{fill:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-AA5{fill:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-AB4{fill:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .fill-AB5{fill:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-N1{stroke:#CDD6F4;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-N2{stroke:#BAC2DE;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-N3{stroke:#A6ADC8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-N4{stroke:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-N5{stroke:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-N6{stroke:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-N7{stroke:#1E1E2E;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-B1{stroke:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-B2{stroke:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-B3{stroke:#6C7086;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-B4{stroke:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-B5{stroke:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-B6{stroke:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-AA2{stroke:#f38BA8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-AA4{stroke:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-AA5{stroke:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-AB4{stroke:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .stroke-AB5{stroke:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-N1{background-color:#CDD6F4;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-N2{background-color:#BAC2DE;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-N3{background-color:#A6ADC8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-N4{background-color:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-N5{background-color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-N6{background-color:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-N7{background-color:#1E1E2E;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-B1{background-color:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-B2{background-color:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-B3{background-color:#6C7086;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-B4{background-color:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-B5{background-color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-B6{background-color:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-AA2{background-color:#f38BA8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-AA4{background-color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-AA5{background-color:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-AB4{background-color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .background-color-AB5{background-color:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-N1{color:#CDD6F4;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-N2{color:#BAC2DE;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-N3{color:#A6ADC8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-N4{color:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-N5{color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-N6{color:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-N7{color:#1E1E2E;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-B1{color:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-B2{color:#CBA6f7;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-B3{color:#6C7086;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-B4{color:#585B70;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-B5{color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-B6{color:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-AA2{color:#f38BA8;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-AA4{color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-AA5{color:#313244;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-AB4{color:#45475A;}
+		.d2-4c771c0edcf5434fae8fedfbba10122d .color-AB5{color:#313244;}.appendix text.text{fill:#CDD6F4}.md{--color-fg-default:#CDD6F4;--color-fg-muted:#BAC2DE;--color-fg-subtle:#A6ADC8;--color-canvas-default:#1E1E2E;--color-canvas-subtle:#313244;--color-border-default:#CBA6f7;--color-border-muted:#CBA6f7;--color-neutral-muted:#313244;--color-accent-fg:#CBA6f7;--color-accent-emphasis:#CBA6f7;--color-attention-subtle:#BAC2DE;--color-danger-fg:red;}.sketch-overlay-B1{fill:url(#streaks-normal-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:color-burn}.sketch-overlay-B2{fill:url(#streaks-normal-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:color-burn}.sketch-overlay-B3{fill:url(#streaks-dark-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:overlay}.sketch-overlay-B4{fill:url(#streaks-dark-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:overlay}.sketch-overlay-B5{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-B6{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-AA2{fill:url(#streaks-normal-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:color-burn}.sketch-overlay-AA4{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-AA5{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-AB4{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-AB5{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-N1{fill:url(#streaks-normal-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:color-burn}.sketch-overlay-N2{fill:url(#streaks-normal-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:color-burn}.sketch-overlay-N3{fill:url(#streaks-normal-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:color-burn}.sketch-overlay-N4{fill:url(#streaks-dark-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:overlay}.sketch-overlay-N5{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-N6{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.sketch-overlay-N7{fill:url(#streaks-darker-d2-4c771c0edcf5434fae8fedfbba10122d);mix-blend-mode:lighten}.light-code{display: none}.dark-code{display: block}</style><g class="YWd1aV9pbg=="><g class="shape"><rect x="12.000000" y="44.000000" width="139.000000" height="66.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="81.500000" y="82.500000" fill="#CDD6F4" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AG-UI stream</text></g><g class="aW5wdXQ="><g class="shape"><rect x="464.000000" y="37.000000" width="177.000000" height="80.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="552.500000" y="82.500000" fill="#CDD6F4" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AGUIInputAdapter</text></g><g class="cHJvYw=="><g class="shape"><rect x="883.000000" y="12.000000" width="207.000000" height="66.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="986.500000" y="50.500000" fill="#CDD6F4" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">StreamBlockProcessor</text></g><g class="b3V0cHV0"><g class="shape"><rect x="1377.000000" y="37.000000" width="189.000000" height="80.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="1471.500000" y="82.500000" fill="#CDD6F4" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AGUIOutputAdapter</text></g><g class="YWd1aV9vdXQ="><g class="shape"><rect x="1865.000000" y="44.000000" width="137.000000" height="66.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="1933.500000" y="82.500000" fill="#CDD6F4" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">AG-UI events</text></g><g class="KGFndWlfaW4gLSZndDsgaW5wdXQpWzBd"><marker id="mk-d2-4c771c0edcf5434fae8fedfbba10122d-3488378134" markerWidth="10.000000" markerHeight="12.000000" refX="7.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0.000000,0.000000 10.000000,6.000000 0.000000,12.000000" fill="#CBA6f7" class="connection fill-B1" stroke-width="2"></polygon> </marker><path d="M 153.000000 77.000000 L 460.000000 77.000000" stroke="#CBA6f7" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-4c771c0edcf5434fae8fedfbba10122d-3488378134)" mask="url(#d2-4c771c0edcf5434fae8fedfbba10122d)"></path><text x="307.500000" y="83.000000" fill="#BAC2DE" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">TEXT_MESSAGE_CONTENT</text></g><g class="KGlucHV0IC0mZ3Q7IHByb2MpWzBd"><path d="M 643.000000 63.666000 L 879.000000 63.666000" stroke="#CBA6f7" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-4c771c0edcf5434fae8fedfbba10122d-3488378134)" mask="url(#d2-4c771c0edcf5434fae8fedfbba10122d)"></path><text x="762.000000" y="69.000000" fill="#BAC2DE" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">extracted text</text></g><g class="KGlucHV0IC0mZ3Q7IG91dHB1dClbMF0="><marker id="mk-d2-4c771c0edcf5434fae8fedfbba10122d-2177206569" markerWidth="10.000000" markerHeight="12.000000" refX="7.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0.000000,0.000000 10.000000,6.000000 0.000000,12.000000" fill="#CBA6f7" class="connection fill-B2" stroke-width="2"></polygon> </marker><path d="M 643.000000 90.333000 L 671.666500 90.333000 C 690.333500 90.333000 671.666500 109.000000 690.333500 109.000000 L 1327.666500 109.000000 C 1346.333500 109.000000 1327.666500 90.333000 1346.333500 90.333000 L 1373.000000 90.333000" stroke="#CBA6f7" fill="none" class="connection stroke-B2" style="stroke-width:2;stroke-dasharray:6.000000,5.919384;" marker-end="url(#mk-d2-4c771c0edcf5434fae8fedfbba10122d-2177206569)" mask="url(#d2-4c771c0edcf5434fae8fedfbba10122d)"></path><text x="1009.500000" y="115.000000" fill="#BAC2DE" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">passthrough (non-text events)</text></g><g class="KHByb2MgLSZndDsgb3V0cHV0KVswXQ=="><path d="M 1092.000000 63.666000 L 1373.000000 63.666000" stroke="#CBA6f7" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-4c771c0edcf5434fae8fedfbba10122d-3488378134)" mask="url(#d2-4c771c0edcf5434fae8fedfbba10122d)"></path><text x="1233.500000" y="69.000000" fill="#BAC2DE" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">StreamBlocks events</text></g><g class="KG91dHB1dCAtJmd0OyBhZ3VpX291dClbMF0="><path d="M 1568.000000 77.000000 L 1861.000000 77.000000" stroke="#CBA6f7" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-4c771c0edcf5434fae8fedfbba10122d-3488378134)" mask="url(#d2-4c771c0edcf5434fae8fedfbba10122d)"></path><text x="1715.500000" y="83.000000" fill="#BAC2DE" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">CUSTOM streamblocks.*</text></g><mask id="d2-4c771c0edcf5434fae8fedfbba10122d" maskUnits="userSpaceOnUse" x="-21" y="-21" width="2056" height="173">
+<rect x="-21" y="-21" width="2056" height="173" fill="white"></rect>
+<rect x="219.000000" y="67.000000" width="177" height="21" fill="black"></rect>
+<rect x="714.000000" y="53.000000" width="96" height="21" fill="black"></rect>
+<rect x="909.000000" y="99.000000" width="201" height="21" fill="black"></rect>
+<rect x="1163.000000" y="53.000000" width="141" height="21" fill="black"></rect>
+<rect x="1634.000000" y="67.000000" width="163" height="21" fill="black"></rect>
+</mask></svg></svg></div></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Mode 2: Bidirectional - AG-UI in, AG-UI out</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=== Bidirectional (AG-UI → AG-UI) ==="</span><span class="p">)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">bidir_processor</span> <span class="o">=</span> <span class="n">create_agui_bidirectional_processor</span><span class="p">(</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">registry</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">event_filter</span><span class="o">=</span><span class="n">AGUIEventFilter</span><span class="o">.</span><span class="n">BLOCKS_ONLY</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">agui_stream2</span><span class="p">():</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="k">yield</span> <span class="n">RunStartedEvent</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="s2">"thread-2"</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="s2">"run-2"</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="k">yield</span> <span class="n">TextMessageContentEvent</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">message_id</span><span class="o">=</span><span class="s2">"msg-2"</span><span class="p">)</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="k">yield</span> <span class="n">RunFinishedEvent</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="s2">"thread-2"</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="s2">"run-2"</span><span class="p">)</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">bidir_processor</span><span class="o">.</span><span class="n">process_stream</span><span class="p">(</span><span class="n">agui_stream2</span><span class="p">()):</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="n">event_type</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"type"</span><span class="p">,</span> <span class="s2">"unknown"</span><span class="p">)</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>        <span class="k">if</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">"CUSTOM"</span><span class="p">:</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Custom event: </span><span class="si">{</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Passthrough: </span><span class="si">{</span><span class="n">event_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<p><a href="https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/06_integrations/02_agui_integration.py">View source on GitHub</a></p>
+<p>The <code>AGUIOutputAdapter</code> maps StreamBlocks events to AG-UI as follows:</p>
+<table>
+<thead>
+<tr>
+<th>StreamBlocks event</th>
+<th>AG-UI event</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TextDeltaEvent</code>, <code>TextContentEvent</code></td>
+<td><code>TEXT_MESSAGE_CONTENT</code></td>
+</tr>
+<tr>
+<td><code>BlockStartEvent</code></td>
+<td><code>CUSTOM</code> (<code>streamblocks.block_start</code>)</td>
+</tr>
+<tr>
+<td><code>BlockHeaderDeltaEvent</code>, <code>BlockMetadataDeltaEvent</code>, <code>BlockContentDeltaEvent</code></td>
+<td><code>CUSTOM</code> (<code>streamblocks.block_delta</code>)</td>
+</tr>
+<tr>
+<td><code>BlockEndEvent</code></td>
+<td><code>CUSTOM</code> (<code>streamblocks.block_end</code>)</td>
+</tr>
+<tr>
+<td><code>BlockErrorEvent</code></td>
+<td><code>CUSTOM</code> (<code>streamblocks.block_error</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Block payloads travel in the event's <code>value</code> field (block id, syntax, metadata, content, line range, and so on).</p>
+<h2 id="filtering-with-aguieventfilter">Filtering with AGUIEventFilter</h2>
+<p><code>AGUIEventFilter</code> is a <code>Flag</code> enum controlling which StreamBlocks events the bidirectional processor emits. Presets:</p>
+<table>
+<thead>
+<tr>
+<th>Preset</th>
+<th>Emits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ALL</code> (default)</td>
+<td>Every StreamBlocks event.</td>
+</tr>
+<tr>
+<td><code>BLOCKS_ONLY</code></td>
+<td>Block lifecycle only: start, end, error.</td>
+</tr>
+<tr>
+<td><code>BLOCKS_WITH_PROGRESS</code></td>
+<td>Block lifecycle plus per-section delta events.</td>
+</tr>
+<tr>
+<td><code>TEXT_AND_FINAL</code></td>
+<td>Text deltas plus final block results (end, error).</td>
+</tr>
+<tr>
+<td><code>NONE</code></td>
+<td>No StreamBlocks events; passthrough only.</td>
+</tr>
+</tbody>
+</table>
+<p>Because it is a flag enum, you can also combine the fine-grained members (such as <code>RAW_TEXT</code>, <code>TEXT_DELTA</code>, and <code>BLOCK_DELTA</code>) with <code>|</code> to build a custom filter; see the <a href="../../reference/extensions/">extensions reference</a> for the full list:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">processor</span> <span class="o">=</span> <span class="n">create_agui_bidirectional_processor</span><span class="p">(</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">registry</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">event_filter</span><span class="o">=</span><span class="n">AGUIEventFilter</span><span class="o">.</span><span class="n">BLOCKS_WITH_PROGRESS</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="p">)</span>
+</code></pre></div>
+<p>Filtering applies to StreamBlocks events only; passthrough AG-UI events are always forwarded.</p>
+<h2 id="auto-detection">Auto-detection</h2>
+<p>Importing <code>hother.streamblocks.extensions.agui</code> registers <code>AGUIInputAdapter</code> for adapter auto-detection (it claims events from the <code>ag_ui.</code> module namespace). A plain <code>ProtocolStreamProcessor</code> with <code>auto_detect_adapter</code> enabled will then recognize an AG-UI stream from its first event without explicit wiring.</p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li><a href="../../reference/events/">Events</a>: the StreamBlocks events behind each <code>CUSTOM</code> mapping.</li>
+<li><a href="../../reference/extensions/">Extensions reference</a>: full API for the AG-UI adapters and filter flags.</li>
+<li><a href="../performance/">Performance Tuning</a>: reduce event volume before it reaches the frontend.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.tabs.link", "navigation.instant", "navigation.tracking", "navigation.top", "header.autohide", "navigation.sections", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "search.share"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
+      
+        <script src="../../javascripts/tablesort.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  
+<script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(()=>{ lightbox.reload(); });
+</script></body></html>

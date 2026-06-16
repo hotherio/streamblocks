@@ -1,0 +1,2230 @@
+<!DOCTYPE html><html lang="en" class="no-js"><head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../events/">
+      
+      
+        <link rel="next" href="../adapters/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
+    
+    
+      
+        <title>Syntaxes - Streamblocks</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+  
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+    
+      
+      
+    
+  
+  
+  <style>:root{--md-admonition-icon--note:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M1%207.775V2.75C1%201.784%201.784%201%202.75%201h5.025c.464%200%20.91.184%201.238.513l6.25%206.25a1.75%201.75%200%200%201%200%202.474l-5.026%205.026a1.75%201.75%200%200%201-2.474%200l-6.25-6.25A1.75%201.75%200%200%201%201%207.775m1.5%200c0%20.066.026.13.073.177l6.25%206.25a.25.25%200%200%200%20.354%200l5.025-5.025a.25.25%200%200%200%200-.354l-6.25-6.25a.25.25%200%200%200-.177-.073H2.75a.25.25%200%200%200-.25.25ZM6%205a1%201%200%201%201%200%202%201%201%200%200%201%200-2%22/%3E%3C/svg%3E');--md-admonition-icon--abstract:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M2.5%201.75v11.5c0%20.138.112.25.25.25h3.17a.75.75%200%200%201%200%201.5H2.75A1.75%201.75%200%200%201%201%2013.25V1.75C1%20.784%201.784%200%202.75%200h8.5C12.216%200%2013%20.784%2013%201.75v7.736a.75.75%200%200%201-1.5%200V1.75a.25.25%200%200%200-.25-.25h-8.5a.25.25%200%200%200-.25.25m13.274%209.537zl-4.557%204.45a.75.75%200%200%201-1.055-.008l-1.943-1.95a.75.75%200%200%201%201.062-1.058l1.419%201.425%204.026-3.932a.75.75%200%201%201%201.048%201.074M4.75%204h4.5a.75.75%200%200%201%200%201.5h-4.5a.75.75%200%200%201%200-1.5M4%207.75A.75.75%200%200%201%204.75%207h2a.75.75%200%200%201%200%201.5h-2A.75.75%200%200%201%204%207.75%22/%3E%3C/svg%3E');--md-admonition-icon--info:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M0%208a8%208%200%201%201%2016%200A8%208%200%200%201%200%208m8-6.5a6.5%206.5%200%201%200%200%2013%206.5%206.5%200%200%200%200-13M6.5%207.75A.75.75%200%200%201%207.25%207h1a.75.75%200%200%201%20.75.75v2.75h.25a.75.75%200%200%201%200%201.5h-2a.75.75%200%200%201%200-1.5h.25v-2h-.25a.75.75%200%200%201-.75-.75M8%206a1%201%200%201%201%200-2%201%201%200%200%201%200%202%22/%3E%3C/svg%3E');--md-admonition-icon--tip:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M3.499.75a.75.75%200%200%201%201.5%200v.996C5.9%202.903%206.793%203.65%207.662%204.376l.24.202c-.036-.694.055-1.422.426-2.163C9.1.873%2010.794-.045%2012.622.26%2014.408.558%2016%201.94%2016%204.25c0%201.278-.954%202.575-2.44%202.734l.146.508.065.22c.203.701.412%201.455.476%202.226.142%201.707-.4%203.03-1.487%203.898C11.714%2014.671%2010.27%2015%208.75%2015h-6a.75.75%200%200%201%200-1.5h1.376a4.5%204.5%200%200%201-.563-1.191%203.84%203.84%200%200%201-.05-2.063%204.65%204.65%200%200%201-2.025-.293.75.75%200%200%201%20.525-1.406c1.357.507%202.376-.006%202.698-.318l.009-.01a.747.747%200%200%201%201.06%200%20.75.75%200%200%201-.012%201.074c-.912.92-.992%201.835-.768%202.586.221.74.745%201.337%201.196%201.621H8.75c1.343%200%202.398-.296%203.074-.836.635-.507%201.036-1.31.928-2.602-.05-.603-.216-1.224-.422-1.93l-.064-.221c-.12-.407-.246-.84-.353-1.29a2.4%202.4%200%200%201-.507-.441%203.1%203.1%200%200%201-.633-1.248.75.75%200%200%201%201.455-.364c.046.185.144.436.31.627.146.168.353.305.712.305.738%200%201.25-.615%201.25-1.25%200-1.47-.95-2.315-2.123-2.51-1.172-.196-2.227.387-2.706%201.345-.46.92-.27%201.774.019%203.062l.042.19.01.05c.348.443.666.949.94%201.553a.75.75%200%201%201-1.365.62c-.553-1.217-1.32-1.94-2.3-2.768L6.7%205.527c-.814-.68-1.75-1.462-2.692-2.619a3.7%203.7%200%200%200-1.023.88c-.406.495-.663%201.036-.722%201.508.116.122.306.21.591.239.388.038.797-.06%201.032-.19a.75.75%200%200%201%20.728%201.31c-.515.287-1.23.439-1.906.373-.682-.067-1.473-.38-1.879-1.193L.75%205.677V5.5c0-.984.48-1.94%201.077-2.664.46-.559%201.05-1.055%201.673-1.353z%22/%3E%3C/svg%3E');--md-admonition-icon--success:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M13.78%204.22a.75.75%200%200%201%200%201.06l-7.25%207.25a.75.75%200%200%201-1.06%200L2.22%209.28a.75.75%200%200%201%20.018-1.042.75.75%200%200%201%201.042-.018L6%2010.94l6.72-6.72a.75.75%200%200%201%201.06%200%22/%3E%3C/svg%3E');--md-admonition-icon--question:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M0%208a8%208%200%201%201%2016%200A8%208%200%200%201%200%208m8-6.5a6.5%206.5%200%201%200%200%2013%206.5%206.5%200%200%200%200-13M6.92%206.085h.001a.749.749%200%201%201-1.342-.67c.169-.339.436-.701.849-.977C6.845%204.16%207.369%204%208%204a2.76%202.76%200%200%201%201.637.525c.503.377.863.965.863%201.725%200%20.448-.115.83-.329%201.15-.205.307-.47.513-.692.662-.109.072-.22.138-.313.195l-.006.004a6%206%200%200%200-.26.16%201%201%200%200%200-.276.245.75.75%200%200%201-1.248-.832c.184-.264.42-.489.692-.661q.154-.1.313-.195l.007-.004c.1-.061.182-.11.258-.161a1%201%200%200%200%20.277-.245C8.96%206.514%209%206.427%209%206.25a.61.61%200%200%200-.262-.525A1.27%201.27%200%200%200%208%205.5c-.369%200-.595.09-.74.187a1%201%200%200%200-.34.398M9%2011a1%201%200%201%201-2%200%201%201%200%200%201%202%200%22/%3E%3C/svg%3E');--md-admonition-icon--warning:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M6.457%201.047c.659-1.234%202.427-1.234%203.086%200l6.082%2011.378A1.75%201.75%200%200%201%2014.082%2015H1.918a1.75%201.75%200%200%201-1.543-2.575Zm1.763.707a.25.25%200%200%200-.44%200L1.698%2013.132a.25.25%200%200%200%20.22.368h12.164a.25.25%200%200%200%20.22-.368Zm.53%203.996v2.5a.75.75%200%200%201-1.5%200v-2.5a.75.75%200%200%201%201.5%200M9%2011a1%201%200%201%201-2%200%201%201%200%200%201%202%200%22/%3E%3C/svg%3E');--md-admonition-icon--failure:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M2.344%202.343za8%208%200%200%201%2011.314%2011.314A8.002%208.002%200%200%201%20.234%2010.089a8%208%200%200%201%202.11-7.746m1.06%2010.253a6.5%206.5%200%201%200%209.108-9.275%206.5%206.5%200%200%200-9.108%209.275M6.03%204.97%208%206.94l1.97-1.97a.749.749%200%200%201%201.275.326.75.75%200%200%201-.215.734L9.06%208l1.97%201.97a.749.749%200%200%201-.326%201.275.75.75%200%200%201-.734-.215L8%209.06l-1.97%201.97a.749.749%200%200%201-1.275-.326.75.75%200%200%201%20.215-.734L6.94%208%204.97%206.03a.75.75%200%200%201%20.018-1.042.75.75%200%200%201%201.042-.018%22/%3E%3C/svg%3E');--md-admonition-icon--danger:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M9.504.43a1.516%201.516%200%200%201%202.437%201.713L10.415%205.5h2.123c1.57%200%202.346%201.909%201.22%203.004l-7.34%207.142a1.25%201.25%200%200%201-.871.354h-.302a1.25%201.25%200%200%201-1.157-1.723L5.633%2010.5H3.462c-1.57%200-2.346-1.909-1.22-3.004zm1.047%201.074L3.286%208.571A.25.25%200%200%200%203.462%209H6.75a.75.75%200%200%201%20.694%201.034l-1.713%204.188%206.982-6.793A.25.25%200%200%200%2012.538%207H9.25a.75.75%200%200%201-.683-1.06l2.008-4.418.003-.006-.004-.009-.006-.006-.008-.001q-.005%200-.009.004%22/%3E%3C/svg%3E');--md-admonition-icon--bug:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4.72.22a.75.75%200%200%201%201.06%200l1%20.999a3.5%203.5%200%200%201%202.441%200l.999-1a.748.748%200%200%201%201.265.332.75.75%200%200%201-.205.729l-.775.776c.616.63.995%201.493.995%202.444v.327q0%20.15-.025.292c.408.14.764.392%201.029.722l1.968-.787a.75.75%200%200%201%20.556%201.392L13%207.258V9h2.25a.75.75%200%200%201%200%201.5H13v.5q-.002.615-.141%201.186l2.17.868a.75.75%200%200%201-.557%201.392l-2.184-.873A5%205%200%200%201%208%2016a5%205%200%200%201-4.288-2.427l-2.183.873a.75.75%200%200%201-.558-1.392l2.17-.868A5%205%200%200%201%203%2011v-.5H.75a.75.75%200%200%201%200-1.5H3V7.258L.971%206.446a.75.75%200%200%201%20.558-1.392l1.967.787c.265-.33.62-.583%201.03-.722a1.7%201.7%200%200%201-.026-.292V4.5c0-.951.38-1.814.995-2.444L4.72%201.28a.75.75%200%200%201%200-1.06m.53%206.28a.75.75%200%200%200-.75.75V11a3.5%203.5%200%201%200%207%200V7.25a.75.75%200%200%200-.75-.75ZM6.173%205h3.654A.17.17%200%200%200%2010%204.827V4.5a2%202%200%201%200-4%200v.327c0%20.096.077.173.173.173%22/%3E%3C/svg%3E');--md-admonition-icon--example:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M5%205.782V2.5h-.25a.75.75%200%200%201%200-1.5h6.5a.75.75%200%200%201%200%201.5H11v3.282l3.666%205.76C15.619%2013.04%2014.543%2015%2012.767%2015H3.233c-1.776%200-2.852-1.96-1.899-3.458Zm-2.4%206.565a.75.75%200%200%200%20.633%201.153h9.534a.75.75%200%200%200%20.633-1.153L12.225%2010.5h-8.45ZM9.5%202.5h-3V6c0%20.143-.04.283-.117.403L4.73%209h6.54L9.617%206.403A.75.75%200%200%201%209.5%206Z%22/%3E%3C/svg%3E');--md-admonition-icon--quote:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M1.75%202.5h10.5a.75.75%200%200%201%200%201.5H1.75a.75.75%200%200%201%200-1.5m4%205h8.5a.75.75%200%200%201%200%201.5h-8.5a.75.75%200%200%201%200-1.5m0%205h8.5a.75.75%200%200%201%200%201.5h-8.5a.75.75%200%200%201%200-1.5M2.5%207.75v6a.75.75%200%200%201-1.5%200v-6a.75.75%200%200%201%201.5%200%22/%3E%3C/svg%3E');}</style>
+
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/mkdocs_d2_plugin.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            .gscrollbar-fixer { padding-right: 15px; }
+            .gdesc-inner { font-size: 0.75rem; }
+            body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color); }
+            body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color); }
+            body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color); }
+        </style></head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#syntaxes" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Streamblocks" class="md-header__button md-logo" aria-label="Streamblocks" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Streamblocks
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Syntaxes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="pink" aria-label="Switch to dark mode" type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="red" data-md-color-accent="deep-orange" aria-label="Switch to light mode" type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"></path></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"></path></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/hotherio/streamblocks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    hotherio/streamblocks
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Streamblocks" class="md-nav__button md-logo" aria-label="Streamblocks" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    Streamblocks
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/hotherio/streamblocks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"></path></svg>
+  </div>
+  <div class="md-source__repository">
+    hotherio/streamblocks
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    StreamBlocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../getting-started/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/first-custom-block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Your First Custom Block
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../blocks-and-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blocks &amp; Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../events/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Events
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Syntaxes
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Syntaxes
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#delimiterpreamblesyntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      DelimiterPreambleSyntax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delimiterfrontmattersyntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      DelimiterFrontmatterSyntax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#markdownfrontmattersyntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      MarkdownFrontmatterSyntax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-syntax-is-chosen" class="md-nav__link">
+    <span class="md-ellipsis">
+      How a syntax is chosen
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-syntaxes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom syntaxes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adapters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Guides
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/define-custom-blocks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Defining Custom Blocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/generate-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generating Prompts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/error-handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error Handling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenAI, Anthropic &amp; Gemini
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/agui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AG-UI Protocol
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/pydantic-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pydantic AI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Performance Tuning
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../examples/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Basics
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/syntaxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Syntaxes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adapters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/blocks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blocks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integrations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Providers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6">
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../reference/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/processors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Processors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/registry-and-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Registry &amp; Models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prompts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/events/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Events
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/syntaxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Syntaxes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adapters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/parsing-and-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Parsing &amp; Validation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extensions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integrations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#delimiterpreamblesyntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      DelimiterPreambleSyntax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delimiterfrontmattersyntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      DelimiterFrontmatterSyntax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#markdownfrontmattersyntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      MarkdownFrontmatterSyntax
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-syntax-is-chosen" class="md-nav__link">
+    <span class="md-ellipsis">
+      How a syntax is chosen
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-syntaxes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom syntaxes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="syntaxes">Syntaxes</h1>
+<p>A <em>syntax</em> defines the wire format of a block: how its opening is detected, where metadata lives, and what closes it. Each <a href="../blocks-and-registry/"><code>Registry</code></a> holds exactly one syntax instance. StreamBlocks ships three built-in syntaxes and lets you implement your own.</p>
+<p>Every block has the same anatomy regardless of syntax: an opening marker, an optional metadata section, the content, and a closing marker. Here it is for <code>DelimiterFrontmatterSyntax</code>:</p>
+<div class="d2"><div class="d2-light"><svg data-d2-version="v0.7.1" preserveAspectRatio="xMinYMin meet" viewBox="0 0 559 1088" role="img" aria-label="Diagram"><svg class="d2-1f3736e36f404eb19b6a52a5640981fc d2-svg" width="559" height="1088" viewBox="-21 -21 559 1088"><rect x="-21.000000" y="-21.000000" width="559.000000" height="1088.000000" rx="0.000000" fill="#FFFFFF" class=" fill-N7" stroke-width="0"></rect><style type="text/css">
+.d2-1f3736e36f404eb19b6a52a5640981fc .text {
+	font-family: "d2-1f3736e36f404eb19b6a52a5640981fc-font-regular";
+}
+@font-face {
+	font-family: d2-1f3736e36f404eb19b6a52a5640981fc-font-regular;
+	src: url("data:application/font-woff;base64,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");
+}
+.d2-1f3736e36f404eb19b6a52a5640981fc .text-mono {
+	font-family: "d2-1f3736e36f404eb19b6a52a5640981fc-font-mono";
+}
+@font-face {
+	font-family: d2-1f3736e36f404eb19b6a52a5640981fc-font-mono;
+	src: url("data:application/font-woff;base64,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");
+}
+.d2-1f3736e36f404eb19b6a52a5640981fc .text-mono-bold {
+	font-family: "d2-1f3736e36f404eb19b6a52a5640981fc-font-mono-bold";
+}
+@font-face {
+	font-family: d2-1f3736e36f404eb19b6a52a5640981fc-font-mono-bold;
+	src: url("data:application/font-woff;base64,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");
+}</style><style type="text/css">.shape {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+}
+.connection {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blend {
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-N1{fill:#0A0F25;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-N2{fill:#676C7E;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-N3{fill:#9499AB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-N4{fill:#CFD2DD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-N5{fill:#DEE1EB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-N6{fill:#EEF1F8;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-N7{fill:#FFFFFF;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-B1{fill:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-B2{fill:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-B3{fill:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-B4{fill:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-B5{fill:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-B6{fill:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-AA2{fill:#4A6FF3;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-AA4{fill:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-AA5{fill:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-AB4{fill:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .fill-AB5{fill:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-N1{stroke:#0A0F25;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-N2{stroke:#676C7E;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-N3{stroke:#9499AB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-N4{stroke:#CFD2DD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-N5{stroke:#DEE1EB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-N6{stroke:#EEF1F8;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-N7{stroke:#FFFFFF;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-B1{stroke:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-B2{stroke:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-B3{stroke:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-B4{stroke:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-B5{stroke:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-B6{stroke:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-AA2{stroke:#4A6FF3;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-AA4{stroke:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-AA5{stroke:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-AB4{stroke:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .stroke-AB5{stroke:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-N1{background-color:#0A0F25;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-N2{background-color:#676C7E;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-N3{background-color:#9499AB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-N4{background-color:#CFD2DD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-N5{background-color:#DEE1EB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-N6{background-color:#EEF1F8;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-N7{background-color:#FFFFFF;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-B1{background-color:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-B2{background-color:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-B3{background-color:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-B4{background-color:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-B5{background-color:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-B6{background-color:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-AA2{background-color:#4A6FF3;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-AA4{background-color:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-AA5{background-color:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-AB4{background-color:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .background-color-AB5{background-color:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-N1{color:#0A0F25;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-N2{color:#676C7E;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-N3{color:#9499AB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-N4{color:#CFD2DD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-N5{color:#DEE1EB;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-N6{color:#EEF1F8;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-N7{color:#FFFFFF;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-B1{color:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-B2{color:#0D32B2;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-B3{color:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-B4{color:#E3E9FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-B5{color:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-B6{color:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-AA2{color:#4A6FF3;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-AA4{color:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-AA5{color:#F7F8FE;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-AB4{color:#EDF0FD;}
+		.d2-1f3736e36f404eb19b6a52a5640981fc .color-AB5{color:#F7F8FE;}.appendix text.text{fill:#0A0F25}.md{--color-fg-default:#0A0F25;--color-fg-muted:#676C7E;--color-fg-subtle:#9499AB;--color-canvas-default:#FFFFFF;--color-canvas-subtle:#EEF1F8;--color-border-default:#0D32B2;--color-border-muted:#0D32B2;--color-neutral-muted:#EEF1F8;--color-accent-fg:#0D32B2;--color-accent-emphasis:#0D32B2;--color-attention-subtle:#676C7E;--color-danger-fg:red;}.sketch-overlay-B1{fill:url(#streaks-darker-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:lighten}.sketch-overlay-B2{fill:url(#streaks-darker-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:lighten}.sketch-overlay-B3{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-B4{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-B5{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-B6{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-AA2{fill:url(#streaks-dark-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:overlay}.sketch-overlay-AA4{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-AA5{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-AB4{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-AB5{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-N1{fill:url(#streaks-darker-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:lighten}.sketch-overlay-N2{fill:url(#streaks-dark-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:overlay}.sketch-overlay-N3{fill:url(#streaks-normal-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:color-burn}.sketch-overlay-N4{fill:url(#streaks-normal-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:color-burn}.sketch-overlay-N5{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-N6{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.sketch-overlay-N7{fill:url(#streaks-bright-d2-1f3736e36f404eb19b6a52a5640981fc);mix-blend-mode:darken}.light-code{display: block}.dark-code{display: none}</style><g class="YmxvY2s="><g class="shape"><rect x="12.000000" y="12.000000" width="493.000000" height="1022.000000" stroke="#0D32B2" fill="#E3E9FD" class=" stroke-B1 fill-B4" style="stroke-width:2;"></rect></g><text x="258.500000" y="45.000000" fill="#0A0F25" class="text fill-N1" style="text-anchor:middle;font-size:28px">Delimiter frontmatter block</text></g><g class="YmxvY2sub3Blbg=="><g class="shape"><rect x="154.000000" y="62.000000" width="209.000000" height="166.000000" stroke="#0D32B2" fill="#EDF0FD" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.500000" y="91.000000" fill="#0A0F25" class="text fill-N1" style="text-anchor:middle;font-size:24px">Opening marker</text></g><g class="YmxvY2subWV0YQ=="><g class="shape"><rect x="109.000000" y="298.000000" width="298.000000" height="214.000000" stroke="#0D32B2" fill="#EDF0FD" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.000000" y="327.000000" fill="#0A0F25" class="text fill-N1" style="text-anchor:middle;font-size:24px">Metadata section (YAML)</text></g><g class="YmxvY2suY29udGVudA=="><g class="shape"><rect x="62.000000" y="582.000000" width="393.000000" height="166.000000" stroke="#0D32B2" fill="#EDF0FD" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.500000" y="611.000000" fill="#0A0F25" class="text fill-N1" style="text-anchor:middle;font-size:24px">Content section</text></g><g class="YmxvY2suY2xvc2U="><g class="shape"><rect x="160.000000" y="818.000000" width="196.000000" height="166.000000" stroke="#0D32B2" fill="#EDF0FD" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.000000" y="847.000000" fill="#0A0F25" class="text fill-N1" style="text-anchor:middle;font-size:24px">Closing marker</text></g><g class="YmxvY2sub3Blbi5jb2Rl"><g class="shape"><rect x="204.000000" y="112.000000" width="109.000000" height="66.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.500000" y="150.500000" fill="#0A0F25" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px">!!start</text></g><g class="YmxvY2subWV0YS5jb2Rl"><g class="shape"><rect x="159.000000" y="348.000000" width="198.000000" height="114.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.000000" y="386.500000" fill="#0A0F25" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="258.000000" dy="0.000000">---</tspan><tspan x="258.000000" dy="17.250000">id: plan01</tspan><tspan x="258.000000" dy="17.250000">block_type: task</tspan><tspan x="258.000000" dy="17.250000">---</tspan></text></g><g class="YmxvY2suY29udGVudC5jb2Rl"><g class="shape"><rect x="112.000000" y="632.000000" width="293.000000" height="66.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.500000" y="670.500000" fill="#0A0F25" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px">Refactor the parser module</text></g><g class="YmxvY2suY2xvc2UuY29kZQ=="><g class="shape"><rect x="213.000000" y="868.000000" width="90.000000" height="66.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.000000" y="906.500000" fill="#0A0F25" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px">!!end</text></g><g class="YmxvY2suKG9wZW4gLSZndDsgbWV0YSlbMF0="><marker id="mk-d2-1f3736e36f404eb19b6a52a5640981fc-3488378134" markerWidth="10.000000" markerHeight="12.000000" refX="7.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0.000000,0.000000 10.000000,6.000000 0.000000,12.000000" fill="#0D32B2" class="connection fill-B1" stroke-width="2"></polygon> </marker><path d="M 258.500000 230.000000 L 258.500000 294.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-1f3736e36f404eb19b6a52a5640981fc-3488378134)" mask="url(#d2-1f3736e36f404eb19b6a52a5640981fc)"></path></g><g class="YmxvY2suKG1ldGEgLSZndDsgY29udGVudClbMF0="><path d="M 258.500000 514.000000 L 258.500000 578.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-1f3736e36f404eb19b6a52a5640981fc-3488378134)" mask="url(#d2-1f3736e36f404eb19b6a52a5640981fc)"></path></g><g class="YmxvY2suKGNvbnRlbnQgLSZndDsgY2xvc2UpWzBd"><path d="M 258.500000 750.000000 L 258.500000 814.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-1f3736e36f404eb19b6a52a5640981fc-3488378134)" mask="url(#d2-1f3736e36f404eb19b6a52a5640981fc)"></path></g><mask id="d2-1f3736e36f404eb19b6a52a5640981fc" maskUnits="userSpaceOnUse" x="-21" y="-21" width="559" height="1088">
+<rect x="-21" y="-21" width="559" height="1088" fill="white"></rect>
+
+</mask></svg></svg></div><div class="d2-dark"><svg data-d2-version="v0.7.1" preserveAspectRatio="xMinYMin meet" viewBox="0 0 559 1088" role="img" aria-label="Diagram"><svg class="d2-33e87bef84a347848094a132510a8995 d2-svg" width="559" height="1088" viewBox="-21 -21 559 1088"><rect x="-21.000000" y="-21.000000" width="559.000000" height="1088.000000" rx="0.000000" fill="#1E1E2E" class=" fill-N7" stroke-width="0"></rect><style type="text/css">
+.d2-33e87bef84a347848094a132510a8995 .text {
+	font-family: "d2-33e87bef84a347848094a132510a8995-font-regular";
+}
+@font-face {
+	font-family: d2-33e87bef84a347848094a132510a8995-font-regular;
+	src: url("data:application/font-woff;base64,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");
+}
+.d2-33e87bef84a347848094a132510a8995 .text-mono {
+	font-family: "d2-33e87bef84a347848094a132510a8995-font-mono";
+}
+@font-face {
+	font-family: d2-33e87bef84a347848094a132510a8995-font-mono;
+	src: url("data:application/font-woff;base64,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");
+}
+.d2-33e87bef84a347848094a132510a8995 .text-mono-bold {
+	font-family: "d2-33e87bef84a347848094a132510a8995-font-mono-bold";
+}
+@font-face {
+	font-family: d2-33e87bef84a347848094a132510a8995-font-mono-bold;
+	src: url("data:application/font-woff;base64,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");
+}</style><style type="text/css">.shape {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+}
+.connection {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blend {
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+		.d2-33e87bef84a347848094a132510a8995 .fill-N1{fill:#CDD6F4;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-N2{fill:#BAC2DE;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-N3{fill:#A6ADC8;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-N4{fill:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-N5{fill:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-N6{fill:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-N7{fill:#1E1E2E;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-B1{fill:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-B2{fill:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-B3{fill:#6C7086;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-B4{fill:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-B5{fill:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-B6{fill:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-AA2{fill:#f38BA8;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-AA4{fill:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-AA5{fill:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-AB4{fill:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .fill-AB5{fill:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-N1{stroke:#CDD6F4;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-N2{stroke:#BAC2DE;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-N3{stroke:#A6ADC8;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-N4{stroke:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-N5{stroke:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-N6{stroke:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-N7{stroke:#1E1E2E;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-B1{stroke:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-B2{stroke:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-B3{stroke:#6C7086;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-B4{stroke:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-B5{stroke:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-B6{stroke:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-AA2{stroke:#f38BA8;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-AA4{stroke:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-AA5{stroke:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-AB4{stroke:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .stroke-AB5{stroke:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-N1{background-color:#CDD6F4;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-N2{background-color:#BAC2DE;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-N3{background-color:#A6ADC8;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-N4{background-color:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-N5{background-color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-N6{background-color:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-N7{background-color:#1E1E2E;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-B1{background-color:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-B2{background-color:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-B3{background-color:#6C7086;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-B4{background-color:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-B5{background-color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-B6{background-color:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-AA2{background-color:#f38BA8;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-AA4{background-color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-AA5{background-color:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-AB4{background-color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .background-color-AB5{background-color:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .color-N1{color:#CDD6F4;}
+		.d2-33e87bef84a347848094a132510a8995 .color-N2{color:#BAC2DE;}
+		.d2-33e87bef84a347848094a132510a8995 .color-N3{color:#A6ADC8;}
+		.d2-33e87bef84a347848094a132510a8995 .color-N4{color:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .color-N5{color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .color-N6{color:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .color-N7{color:#1E1E2E;}
+		.d2-33e87bef84a347848094a132510a8995 .color-B1{color:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .color-B2{color:#CBA6f7;}
+		.d2-33e87bef84a347848094a132510a8995 .color-B3{color:#6C7086;}
+		.d2-33e87bef84a347848094a132510a8995 .color-B4{color:#585B70;}
+		.d2-33e87bef84a347848094a132510a8995 .color-B5{color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .color-B6{color:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .color-AA2{color:#f38BA8;}
+		.d2-33e87bef84a347848094a132510a8995 .color-AA4{color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .color-AA5{color:#313244;}
+		.d2-33e87bef84a347848094a132510a8995 .color-AB4{color:#45475A;}
+		.d2-33e87bef84a347848094a132510a8995 .color-AB5{color:#313244;}.appendix text.text{fill:#CDD6F4}.md{--color-fg-default:#CDD6F4;--color-fg-muted:#BAC2DE;--color-fg-subtle:#A6ADC8;--color-canvas-default:#1E1E2E;--color-canvas-subtle:#313244;--color-border-default:#CBA6f7;--color-border-muted:#CBA6f7;--color-neutral-muted:#313244;--color-accent-fg:#CBA6f7;--color-accent-emphasis:#CBA6f7;--color-attention-subtle:#BAC2DE;--color-danger-fg:red;}.sketch-overlay-B1{fill:url(#streaks-normal-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:color-burn}.sketch-overlay-B2{fill:url(#streaks-normal-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:color-burn}.sketch-overlay-B3{fill:url(#streaks-dark-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:overlay}.sketch-overlay-B4{fill:url(#streaks-dark-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:overlay}.sketch-overlay-B5{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-B6{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-AA2{fill:url(#streaks-normal-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:color-burn}.sketch-overlay-AA4{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-AA5{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-AB4{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-AB5{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-N1{fill:url(#streaks-normal-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:color-burn}.sketch-overlay-N2{fill:url(#streaks-normal-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:color-burn}.sketch-overlay-N3{fill:url(#streaks-normal-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:color-burn}.sketch-overlay-N4{fill:url(#streaks-dark-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:overlay}.sketch-overlay-N5{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-N6{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.sketch-overlay-N7{fill:url(#streaks-darker-d2-33e87bef84a347848094a132510a8995);mix-blend-mode:lighten}.light-code{display: none}.dark-code{display: block}</style><g class="YmxvY2s="><g class="shape"><rect x="12.000000" y="12.000000" width="493.000000" height="1022.000000" stroke="#CBA6f7" fill="#585B70" class=" stroke-B1 fill-B4" style="stroke-width:2;"></rect></g><text x="258.500000" y="45.000000" fill="#CDD6F4" class="text fill-N1" style="text-anchor:middle;font-size:28px">Delimiter frontmatter block</text></g><g class="YmxvY2sub3Blbg=="><g class="shape"><rect x="154.000000" y="62.000000" width="209.000000" height="166.000000" stroke="#CBA6f7" fill="#45475A" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.500000" y="91.000000" fill="#CDD6F4" class="text fill-N1" style="text-anchor:middle;font-size:24px">Opening marker</text></g><g class="YmxvY2subWV0YQ=="><g class="shape"><rect x="109.000000" y="298.000000" width="298.000000" height="214.000000" stroke="#CBA6f7" fill="#45475A" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.000000" y="327.000000" fill="#CDD6F4" class="text fill-N1" style="text-anchor:middle;font-size:24px">Metadata section (YAML)</text></g><g class="YmxvY2suY29udGVudA=="><g class="shape"><rect x="62.000000" y="582.000000" width="393.000000" height="166.000000" stroke="#CBA6f7" fill="#45475A" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.500000" y="611.000000" fill="#CDD6F4" class="text fill-N1" style="text-anchor:middle;font-size:24px">Content section</text></g><g class="YmxvY2suY2xvc2U="><g class="shape"><rect x="160.000000" y="818.000000" width="196.000000" height="166.000000" stroke="#CBA6f7" fill="#45475A" class=" stroke-B1 fill-B5" style="stroke-width:2;"></rect></g><text x="258.000000" y="847.000000" fill="#CDD6F4" class="text fill-N1" style="text-anchor:middle;font-size:24px">Closing marker</text></g><g class="YmxvY2sub3Blbi5jb2Rl"><g class="shape"><rect x="204.000000" y="112.000000" width="109.000000" height="66.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.500000" y="150.500000" fill="#CDD6F4" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px">!!start</text></g><g class="YmxvY2subWV0YS5jb2Rl"><g class="shape"><rect x="159.000000" y="348.000000" width="198.000000" height="114.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.000000" y="386.500000" fill="#CDD6F4" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="258.000000" dy="0.000000">---</tspan><tspan x="258.000000" dy="17.250000">id: plan01</tspan><tspan x="258.000000" dy="17.250000">block_type: task</tspan><tspan x="258.000000" dy="17.250000">---</tspan></text></g><g class="YmxvY2suY29udGVudC5jb2Rl"><g class="shape"><rect x="112.000000" y="632.000000" width="293.000000" height="66.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.500000" y="670.500000" fill="#CDD6F4" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px">Refactor the parser module</text></g><g class="YmxvY2suY2xvc2UuY29kZQ=="><g class="shape"><rect x="213.000000" y="868.000000" width="90.000000" height="66.000000" stroke="#CBA6f7" fill="#313244" class=" stroke-B1 fill-B6" style="stroke-width:2;"></rect></g><text x="258.000000" y="906.500000" fill="#CDD6F4" class="text-mono-bold fill-N1" style="text-anchor:middle;font-size:16px">!!end</text></g><g class="YmxvY2suKG9wZW4gLSZndDsgbWV0YSlbMF0="><marker id="mk-d2-33e87bef84a347848094a132510a8995-3488378134" markerWidth="10.000000" markerHeight="12.000000" refX="7.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0.000000,0.000000 10.000000,6.000000 0.000000,12.000000" fill="#CBA6f7" class="connection fill-B1" stroke-width="2"></polygon> </marker><path d="M 258.500000 230.000000 L 258.500000 294.000000" stroke="#CBA6f7" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-33e87bef84a347848094a132510a8995-3488378134)" mask="url(#d2-33e87bef84a347848094a132510a8995)"></path></g><g class="YmxvY2suKG1ldGEgLSZndDsgY29udGVudClbMF0="><path d="M 258.500000 514.000000 L 258.500000 578.000000" stroke="#CBA6f7" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-33e87bef84a347848094a132510a8995-3488378134)" mask="url(#d2-33e87bef84a347848094a132510a8995)"></path></g><g class="YmxvY2suKGNvbnRlbnQgLSZndDsgY2xvc2UpWzBd"><path d="M 258.500000 750.000000 L 258.500000 814.000000" stroke="#CBA6f7" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-33e87bef84a347848094a132510a8995-3488378134)" mask="url(#d2-33e87bef84a347848094a132510a8995)"></path></g><mask id="d2-33e87bef84a347848094a132510a8995" maskUnits="userSpaceOnUse" x="-21" y="-21" width="559" height="1088">
+<rect x="-21" y="-21" width="559" height="1088" fill="white"></rect>
+
+</mask></svg></svg></div></div>
+<h2 id="delimiterpreamblesyntax">DelimiterPreambleSyntax</h2>
+<p>The default. Metadata is inline in the opening line, compact and cheap for an LLM to emit.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio"><input id="__tabbed_1_2" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="__tabbed_1_1">Wire format</label><label for="__tabbed_1_2">Usage</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>!!&lt;id&gt;:&lt;type&gt;[:param1:param2:...]
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Content lines here
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>!!end
+</code></pre></div>
+<p>The opening delimiter carries the block <code>id</code> and <code>block_type</code> (both required, alphanumeric).</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Setup: registry + processor</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">()</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"files_operations"</span><span class="p">,</span> <span class="n">FileOperations</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">processor</span> <span class="o">=</span> <span class="n">StreamBlockProcessor</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Text with one block</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">text</span> <span class="o">=</span> <span class="s2">"!!block01:files_operations</span><span class="se">\n</span><span class="s2">src/main.py:C</span><span class="se">\n</span><span class="s2">!!end"</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">stream</span> <span class="o">=</span> <span class="n">simple_text_stream</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Process and extract blocks</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">processor</span><span class="o">.</span><span class="n">process_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockEndEvent</span><span class="p">):</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>        <span class="n">block</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_block</span><span class="p">()</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="k">if</span> <span class="n">block</span><span class="p">:</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>            <span class="nb">print</span><span class="p">(</span><span class="s2">"Extracted block:"</span><span class="p">)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>            <span class="nb">print</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>delimiter</code></td>
+<td><code>"!!"</code></td>
+<td>Marker prefix for the opening line and the <code>!!end</code> closing line</td>
+</tr>
+</tbody>
+</table>
+<details class="note">
+<summary>Extra parameters in the opening line</summary>
+<p>Optional colon-separated parameters are stored in metadata as <code>param_0</code>, <code>param_1</code>, and so on:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>!!file123:operation:create:urgent
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Create new config file
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>!!end
+</code></pre></div>
+<p>produces metadata <code>{"id": "file123", "block_type": "operation", "param_0": "create", "param_1": "urgent"}</code>.</p>
+</details>
+<h2 id="delimiterfrontmattersyntax">DelimiterFrontmatterSyntax</h2>
+<p>Delimiter markers with a YAML frontmatter section for richer metadata. The YAML is parsed into your metadata model (it must include <code>id</code> and <code>block_type</code> when using <code>BaseMetadata</code>); nested YAML is supported.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio"><input id="__tabbed_2_2" name="__tabbed_2" type="radio"><div class="tabbed-labels"><label for="__tabbed_2_1">Wire format</label><label for="__tabbed_2_2">Usage</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>!!start
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>---
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>id: block_001
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>block_type: example
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>custom_field: value
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>---
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>Content lines here
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>!!end
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Create delimiter frontmatter syntax for tasks</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># Using standard !!start/!!end delimiters</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">task_syntax</span> <span class="o">=</span> <span class="n">DelimiterFrontmatterSyntax</span><span class="p">(</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">start_delimiter</span><span class="o">=</span><span class="s2">"!!start"</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">end_delimiter</span><span class="o">=</span><span class="s2">"!!end"</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Create type-specific registry and register block</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span><span class="n">syntax</span><span class="o">=</span><span class="n">task_syntax</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"task"</span><span class="p">,</span> <span class="n">TaskBlock</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>start_delimiter</code></td>
+<td><code>"!!start"</code></td>
+<td>Opening marker</td>
+</tr>
+<tr>
+<td><code>end_delimiter</code></td>
+<td><code>"!!end"</code></td>
+<td>Closing marker</td>
+</tr>
+</tbody>
+</table>
+<h2 id="markdownfrontmattersyntax">MarkdownFrontmatterSyntax</h2>
+<p>Markdown fenced code blocks with optional YAML frontmatter, useful when the stream is rendered as Markdown anyway. When frontmatter is absent (or has no <code>block_type</code>), the info string is the fallback <code>block_type</code> and all lines become content.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio"><input id="__tabbed_3_2" name="__tabbed_3" type="radio"><div class="tabbed-labels"><label for="__tabbed_3_1">Wire format</label><label for="__tabbed_3_2">Usage</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>```[info_string]
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>---
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>id: block_001
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>block_type: example
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>custom_field: value
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>---
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>Content lines here
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>```
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Create markdown frontmatter syntax for patch blocks</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Each Registry holds exactly one syntax.</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># To handle multiple info strings (patch/yaml/diff), you would need separate processors</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># or a custom syntax that handles multiple patterns internally.</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">syntax</span> <span class="o">=</span> <span class="n">MarkdownFrontmatterSyntax</span><span class="p">(</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">fence</span><span class="o">=</span><span class="s2">"```"</span><span class="p">,</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">info_string</span><span class="o">=</span><span class="s2">"patch"</span><span class="p">,</span>  <span class="c1"># Will match ```patch blocks</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="c1"># Create type-specific registry and register block</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span><span class="n">syntax</span><span class="o">=</span><span class="n">syntax</span><span class="p">)</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"patch"</span><span class="p">,</span> <span class="n">Patch</span><span class="p">)</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="c1"># Create processor with config</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="n">config</span> <span class="o">=</span> <span class="n">ProcessorConfig</span><span class="p">(</span><span class="n">lines_buffer</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="n">processor</span> <span class="o">=</span> <span class="n">StreamBlockProcessor</span><span class="p">(</span><span class="n">registry</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fence</code></td>
+<td><code>"```"</code></td>
+<td>Fence string</td>
+</tr>
+<tr>
+<td><code>info_string</code></td>
+<td><code>None</code></td>
+<td>Restricts detection to fences with this info string; also the fallback <code>block_type</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-a-syntax-is-chosen">How a syntax is chosen</h2>
+<p>Pass either a <code>Syntax</code> enum member or a configured instance to the registry:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Registry</span><span class="p">,</span> <span class="n">DelimiterFrontmatterSyntax</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks.syntaxes.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">Syntax</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Enum: built-in syntax with default options</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span><span class="n">syntax</span><span class="o">=</span><span class="n">Syntax</span><span class="o">.</span><span class="n">DELIMITER_FRONTMATTER</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># Instance: full control over options</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span><span class="n">syntax</span><span class="o">=</span><span class="n">DelimiterFrontmatterSyntax</span><span class="p">(</span><span class="n">start_delimiter</span><span class="o">=</span><span class="s2">"&lt;&lt;begin"</span><span class="p">,</span> <span class="n">end_delimiter</span><span class="o">=</span><span class="s2">"&lt;&lt;end"</span><span class="p">))</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Enum member</th>
+<th>Syntax class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Syntax.DELIMITER_PREAMBLE</code> (default)</td>
+<td><code>DelimiterPreambleSyntax</code></td>
+</tr>
+<tr>
+<td><code>Syntax.DELIMITER_FRONTMATTER</code></td>
+<td><code>DelimiterFrontmatterSyntax</code></td>
+</tr>
+<tr>
+<td><code>Syntax.MARKDOWN_FRONTMATTER</code></td>
+<td><code>MarkdownFrontmatterSyntax</code></td>
+</tr>
+</tbody>
+</table>
+<p>Because a registry holds a single syntax, processing one stream with several wire formats requires separate processors or a custom syntax that recognizes multiple patterns.</p>
+<h2 id="custom-syntaxes">Custom syntaxes</h2>
+<p>Subclass <code>BaseSyntax</code> and implement four methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>detect_line(line, candidate)</code></td>
+<td>Return a <code>DetectionResult</code> flagging opening, closing, or metadata-boundary lines; accumulate lines into the candidate</td>
+</tr>
+<tr>
+<td><code>should_accumulate_metadata(candidate)</code></td>
+<td>Whether the candidate is still in its metadata section</td>
+</tr>
+<tr>
+<td><code>extract_block_type(candidate)</code></td>
+<td>Pull the <code>block_type</code> string out of a candidate so the registry can find the block class</td>
+</tr>
+<tr>
+<td><code>parse_block(candidate, block_class)</code></td>
+<td>Build the final <code>ParseResult</code> with parsed metadata and content</td>
+</tr>
+</tbody>
+</table>
+<p>A custom syntax plugs into the registry like any built-in one:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">syntax</span> <span class="o">=</span> <span class="n">XMLBlockSyntax</span><span class="p">()</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">registry</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span><span class="n">syntax</span><span class="o">=</span><span class="n">syntax</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"files_operations"</span><span class="p">,</span> <span class="n">FileOperations</span><span class="p">)</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">processor</span> <span class="o">=</span> <span class="n">StreamBlockProcessor</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+</code></pre></div>
+<p>The full example implements an XML-comment wire format (<code>&lt;!-- block:type id="..." --&gt;</code> … <code>&lt;!-- /block --&gt;</code>); see the <a href="../../examples/syntaxes/">custom syntax example</a> for the complete <code>XMLBlockSyntax</code> implementation.</p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li><a href="../blocks-and-registry/">Blocks &amp; Registry</a>: how block classes attach to a syntax.</li>
+<li><a href="../events/">Events</a>: what the processor emits while a block accumulates.</li>
+<li><a href="../../examples/syntaxes/">Syntax examples</a>: runnable examples for every built-in syntax.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.tabs.link", "navigation.instant", "navigation.tracking", "navigation.top", "header.autohide", "navigation.sections", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "search.share"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
+      
+        <script src="../../javascripts/tablesort.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  
+<script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(()=>{ lightbox.reload(); });
+</script></body></html>
