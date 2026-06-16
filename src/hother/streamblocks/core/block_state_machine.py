@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
+from hother.streamblocks.core.constants import LIMITS
 from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.registry import MetadataValidationFailureMode
 from hother.streamblocks.core.types import (
@@ -58,7 +59,7 @@ class BlockStateMachine:
         syntax: BaseSyntax,
         registry: Registry,
         *,
-        max_block_size: int = 1_048_576,
+        max_block_size: int = LIMITS.MAX_BLOCK_SIZE,
         emit_section_end_events: bool = True,
         logger: Logger | None = None,
     ) -> None:

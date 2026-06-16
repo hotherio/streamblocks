@@ -306,11 +306,6 @@ line-ending = "auto"
     "INP001",  # Implicit namespace package
     "PLC0415", # Import not at top-level (acceptable in tools)
 ]
-"src/hother/streamblocks/core/processor.py" = [
-    "PLR0912", # Too many branches
-    "PLR0915", # Too many statements
-    "C901",    # Too complex
-]
 "src/hother/streamblocks/core/models.py" = [
     "UP046",   # Type annotation can be modernized
     "PLC0415", # Import not at top-level (needed to avoid circular imports with syntaxes)

@@ -96,7 +96,7 @@ class ProcessorConfig:
 
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, AsyncIterator, Callable
+    from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterator
 
     from hother.streamblocks.adapters.protocols import InputProtocolAdapter
     from hother.streamblocks.core._logger import Logger
@@ -196,43 +196,7 @@ class StreamBlockProcessor:
             ...     if isinstance(event, BlockErrorEvent):
             ...         print(f"Incomplete block: {event.reason}")
         """
-        events: list[TChunk | Event] = []
-
-        # Auto-detect adapter on first chunk
-        self._ensure_adapter(chunk, adapter)
-
-        # Emit original chunk (passthrough)
-        if self.config.emit_original_events and not isinstance(self._adapter, IdentityInputAdapter):
-            events.append(chunk)
-
-        # Extract text from chunk
-        if self._adapter is None:
-            raise AdapterNotConfiguredError(context="process_chunk")
-        text = cast("InputProtocolAdapter[Any]", self._adapter).extract_text(chunk)
-
-        if not text:
-            return events
-
-        # Log stream processing start on first chunk with text
-        if self._line_accumulator.line_number == 0 and not self._line_accumulator.has_pending_text:
-            self.logger.debug(
-                "stream_processing_started",
-                syntax=get_syntax_name(self.syntax),
-                lines_buffer=self.config.lines_buffer,
-                max_block_size=self.config.max_block_size,
-            )
-
-        # Emit text delta for real-time streaming
-        if self.config.emit_text_deltas:
-            events.append(self._create_text_delta_event(text))
-
-        # Process text through line accumulator and block state machine
-        for line_number, line in self._line_accumulator.add_text(text):
-            line_events = self._block_machine.process_line(line, line_number)
-            self._update_stats(line_events)
-            events.extend(line_events)
-
-        return events
+        return list(self._iter_chunk_outputs(chunk, adapter, context="process_chunk"))
 
     def finalize(self) -> list[Event]:
         """Finalize processing and flush any incomplete blocks.
@@ -260,22 +224,7 @@ class StreamBlockProcessor:
             ...     if isinstance(event, BlockErrorEvent):
             ...         print(f"Incomplete block: {event.reason}")
         """
-        events: list[Event] = []
-
-        # Process any remaining accumulated text as a final line
-        final_line = self._line_accumulator.finalize()
-        if final_line:
-            line_number, line = final_line
-            line_events = self._block_machine.process_line(line, line_number)
-            self._update_stats(line_events)
-            events.extend(line_events)
-
-        # Flush remaining candidates
-        flush_events = self._block_machine.flush(self._line_accumulator.line_number)
-        self._update_stats(flush_events)
-        events.extend(flush_events)
-
-        return events
+        return list(self._iter_finalize_outputs())
 
     def is_native_event(self, event: Any) -> bool:
         """Check if event is a native provider event (not a StreamBlocks event).
@@ -377,51 +326,11 @@ class StreamBlockProcessor:
             self._first_chunk_processed = True
 
         async for chunk in stream:
-            # Auto-detection on first chunk
-            self._ensure_adapter(chunk, None)
+            for output in self._iter_chunk_outputs(chunk, None, context="process_stream"):
+                yield output
 
-            # Emit original chunk (passthrough)
-            if self.config.emit_original_events and not isinstance(self._adapter, IdentityInputAdapter):
-                yield chunk
-
-            # Extract text from chunk
-            if self._adapter is None:
-                raise AdapterNotConfiguredError(context="process_stream")
-            text = cast("InputProtocolAdapter[Any]", self._adapter).extract_text(chunk)
-
-            if not text:
-                continue
-
-            # Log stream processing start on first chunk with text
-            if self._line_accumulator.line_number == 0 and not self._line_accumulator.has_pending_text:
-                self.logger.debug(
-                    "stream_processing_started",
-                    syntax=get_syntax_name(self.syntax),
-                    lines_buffer=self.config.lines_buffer,
-                    max_block_size=self.config.max_block_size,
-                )
-
-            # Emit text delta for real-time streaming
-            if self.config.emit_text_deltas:
-                yield self._create_text_delta_event(text)
-
-            # Process text through line accumulator and block state machine
-            for line_number, line in self._line_accumulator.add_text(text):
-                for event in self._block_machine.process_line(line, line_number):
-                    self._update_stats([event])
-                    yield event
-
-        # Process any remaining accumulated text as a final line
-        final_line = self._line_accumulator.finalize()
-        if final_line:
-            line_number, line = final_line
-            for event in self._block_machine.process_line(line, line_number):
-                self._update_stats([event])
-                yield event
-
-        # Flush remaining candidates at stream end
-        for event in self._block_machine.flush(self._line_accumulator.line_number):
-            self._update_stats([event])
+        # Process remaining text and flush incomplete blocks at stream end
+        for event in self._iter_finalize_outputs():
             yield event
 
     def _ensure_adapter(self, chunk: TChunk, adapter: InputProtocolAdapter[TChunk] | None) -> None:
@@ -446,6 +355,82 @@ class StreamBlockProcessor:
             self._adapter = IdentityInputAdapter()
 
         self._first_chunk_processed = True
+
+    def _iter_chunk_outputs(
+        self,
+        chunk: TChunk,
+        adapter: InputProtocolAdapter[TChunk] | None,
+        *,
+        context: str,
+    ) -> Iterator[TChunk | Event]:
+        """Yield the outputs produced by a single chunk.
+
+        Shared by the sync :meth:`process_chunk` (consumed via ``list()``) and the
+        async :meth:`process_stream` (re-yielded). Emits, in order: the original
+        chunk (passthrough), an optional TextDeltaEvent, then any block events from
+        the lines completed by this chunk's text.
+
+        Args:
+            chunk: Single chunk to process.
+            adapter: Optional adapter for text extraction; auto-detected on the
+                first chunk when not provided.
+            context: Caller name used in :class:`AdapterNotConfiguredError`.
+        """
+        # Auto-detect adapter on first chunk
+        self._ensure_adapter(chunk, adapter)
+
+        # Emit original chunk (passthrough)
+        if self.config.emit_original_events and not isinstance(self._adapter, IdentityInputAdapter):
+            yield chunk
+
+        # Extract text from chunk
+        if self._adapter is None:
+            raise AdapterNotConfiguredError(context=context)
+        text = cast("InputProtocolAdapter[Any]", self._adapter).extract_text(chunk)
+
+        if not text:
+            return
+
+        self._maybe_log_stream_start()
+
+        # Emit text delta for real-time streaming
+        if self.config.emit_text_deltas:
+            yield self._create_text_delta_event(text)
+
+        # Process text through line accumulator and block state machine
+        for line_number, line in self._line_accumulator.add_text(text):
+            line_events = self._block_machine.process_line(line, line_number)
+            self._update_stats(line_events)
+            yield from line_events
+
+    def _iter_finalize_outputs(self) -> Iterator[Event]:
+        """Yield the final line's events and rejection events for incomplete blocks.
+
+        Shared by :meth:`finalize` (consumed via ``list()``) and the tail of
+        :meth:`process_stream`.
+        """
+        # Process any remaining accumulated text as a final line
+        final_line = self._line_accumulator.finalize()
+        if final_line:
+            line_number, line = final_line
+            line_events = self._block_machine.process_line(line, line_number)
+            self._update_stats(line_events)
+            yield from line_events
+
+        # Flush remaining candidates
+        flush_events = self._block_machine.flush(self._line_accumulator.line_number)
+        self._update_stats(flush_events)
+        yield from flush_events
+
+    def _maybe_log_stream_start(self) -> None:
+        """Log the stream-start debug event once, on the first chunk with text."""
+        if self._line_accumulator.line_number == 0 and not self._line_accumulator.has_pending_text:
+            self.logger.debug(
+                "stream_processing_started",
+                syntax=get_syntax_name(self.syntax),
+                lines_buffer=self.config.lines_buffer,
+                max_block_size=self.config.max_block_size,
+            )
 
     def _create_text_delta_event(self, text: str) -> TextDeltaEvent:
         """Create a TextDeltaEvent with current block context."""
