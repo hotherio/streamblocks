@@ -3025,6 +3025,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+agui = [
+    { name = "ag-ui-protocol" },
+]
 all-providers = [
     { name = "anthropic" },
     { name = "google-genai" },
@@ -3085,6 +3088,7 @@ doc = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ag-ui-protocol", marker = "extra == 'agui'", specifier = ">=0.1.0" },
     { name = "anthropic", marker = "extra == 'all-providers'", specifier = ">=0.18.0" },
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.18.0" },
     { name = "google-genai", marker = "extra == 'all-providers'", specifier = ">=1.38.0" },
@@ -3101,7 +3105,7 @@ requires-dist = [
     { name = "structlog", marker = "extra == 'structlog'", specifier = ">=24.1.0" },
     { name = "textual", specifier = ">=6.1.0" },
 ]
-provides-extras = ["gemini", "openai", "anthropic", "all-providers", "structlog", "loguru", "examples"]
+provides-extras = ["gemini", "openai", "anthropic", "all-providers", "structlog", "loguru", "agui", "examples"]
 
 [package.metadata.requires-dev]
 dev = [
