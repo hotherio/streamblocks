@@ -23,10 +23,10 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/streamblocks/streamblocks"
-"Bug Tracker" = "https://github.com/streamblocks/streamblocks/issues"
-"Source" = "https://github.com/streamblocks/streamblocks"
-"Documentation" = "https://streamblocks.github.io/streamblocks/latest/"
+"Homepage" = "https://github.com/hotherio/streamblocks"
+"Bug Tracker" = "https://github.com/hotherio/streamblocks/issues"
+"Source" = "https://github.com/hotherio/streamblocks"
+"Documentation" = "https://streamblocks.hother.io/"
 
 # Optional dependencies
 [project.optional-dependencies]
@@ -42,6 +42,8 @@ all-providers = [
 # Enhanced logging
 structlog = ["structlog>=24.1.0"]
 loguru = ["loguru>=0.7.0"]
+# AG-UI protocol integration (see extensions/agui)
+agui = ["ag-ui-protocol>=0.1.0"]
 # Examples dependencies
 examples = ["streamblocks-examples", "hother-cancelable>=0.1.0"]
 
@@ -305,11 +307,6 @@ line-ending = "auto"
     "S110",    # try-except-pass (acceptable in internal tools)
     "INP001",  # Implicit namespace package
     "PLC0415", # Import not at top-level (acceptable in tools)
-]
-"src/hother/streamblocks/core/processor.py" = [
-    "PLR0912", # Too many branches
-    "PLR0915", # Too many statements
-    "C901",    # Too complex
 ]
 "src/hother/streamblocks/core/models.py" = [
     "UP046",   # Type annotation can be modernized
