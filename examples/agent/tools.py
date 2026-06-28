@@ -110,6 +110,9 @@ class DateRange(BaseModel):
 # PRODUCT DATA (Mock database)
 # =============================================================================
 
+# Valid product IDs for validation
+VALID_PRODUCT_IDS = {"laptop-001", "laptop-002", "laptop-003", "laptop-004"}
+
 PRODUCTS = [
     {
         "id": "laptop-001",
@@ -262,10 +265,19 @@ async def create_order_impl(
 ) -> dict[str, Any]:
     """Create a new order with nested objects.
 
+    IMPORTANT: You MUST call search_products FIRST and emit a wait block to get
+    valid product IDs before calling this function. Do NOT guess or make up
+    product IDs - use only the exact IDs returned by search_products.
+
+    Example workflow:
+    1. Emit a tool_call block for search_products
+    2. Emit a wait block listing the search_products tool_call ID
+    3. After receiving results, emit a tool_call block for create_order with real IDs
+
     Args:
         customer_id: The customer's unique identifier
         items: List of order items, each with:
-               - product_id: Product ID to order
+               - product_id: Product ID from search_products results (REQUIRED)
                - quantity: Number of units
                - options: Optional customization (e.g., {"color": "silver"})
         shipping_address: Shipping address with:
@@ -280,6 +292,15 @@ async def create_order_impl(
     Returns:
         Order confirmation with order_id, total, estimated_delivery, status
     """
+    # Validate product IDs before processing
+    for item in items:
+        if item.product_id not in VALID_PRODUCT_IDS:
+            return {
+                "error": f"Invalid product_id: {item.product_id}. "
+                f"Valid IDs are: {', '.join(sorted(VALID_PRODUCT_IDS))}. "
+                "Use search_products first to find valid product IDs."
+            }
+
     # Simulate database write and payment processing
     await asyncio.sleep(1.5)
 

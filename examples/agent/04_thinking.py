@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""Sequential Agent Example - Tools Execute After LLM Finishes.
+"""
+Hybrid Thinking Mode Demo - Dynamic thinking control per LLM call.
 
-Demonstrates the traditional ReAct pattern where tools execute ONLY after
-the LLM finishes its response. Compares against Pydantic AI with the same tools.
+Demonstrates DYNAMIC THINKING control with StreamBlocks vs constant thinking with Pydantic AI:
 
-This is the PARALLEL-AFTER-LLM approach:
-- LLM generates complete response
-- ALL tools execute IN PARALLEL after LLM stops
-- Results injected before next LLM call
+StreamBlocks (ThinkingAgentStream):
+- First LLM call uses thinking (thinking_budget=1024) for initial reasoning
+- Subsequent calls after tool feedback use NO thinking (thinking_budget=0) for faster response
+- Creates NEW chat per call to enable dynamic thinking config
 
-Compare with 01_basic_agent.py which uses SPECULATIVE continuation:
-- Tools execute in parallel while LLM continues streaming
-- Results injected mid-stream when ready
+Pydantic AI:
+- Uses thinking throughout ALL calls (thinking_budget=1024)
+- Consistent reasoning mode across the entire conversation
+
+This demonstrates the flexibility of StreamBlocks to control model behavior per-call,
+which is useful for optimizing latency vs. reasoning quality tradeoffs.
 
 Uses COMPLEX TOOLS to demonstrate StreamBlocks' advantages:
 - Complex schemas (nested objects, enums, arrays)
@@ -32,20 +35,22 @@ from typing import Any, Literal
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from google import genai  # type: ignore[import-not-found]
+from google import genai
 from rich import box
 
-from examples.agent.display import AgentEventRenderer, console
+from examples.agent.display import AgentEventRenderer, console, truncate
 from examples.agent.events import (
     AnswerEvent,
     LLMCallEndEvent,
     LLMCallStartEvent,
     LLMFirstTokenEvent,
+    StreamCancelledEvent,
     ToolCallEvent,
     ToolCallResultEvent,
+    ToolStartedEvent,
 )
 from examples.agent.executor import ToolExecutor
-from examples.agent.sequential_stream import SequentialAgentStream
+from examples.agent.thinking_stream import ThinkingAgentStream
 from examples.agent.tools import (
     COMPLEX_TASK,
     DateRange,
@@ -75,12 +80,14 @@ except ImportError:
 
 
 # =============================================================================
-# STREAMBLOCKS SEQUENTIAL AGENT
+# STREAMBLOCKS THINKING AGENT (Hybrid Thinking Mode)
 # =============================================================================
 
 
-async def run_streamblocks_sequential(task: str) -> tuple[str, int, float, int]:
-    """Run the StreamBlocks sequential agent.
+async def run_streamblocks_thinking(task: str) -> tuple[str, int, float, int]:
+    """Run the StreamBlocks thinking agent with dynamic thinking config.
+
+    First LLM call uses thinking (budget=128), subsequent calls disable thinking (budget=0).
 
     Returns:
         (answer, tools_called, elapsed_time, total_tokens)
@@ -88,42 +95,18 @@ async def run_streamblocks_sequential(task: str) -> tuple[str, int, float, int]:
     # Initialize renderer
     renderer = AgentEventRenderer()
     renderer.render_header(
-        "STREAMBLOCKS SEQUENTIAL AGENT",
-        "(Tools execute IN PARALLEL after LLM finishes)",
+        "STREAMBLOCKS THINKING AGENT (Hybrid Mode)",
+        "(First call: thinking=1024, Subsequent calls: thinking=0)",
     )
 
-    # Initialize client
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    client = genai.Client(api_key=api_key)
+    # Create Gemini client
+    client = genai.Client()
 
-    # Create executor and register complex tools
+    # Create tool executor
     executor = ToolExecutor()
 
-    @executor.register(
-        name="search_products",
-        description="""Search product catalog with filters.
-
-Args:
-    query: Search query (e.g., "laptop", "programming laptop")
-    category: One of: electronics, clothing, home, sports
-    price_range: Object with "min" (default 0) and "max" price
-    filters: List of filter objects. Each filter MUST use:
-        - field: "specs.ram_gb" | "specs.storage_gb" | "rating"
-        - operator: ">=" | "<=" | "==" | "!="
-        - value: integer (16, 32, 64 for RAM; 256, 512, 1024 for storage)
-    sort_by: relevance, price_asc, price_desc, rating
-    limit: Max results (default 10)
-
-Example filters:
-    filters:
-      - field: specs.ram_gb
-        operator: ">="
-        value: 16
-
-Returns:
-    List of matching products""",
-    )
-    async def search_products(
+    # Register tool implementations with docstrings (executor extracts schema from type hints)
+    async def search_products_handler(
         query: str,
         category: Literal["electronics", "clothing", "home", "sports"],
         price_range: PriceRange,
@@ -131,67 +114,85 @@ Returns:
         sort_by: str = "relevance",
         limit: int = 10,
     ) -> list[dict[str, Any]]:
+        """Search product catalog with filters.
+
+        Args:
+            query: Search query (e.g., "laptop", "programming laptop")
+            category: One of: electronics, clothing, home, sports
+            price_range: Object with "min" (default 0) and "max" price
+            filters: List of filter objects. Each filter MUST use:
+                - field: "specs.ram_gb" | "specs.storage_gb" | "rating"
+                - operator: ">=" | "<=" | "==" | "!="
+                - value: integer (16, 32, 64 for RAM; 256, 512, 1024 for storage)
+            sort_by: relevance, price_asc, price_desc, rating
+            limit: Max results (default 10)
+
+        Returns:
+            List of matching products
+        """
         return await search_products_impl(query, category, price_range, filters, sort_by, limit)
 
-    @executor.register(
-        name="create_order",
-        description="""Create a new order with nested objects.
-
-Args:
-    customer_id: The customer's unique identifier
-    items: List of order items with product_id, quantity, options
-    shipping_address: Address with street, city, state, zip, country
-    payment_method: Payment type - credit_card, paypal, or bank_transfer
-    coupon_code: Optional discount coupon code
-
-Returns:
-    Order confirmation with order_id, total, estimated_delivery, status""",
-    )
-    async def create_order(
+    async def create_order_handler(
         customer_id: str,
         items: list[OrderItem],
         shipping_address: ShippingAddress,
         payment_method: Literal["credit_card", "paypal", "bank_transfer"],
         coupon_code: str | None = None,
     ) -> dict[str, Any]:
+        """Create a new order with nested objects.
+
+        Args:
+            customer_id: The customer's unique identifier
+            items: List of order items with product_id, quantity, options
+            shipping_address: Address with street, city, state, zip, country
+            payment_method: Payment type - credit_card, paypal, or bank_transfer
+            coupon_code: Optional discount coupon code
+
+        Returns:
+            Order confirmation with order_id, total, estimated_delivery, status
+        """
         return await create_order_impl(customer_id, items, shipping_address, payment_method, coupon_code)
 
-    @executor.register(
-        name="get_analytics",
-        description="""Get analytics data with aggregations.
-
-Args:
-    metric_type: Type of metric - sales, traffic, or conversion
-    date_range: Date range with "start" and "end" keys (YYYY-MM-DD)
-    granularity: Time granularity - hour, day, week, or month
-    dimensions: Dimensions to group by - product, category, region, channel
-
-Returns:
-    Analytics data with time series, breakdowns, and summary stats""",
-    )
-    async def get_analytics(
+    async def get_analytics_handler(
         metric_type: Literal["sales", "traffic", "conversion"],
         date_range: DateRange,
         granularity: Literal["hour", "day", "week", "month"],
         dimensions: list[str],
     ) -> dict[str, Any]:
+        """Get analytics data with aggregations.
+
+        Args:
+            metric_type: Type of metric - sales, traffic, or conversion
+            date_range: Date range with "start" and "end" keys (YYYY-MM-DD)
+            granularity: Time granularity - hour, day, week, or month
+            dimensions: Dimensions to group by - product, category, region, channel
+
+        Returns:
+            Analytics data with time series, breakdowns, and summary stats
+        """
         return await get_analytics_impl(metric_type, date_range, granularity, dimensions)
 
-    # Get tool definitions
-    tools = [executor.get(name) for name in executor.list_tools() if executor.get(name) is not None]
+    executor.register(search_products_handler, name="search_products")
+    executor.register(create_order_handler, name="create_order")
+    executor.register(get_analytics_handler, name="get_analytics")
 
-    # Create sequential stream
-    stream = SequentialAgentStream(
+    # Get tool definitions from executor (for system prompt building)
+    tool_definitions = list(executor._tools.values())
+
+    # Create ThinkingAgentStream with hybrid thinking mode
+    # First call: thinking_budget=128, subsequent calls: thinking_budget=0
+    stream = ThinkingAgentStream(
         client=client,
         executor=executor,
-        tools=tools,  # type: ignore[arg-type]
+        tools=tool_definitions,
         model_id="gemini-2.5-flash",
-        max_iterations=10,
+        first_call_thinking_budget=1024,
+        subsequent_thinking_budget=0,
     )
 
     renderer.render_task(task)
 
-    # Track state
+    # Track state for visualization
     turn = 1
     tools_called = 0
     final_answer = ""
@@ -201,9 +202,7 @@ Returns:
     llm_call_metrics: list[dict[str, Any]] = []
     current_call_ttft: float | None = None
 
-    console.print(f"[bold]--- Turn {turn} ---[/bold]")
-
-    # Stream events
+    # Stream events in real-time
     async for event in stream.run(task):
         if isinstance(event, TextDeltaEvent):
             renderer.render_text_delta(event)
@@ -212,11 +211,18 @@ Returns:
             renderer.render_block_extracted(event)
 
         elif isinstance(event, ToolCallEvent):
-            console.print(f"\n[bold yellow][Tool call queued: {event.tool_name}][/]")
-            from examples.agent.display import truncate
+            renderer.render_tool_call(event)
 
-            params_str = truncate(str(event.parameters), 100)
-            console.print(f"[dim]  Parameters: {params_str}[/dim]")
+        elif isinstance(event, ToolStartedEvent):
+            renderer.render_tool_started(event)
+
+        elif isinstance(event, ToolCallResultEvent):
+            tools_called += 1
+            renderer.render_tool_result(event)
+
+        elif isinstance(event, StreamCancelledEvent):
+            renderer.render_stream_cancelled(event)
+            turn += 1
 
         elif isinstance(event, LLMCallStartEvent):
             renderer.render_llm_start(event)
@@ -241,12 +247,6 @@ Returns:
                 }
             )
             renderer.render_llm_end(event)
-
-        elif isinstance(event, ToolCallResultEvent):
-            tools_called += 1
-            renderer.render_tool_result(event)
-            turn += 1
-            console.print(f"\n[bold]--- Turn {turn} ---[/bold]")
 
         elif isinstance(event, AnswerEvent):
             final_answer = event.answer
@@ -277,12 +277,14 @@ Returns:
 
 
 # =============================================================================
-# PYDANTIC AI AGENT (COMPARISON)
+# PYDANTIC AI AGENT (Constant Thinking Mode)
 # =============================================================================
 
 
 async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
-    """Run the Pydantic AI agent with native tool calling.
+    """Run the Pydantic AI agent with thinking enabled throughout.
+
+    Uses thinking_budget=1024 for ALL LLM calls (consistent reasoning mode).
 
     Returns:
         (answer, tools_called, elapsed_time, total_tokens)
@@ -293,13 +295,16 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
 
     # Initialize renderer
     renderer = AgentEventRenderer()
-    renderer.render_header("PYDANTIC AI AGENT", "(Native tool calling)")
+    renderer.render_header(
+        "PYDANTIC AI AGENT (Constant Thinking)",
+        "(thinking_budget=1024 for ALL calls)",
+    )
 
-    # Create model and agent with thinking disabled
+    # Create model and agent with thinking ENABLED throughout
     model = GoogleModel("gemini-2.5-flash")
     gemini_thinking_config = {
         "include_thoughts": False,
-        "thinking_budget": 0,
+        "thinking_budget": 1024,  # Thinking enabled for ALL calls
     }
     agent = PydanticAgent(
         model=model,
@@ -317,18 +322,27 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
         sort_by: str = "relevance",
         limit: int = 10,
     ) -> list[dict[str, Any]]:
-        """Search product catalog with complex filters.
+        """Search product catalog with filters.
 
         Args:
-            query: Search query string (e.g., "laptop", "programming laptop")
-            category: Product category to search in
-            price_range: Price range filter with "min" and "max" keys
-            filters: List of filter objects, each with "field", "operator", "value"
-            sort_by: Sort order - "relevance", "price_asc", "price_desc", "rating"
-            limit: Maximum number of results to return
+            query: Search query (e.g., "laptop", "programming laptop")
+            category: One of: electronics, clothing, home, sports
+            price_range: Object with "min" (default 0) and "max" price
+            filters: List of filter objects. Each filter MUST use:
+                - field: "specs.ram_gb" | "specs.storage_gb" | "rating"
+                - operator: ">=" | "<=" | "==" | "!="
+                - value: integer (16, 32, 64 for RAM; 256, 512, 1024 for storage)
+            sort_by: relevance, price_asc, price_desc, rating
+            limit: Max results (default 10)
+
+        Example filters:
+            filters:
+              - field: specs.ram_gb
+                operator: ">="
+                value: 16
 
         Returns:
-            List of matching products with id, name, price, specs, rating
+            List of matching products
         """
         return await search_products_impl(query, category, price_range, filters, sort_by, limit)
 
@@ -480,7 +494,7 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
 
 
 async def main() -> None:
-    """Run both agents and compare results."""
+    """Run both agents and compare thinking mode behavior."""
     from rich.panel import Panel
 
     # Check for API key
@@ -490,7 +504,10 @@ async def main() -> None:
 
     # Intro panel
     intro_content = (
-        "[bold]StreamBlocks vs Pydantic AI - Sequential Agent Comparison[/]\n\n"
+        "[bold]StreamBlocks vs Pydantic AI - Hybrid Thinking Mode Comparison[/]\n\n"
+        "[bold]THINKING MODE CONFIGURATION:[/]\n"
+        "  StreamBlocks: First call thinking=1024, subsequent calls thinking=0\n"
+        "  Pydantic AI:  ALL calls thinking=1024\n\n"
         "[dim]Using COMPLEX TOOLS with simulated latency:[/]\n"
         "  • search_products: 1.2s (complex filters, nested objects)\n"
         "  • create_order: 1.5s (nested address, items)\n"
@@ -503,10 +520,10 @@ async def main() -> None:
     # Use complex task
     task = COMPLEX_TASK
 
-    # Run StreamBlocks sequential agent
-    _sb_answer, sb_tools, sb_time, sb_tokens = await run_streamblocks_sequential(task)
+    # Run StreamBlocks thinking agent (hybrid mode)
+    _sb_answer, sb_tools, sb_time, sb_tokens = await run_streamblocks_thinking(task)
 
-    # Run Pydantic AI agent
+    # Run Pydantic AI agent (constant thinking)
     _pai_answer, pai_tools, pai_time, pai_tokens = await run_pydantic_ai(task)
 
     # Final comparison using renderer
@@ -515,6 +532,7 @@ async def main() -> None:
         "StreamBlocks",
         "Pydantic AI",
         [
+            ("Thinking mode", "Hybrid (1024→0)", "Constant (1024)"),
             ("Tools called", str(sb_tools), str(pai_tools)),
             ("Time (seconds)", f"{sb_time:.2f}", f"{pai_time:.2f}"),
             ("Total tokens", str(sb_tokens), str(pai_tokens)),
@@ -523,15 +541,19 @@ async def main() -> None:
 
     renderer.render_notes(
         [
-            "Note: Both use PARALLEL-AFTER-LLM pattern:",
-            "      - LLM generates complete response",
-            "      - ALL tools run in parallel after LLM stops",
+            "KEY DIFFERENCES:",
             "",
-            "      StreamBlocks: Block-based tool calling (text parsing)",
-            "      Pydantic AI: Native function calling (API-level)",
+            "  StreamBlocks (Hybrid Thinking):",
+            "    - First call uses thinking (better initial reasoning)",
+            "    - Subsequent calls disable thinking (faster after feedback)",
+            "    - thoughts_tokens > 0 on first call, = 0 on subsequent calls",
             "",
-            "See 01_basic_agent.py for the SPECULATIVE approach (faster with slow tools).",
-            "See 03_batched_speculative.py for the BATCHED approach.",
+            "  Pydantic AI (Constant Thinking):",
+            "    - ALL calls use thinking mode",
+            "    - Consistent reasoning quality throughout",
+            "    - Cannot dynamically control thinking per-call",
+            "",
+            "This demonstrates StreamBlocks' flexibility for per-call model configuration.",
         ]
     )
 

@@ -89,3 +89,40 @@ class FinalAnswerContent(BaseContent):
 
 # Block type alias for final answers
 FinalAnswer = Block[FinalAnswerMetadata, FinalAnswerContent]
+
+
+class WaitMetadata(BaseMetadata):
+    """Metadata for wait blocks.
+
+    Attributes:
+        id: Unique identifier for this wait block
+        block_type: Always "wait"
+    """
+
+    # No additional metadata needed
+
+
+class WaitContent(BaseContent):
+    """Content for wait blocks - list of tool IDs to wait for.
+
+    Attributes:
+        raw_content: The raw YAML text
+        tool_ids: List of tool call IDs to wait for
+    """
+
+    tool_ids: list[str] = Field(default_factory=list)
+
+    @classmethod
+    def parse(cls, raw_text: str) -> Self:
+        """Parse tool IDs from YAML list."""
+        try:
+            parsed = yaml.safe_load(raw_text)
+            tool_ids = [str(tid) for tid in parsed] if isinstance(parsed, list) else []
+        except yaml.YAMLError:
+            tool_ids = []
+
+        return cls(raw_content=raw_text, tool_ids=tool_ids)
+
+
+# Block type alias for wait blocks
+Wait = Block[WaitMetadata, WaitContent]

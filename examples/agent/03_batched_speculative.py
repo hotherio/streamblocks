@@ -38,8 +38,10 @@ from typing import Any, Literal
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from google import genai  # type: ignore[import-not-found]
+from rich import box
 
 from examples.agent.batched_stream import BatchedAgentStream
+from examples.agent.display import AgentEventRenderer, console
 from examples.agent.events import (
     AnswerEvent,
     LLMCallEndEvent,
@@ -83,17 +85,18 @@ except ImportError:
 # =============================================================================
 
 
-async def run_streamblocks_batched(task: str) -> tuple[str, int, float, int]:
+async def run_streamblocks_batched(task: str) -> tuple[str, int, float, int, int]:
     """Run the StreamBlocks batched agent.
 
     Returns:
-        (answer, tools_called, elapsed_time, llm_calls)
+        (answer, tools_called, elapsed_time, llm_calls, total_tokens)
     """
-    print("=" * 70)
-    print("STREAMBLOCKS BATCHED AGENT")
-    print("(Tools run in background, ALL results batched before next LLM call)")
-    print("=" * 70)
-    print()
+    # Initialize renderer
+    renderer = AgentEventRenderer()
+    renderer.render_header(
+        "STREAMBLOCKS BATCHED AGENT",
+        "(Tools run in background, ALL results batched before next LLM call)",
+    )
 
     # Initialize client
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -188,14 +191,11 @@ Returns:
         client=client,
         executor=executor,
         tools=tools,  # type: ignore[arg-type]
-        model_id="gemini-2.5-pro",
+        model_id="gemini-2.5-flash",
         max_iterations=10,
     )
 
-    print(f"Task: {task}")
-    print()
-    print("--- Streaming Output ---")
-    print()
+    renderer.render_task(task)
 
     # Track state
     tools_called = 0
@@ -210,26 +210,25 @@ Returns:
     # Stream events
     async for event in stream.run(task):
         if isinstance(event, TextDeltaEvent):
-            print(event.delta, end="", flush=True)
+            renderer.render_text_delta(event)
 
         elif isinstance(event, BlockExtractedEvent):
-            block = event.block
-            print(f"\n[Block: {block.metadata.block_type} id={block.metadata.id}]")
+            renderer.render_block_extracted(event)
 
         elif isinstance(event, ToolCallEvent):
-            print(f"\n[Tool call detected: {event.tool_name}]")
-            params_str = str(event.parameters)
-            if len(params_str) > 100:
-                params_str = params_str[:100] + "..."
-            print(f"  Parameters: {params_str}")
+            console.print(f"\n[bold yellow][Tool call detected: {event.tool_name}][/]")
+            from examples.agent.display import truncate
+
+            params_str = truncate(str(event.parameters), 100)
+            console.print(f"[dim]  Parameters: {params_str}[/dim]")
 
         elif isinstance(event, LLMCallStartEvent):
-            print(f"\n[LLM Call {event.call_number} started]")
+            renderer.render_llm_start(event)
             current_call_ttft = None
 
         elif isinstance(event, LLMFirstTokenEvent):
             current_call_ttft = event.ttft
-            print(f"[TTFT: {event.ttft * 1000:.0f}ms]")
+            renderer.render_llm_first_token(event)
 
         elif isinstance(event, LLMCallEndEvent):
             llm_call_metrics.append(
@@ -245,25 +244,20 @@ Returns:
                     "cancelled": event.cancelled,
                 }
             )
-            status = "cancelled" if event.cancelled else "completed"
-            print(f"[LLM Call {event.call_number} {status}: {event.total_tokens} tokens, {event.duration:.2f}s]")
+            renderer.render_llm_end(event)
 
         elif isinstance(event, ToolStartedEvent):
             tools_in_batch += 1
-            print(f"[Tool {event.tool_name} started in background ({tools_in_batch} running)]")
+            console.print(f"[yellow][Tool {event.tool_name} started in background ({tools_in_batch} running)][/]")
 
         elif isinstance(event, ToolCallResultEvent):
             tools_called += 1
             tools_in_batch -= 1
-            status = "SUCCESS" if event.result.success else "ERROR"
-            result_str = str(event.result.result)
-            if len(result_str) > 200:
-                result_str = result_str[:200] + "..."
-            print(f"\n[Tool result ({status}): {result_str}]")
+            renderer.render_tool_result(event)
 
             # If this is the last tool in batch, new LLM call is coming
             if tools_in_batch == 0:
-                print("\n[All tools complete - next LLM call]")
+                console.print("\n[bold cyan][All tools complete - next LLM call][/]")
 
         elif isinstance(event, AnswerEvent):
             final_answer = event.answer
@@ -279,41 +273,19 @@ Returns:
     total_thoughts_tokens = sum(m["thoughts_tokens"] for m in llm_call_metrics)
     llm_calls = len(llm_call_metrics)
 
-    print()
-    print()
-    print("-" * 50)
-    print("RESULTS")
-    print("-" * 50)
-    print(f"Final Answer: {final_answer}")
-    print(f"Tools called: {tools_called}")
-    print(f"LLM API calls: {llm_calls}")
-    print(f"Time: {elapsed:.2f}s")
-
-    # Token metrics
-    print()
-    print("-" * 50)
-    print("TOKEN METRICS")
-    print("-" * 50)
-    print(f"LLM API calls: {llm_calls}")
-    print(f"Total prompt tokens: {total_prompt_tokens}")
-    print(f"Total completion tokens: {total_completion_tokens}")
-    print(f"Total cached tokens: {total_cached_tokens}")
-    print(f"Total thoughts tokens: {total_thoughts_tokens}")
-    print(f"Total tokens: {total_tokens}")
-    print()
-    print("Per-call breakdown:")
-    print(
-        f"  {'Call':<6} {'TTFT':<8} {'Prompt':<8} {'Cached':<8} {'Compl':<8} {'Thoughts':<10} {'Total':<8} {'Duration':<10} {'Status':<10}"
+    # Render results with Rich
+    renderer.render_results_summary(final_answer, tools_called, llm_calls, elapsed)
+    renderer.render_token_metrics_summary(
+        llm_calls,
+        total_prompt_tokens,
+        total_completion_tokens,
+        total_tokens,
+        total_cached_tokens,
+        total_thoughts_tokens,
     )
-    print("  " + "-" * 86)
-    for m in llm_call_metrics:
-        ttft_str = f"{m['ttft'] * 1000:.0f}ms" if m["ttft"] is not None else "N/A"
-        status = "cancelled" if m["cancelled"] else "completed"
-        print(
-            f"  {m['call']:<6} {ttft_str:<8} {m['prompt_tokens']:<8} {m['cached_tokens']:<8} {m['completion_tokens']:<8} {m['thoughts_tokens']:<10} {m['total_tokens']:<8} {m['duration']:.2f}s     {status:<10}"
-        )
+    renderer.render_token_metrics_table(llm_call_metrics)
 
-    return final_answer, tools_called, elapsed, llm_calls
+    return final_answer, tools_called, elapsed, llm_calls, total_tokens
 
 
 # =============================================================================
@@ -321,28 +293,25 @@ Returns:
 # =============================================================================
 
 
-async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
+async def run_pydantic_ai(task: str) -> tuple[str, int, float, int, int]:
     """Run the Pydantic AI agent with native tool calling.
 
     Returns:
-        (answer, tools_called, elapsed_time, llm_calls)
+        (answer, tools_called, elapsed_time, llm_calls, total_tokens)
     """
     if not PYDANTIC_AI_AVAILABLE or PydanticAgent is None or GoogleModel is None:
-        print("Pydantic AI is not available. Install with: pip install pydantic-ai")
-        return "", 0, 0.0, 0
+        console.print("[red]Pydantic AI is not available. Install with: pip install pydantic-ai[/]")
+        return "", 0, 0.0, 0, 0
 
-    print()
-    print("=" * 70)
-    print("PYDANTIC AI AGENT")
-    print("(Native tool calling)")
-    print("=" * 70)
-    print()
+    # Initialize renderer
+    renderer = AgentEventRenderer()
+    renderer.render_header("PYDANTIC AI AGENT", "(Native tool calling)")
 
     # Create model and agent with thinking disabled
-    model = GoogleModel("gemini-2.5-pro")
+    model = GoogleModel("gemini-2.5-flash")
     gemini_thinking_config = {
         "include_thoughts": False,
-        "thinking_budget": 128,
+        "thinking_budget": 0,
     }
     agent = PydanticAgent(
         model=model,
@@ -417,10 +386,7 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
         """
         return await get_analytics_impl(metric_type, date_range, granularity, dimensions)
 
-    print(f"Task: {task}")
-    print()
-    print("--- Streaming Output ---")
-    print()
+    renderer.render_task(task)
 
     # Track metrics
     llm_call_count = 0
@@ -438,7 +404,7 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
                 first_token_time: float | None = None
                 ttft: float | None = None
 
-                print(f"\n[LLM Call {llm_call_count} started]")
+                console.print(f"\n[blue][LLM Call {llm_call_count} started][/]")
 
                 async with node.stream(agent_run.ctx) as stream:
                     async for event in stream:
@@ -446,11 +412,12 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
                         if first_token_time is None:
                             first_token_time = time.time()
                             ttft = first_token_time - call_start
-                            print(f"[TTFT: {ttft * 1000:.0f}ms]")
+                            console.print(f"[dim][TTFT: {ttft * 1000:.0f}ms][/dim]")
 
                         # Stream text deltas
                         if hasattr(event, "delta") and event.delta:
-                            print(event.delta, end="", flush=True)
+                            sys.stdout.write(str(event.delta))
+                            sys.stdout.flush()
 
                 duration = time.time() - call_start
                 llm_call_metrics.append(
@@ -460,24 +427,24 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
                         "duration": duration,
                     }
                 )
-                print(f"\n[LLM Call {llm_call_count} completed: {duration:.2f}s]")
+                console.print(f"\n[blue][LLM Call {llm_call_count} completed: {duration:.2f}s][/]")
 
             elif PydanticAgent.is_call_tools_node(node):
                 # Tool calls
                 async with node.stream(agent_run.ctx) as handle_stream:
                     async for event in handle_stream:
                         if isinstance(event, FunctionToolCallEvent):
-                            print(f"\n[Tool call: {event.part.tool_name}]")
+                            console.print(f"\n[bold yellow][Tool call: {event.part.tool_name}][/]")
                             args_str = str(event.part.args)
                             if len(args_str) > 200:
                                 args_str = args_str[:200] + "..."
-                            print(f"  Parameters: {args_str}")
+                            console.print(f"[dim]  Parameters: {args_str}[/dim]")
                         elif isinstance(event, FunctionToolResultEvent):
                             tools_called += 1
                             result_str = str(event.result.content)
                             if len(result_str) > 200:
                                 result_str = result_str[:200] + "..."
-                            print(f"[Tool result (SUCCESS): {result_str}]")
+                            console.print(f"\n[bold green][Tool result (SUCCESS): {result_str}][/]")
 
     elapsed = time.time() - start_time
 
@@ -487,34 +454,37 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
     llm_calls = usage.requests
 
     answer = str(result.output) if result else "No result"
-    print()
-    print()
-    print("-" * 50)
-    print("RESULTS")
-    print("-" * 50)
-    print(f"Final Answer: {answer}")
-    print(f"Tools called: {tools_called}")
-    print(f"LLM API calls: {llm_calls}")
-    print(f"Time: {elapsed:.2f}s")
 
-    # Token metrics
-    print()
-    print("-" * 50)
-    print("TOKEN METRICS")
-    print("-" * 50)
-    print(f"LLM API calls: {usage.requests}")
-    print(f"Input tokens: {usage.input_tokens}")
-    print(f"Output tokens: {usage.output_tokens}")
-    print(f"Total tokens: {usage.input_tokens + usage.output_tokens}")
-    print()
-    print("Per-call breakdown:")
-    print(f"  {'Call':<6} {'TTFT':<10} {'Duration':<10}")
-    print("  " + "-" * 26)
+    # Render results with Rich
+    renderer.render_results_summary(answer, tools_called, llm_calls, elapsed)
+    renderer.render_token_metrics_summary(
+        usage.requests,
+        usage.input_tokens,
+        usage.output_tokens,
+        usage.input_tokens + usage.output_tokens,
+    )
+
+    # Build per-call breakdown table
+    from rich.table import Table
+
+    table = Table(
+        title="Per-Call Breakdown",
+        box=box.ROUNDED,
+        border_style="cyan",
+    )
+    table.add_column("Call", style="cyan", justify="right")
+    table.add_column("TTFT", style="yellow", justify="right")
+    table.add_column("Duration", justify="right")
+
     for m in llm_call_metrics:
         ttft_str = f"{m['ttft'] * 1000:.0f}ms" if m["ttft"] is not None else "N/A"
-        print(f"  {m['call']:<6} {ttft_str:<10} {m['duration']:.2f}s")
+        table.add_row(str(m["call"]), ttft_str, f"{m['duration']:.2f}s")
 
-    return answer, tools_called, elapsed, llm_calls
+    console.print()
+    console.print(table)
+
+    total_tokens = usage.input_tokens + usage.output_tokens
+    return answer, tools_called, elapsed, llm_calls, total_tokens
 
 
 # =============================================================================
@@ -524,56 +494,64 @@ async def run_pydantic_ai(task: str) -> tuple[str, int, float, int]:
 
 async def main() -> None:
     """Run both agents and compare results."""
+    from rich.panel import Panel
+
     # Check for API key
     if not (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
-        print("Error: Set GEMINI_API_KEY or GOOGLE_API_KEY environment variable")
+        console.print("[red]Error: Set GEMINI_API_KEY or GOOGLE_API_KEY environment variable[/]")
         return
 
-    print()
-    print("StreamBlocks BATCHED vs Pydantic AI - Agent Comparison")
-    print("=" * 70)
-    print()
-    print("Using COMPLEX TOOLS with simulated latency:")
-    print("  - search_products: 1.2s (complex filters, nested objects)")
-    print("  - create_order: 1.5s (nested address, items)")
-    print("  - get_analytics: 2.0s (aggregations, time series)")
-    print()
-    print("BATCHED approach:")
-    print("  - Tools run in background while LLM streams")
-    print("  - Wait for ALL tools to complete")
-    print("  - Inject all results together")
-    print("  - Fewer LLM API calls")
-    print()
+    # Intro panel
+    intro_content = (
+        "[bold]StreamBlocks BATCHED vs Pydantic AI - Agent Comparison[/]\n\n"
+        "[dim]Using COMPLEX TOOLS with simulated latency:[/]\n"
+        "  • search_products: 1.2s (complex filters, nested objects)\n"
+        "  • create_order: 1.5s (nested address, items)\n"
+        "  • get_analytics: 2.0s (aggregations, time series)\n\n"
+        "[bold]BATCHED approach:[/]\n"
+        "  • Tools run in background while LLM streams\n"
+        "  • Wait for ALL tools to complete\n"
+        "  • Inject all results together\n"
+        "  • Fewer LLM API calls"
+    )
+    console.print()
+    console.print(Panel(intro_content, border_style="magenta", box=box.DOUBLE))
+    console.print()
 
     # Use complex task
     task = COMPLEX_TASK
 
     # Run StreamBlocks batched agent
-    _sb_answer, sb_tools, sb_time, sb_llm_calls = await run_streamblocks_batched(task)
+    _sb_answer, sb_tools, sb_time, sb_llm_calls, sb_tokens = await run_streamblocks_batched(task)
 
     # Run Pydantic AI agent
-    _pai_answer, pai_tools, pai_time, pai_llm_calls = await run_pydantic_ai(task)
+    _pai_answer, pai_tools, pai_time, pai_llm_calls, pai_tokens = await run_pydantic_ai(task)
 
-    # Final comparison
-    print()
-    print("=" * 70)
-    print("COMPARISON SUMMARY")
-    print("=" * 70)
-    print()
-    print(f"{'Metric':<25} {'StreamBlocks Batched':<22} {'Pydantic AI':<20}")
-    print("-" * 67)
-    print(f"{'Tools called':<25} {sb_tools:<22} {pai_tools:<20}")
-    print(f"{'LLM API calls':<25} {sb_llm_calls:<22} {f'~{pai_llm_calls}':<20}")
-    print(f"{'Time (seconds)':<25} {sb_time:<22.2f} {pai_time:<20.2f}")
-    print()
-    print("Key Insights:")
-    print("  - BATCHED: Tools run in parallel while LLM streams")
-    print("  - BATCHED: Fewer LLM calls than speculative (waits for all tools)")
-    print("  - With slow tools (1.2-2.0s), parallel execution saves time")
-    print()
-    print("Compare with:")
-    print("  - 01_basic_agent.py: SPECULATIVE (more LLM calls, faster injection)")
-    print("  - 02_sequential_agent.py: PARALLEL-AFTER-LLM (tools start after LLM)")
+    # Final comparison using renderer
+    renderer = AgentEventRenderer()
+    renderer.render_comparison_table(
+        "StreamBlocks Batched",
+        "Pydantic AI",
+        [
+            ("Tools called", str(sb_tools), str(pai_tools)),
+            ("LLM API calls", str(sb_llm_calls), f"~{pai_llm_calls}"),
+            ("Time (seconds)", f"{sb_time:.2f}", f"{pai_time:.2f}"),
+            ("Total tokens", str(sb_tokens), str(pai_tokens)),
+        ],
+    )
+
+    renderer.render_notes(
+        [
+            "Key Insights:",
+            "  - BATCHED: Tools run in parallel while LLM streams",
+            "  - BATCHED: Fewer LLM calls than speculative (waits for all tools)",
+            "  - With slow tools (1.2-2.0s), parallel execution saves time",
+            "",
+            "Compare with:",
+            "  - 01_basic_agent.py: SPECULATIVE (more LLM calls, faster injection)",
+            "  - 02_sequential_agent.py: PARALLEL-AFTER-LLM (tools start after LLM)",
+        ]
+    )
 
 
 if __name__ == "__main__":

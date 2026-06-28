@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from google.genai.types import GenerateContentConfig, ThinkingConfig
 
-from examples.agent.blocks import FinalAnswer, ToolCall
+from examples.agent.blocks import FinalAnswer, ToolCall, Wait
 from examples.agent.events import (
     AnswerEvent,
     LLMCallEndEvent,
@@ -142,6 +142,7 @@ class BatchedAgentStream:
         self._registry = Registry(syntax=self._syntax)
         self._registry.register("tool_call", ToolCall)
         self._registry.register("final_answer", FinalAnswer)
+        self._registry.register("wait", Wait)
 
     def _create_processor(self) -> StreamBlockProcessor[Any]:
         """Create a fresh StreamBlockProcessor for each iteration."""
@@ -162,7 +163,7 @@ class BatchedAgentStream:
             model=self.model_id,
             config=GenerateContentConfig(
                 system_instruction=self.system_prompt,
-                thinking_config=ThinkingConfig(thinking_budget=128),
+                thinking_config=ThinkingConfig(thinking_budget=0),
             ),
         )
 

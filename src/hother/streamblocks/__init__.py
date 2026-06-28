@@ -14,7 +14,7 @@ from hother.streamblocks.adapters import (
 )
 from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
-from hother.streamblocks.core.processor import StreamBlockProcessor
+from hother.streamblocks.core.processor import ProcessorConfig, StreamBlockProcessor
 from hother.streamblocks.core.registry import Registry
 from hother.streamblocks.core.types import (
     BaseContent,
@@ -75,6 +75,7 @@ __all__ = [
     "ParseResult",
     # Parsing
     "ParseStrategy",
+    "ProcessorConfig",
     "RawTextEvent",
     # Core components
     "Registry",

@@ -13,6 +13,7 @@ from hother.streamblocks import (
     BlockExtractedEvent,
     DelimiterPreambleSyntax,
     GeminiAdapter,
+    ProcessorConfig,
     Registry,
     StreamBlockProcessor,
     TextDeltaEvent,
@@ -106,12 +107,15 @@ async def main() -> None:
         auto_detect_adapter=False,
     )
 
-    # Minimal mode
-    await demo_config(
-        "Minimal Mode (Only Blocks)",
+    # Minimal mode using ProcessorConfig object
+    config = ProcessorConfig(
         emit_original_events=False,
         emit_text_deltas=False,
         auto_detect_adapter=True,
+    )
+    await demo_config(
+        "Minimal Mode (via ProcessorConfig)",
+        config=config,
     )
 
     print("\n" + "=" * 60)

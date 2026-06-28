@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import logging
 from collections import deque
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+
+from pydantic import BaseModel
 
 from hother.streamblocks.adapters.detection import AdapterDetector
 from hother.streamblocks.adapters.providers import IdentityAdapter
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.models import BlockCandidate, ExtractedBlock
 from hother.streamblocks.core.types import (
-    BaseContent,
-    BaseMetadata,
     BlockDeltaEvent,
     BlockExtractedEvent,
     BlockOpenedEvent,
@@ -20,7 +20,9 @@ from hother.streamblocks.core.types import (
     BlockState,
     RawTextEvent,
     StreamEvent,
+    TContent,
     TextDeltaEvent,
+    TMetadata,
 )
 
 if TYPE_CHECKING:
@@ -39,7 +41,63 @@ def _get_syntax_name(syntax: object) -> str:
     return type(syntax).__name__
 
 
-class StreamBlockProcessor:
+class ProcessorConfig(BaseModel):
+    """Configuration for StreamBlockProcessor."""
+
+    lines_buffer: int = 5
+    max_line_length: int = 16_384
+    max_block_size: int = 1_048_576  # 1MB
+    emit_original_events: bool = True
+    emit_text_deltas: bool = True
+    auto_detect_adapter: bool = True
+
+
+class StreamBuffer:
+    """Handles accumulation of text chunks into lines."""
+
+    def __init__(self, max_line_length: int) -> None:
+        self.max_line_length = max_line_length
+        self._accumulated_text: list[str] = []
+
+    def add_text(self, text: str) -> list[str]:
+        """Add text and return complete lines."""
+        self._accumulated_text.append(text)
+        full_text = "".join(self._accumulated_text)
+        lines = full_text.split("\n")
+
+        if not full_text.endswith("\n"):
+            self._accumulated_text = [lines[-1]]
+            lines = lines[:-1]
+        else:
+            self._accumulated_text = []
+
+        # Enforce max line length
+        return [
+            line[: self.max_line_length] if len(line) > self.max_line_length else line
+            for line in lines
+        ]
+
+    def flush(self) -> list[str]:
+        """Flush remaining text as a final line."""
+        if not self._accumulated_text:
+            return []
+
+        final_line = "".join(self._accumulated_text)
+        self._accumulated_text.clear()
+
+        return [
+            final_line[: self.max_line_length]
+            if len(final_line) > self.max_line_length
+            else final_line
+        ]
+
+    @property
+    def is_empty(self) -> bool:
+        """Check if buffer is empty."""
+        return not self._accumulated_text
+
+
+class StreamBlockProcessor(Generic[TMetadata, TContent]):
     """Main stream processing engine for a single syntax type.
 
     This processor works with exactly one syntax.
@@ -49,44 +107,58 @@ class StreamBlockProcessor:
         self,
         registry: Registry,
         *,
+        config: ProcessorConfig | None = None,
         logger: Logger | None = None,
-        lines_buffer: int = 5,
-        max_line_length: int = 16_384,
-        max_block_size: int = 1_048_576,  # 1MB
-        emit_original_events: bool = True,
-        emit_text_deltas: bool = True,
-        auto_detect_adapter: bool = True,
+        # Backward compatibility args
+        lines_buffer: int | None = None,
+        max_line_length: int | None = None,
+        max_block_size: int | None = None,
+        emit_original_events: bool | None = None,
+        emit_text_deltas: bool | None = None,
+        auto_detect_adapter: bool | None = None,
     ) -> None:
         """Initialize the stream processor.
 
         Args:
             registry: Registry with a single syntax
+            config: Configuration object. If provided, overrides individual args.
             logger: Optional logger (any object with debug/info/warning/error/exception methods).
                    Defaults to stdlib logging.getLogger(__name__)
-            lines_buffer: Number of lines to keep in buffer
-            max_line_length: Maximum line length before truncation
-            max_block_size: Maximum block size in bytes
-            emit_original_events: If True, pass through original stream chunks unchanged
-            emit_text_deltas: If True, emit TextDeltaEvent for real-time streaming
-            auto_detect_adapter: If True, automatically detect adapter from first chunk
+            lines_buffer: Number of lines to keep in buffer (deprecated, use config)
+            max_line_length: Maximum line length before truncation (deprecated, use config)
+            max_block_size: Maximum block size in bytes (deprecated, use config)
+            emit_original_events: If True, pass through original stream chunks unchanged (deprecated, use config)
+            emit_text_deltas: If True, emit TextDeltaEvent for real-time streaming (deprecated, use config)
+            auto_detect_adapter: If True, automatically detect adapter from first chunk (deprecated, use config)
         """
         self.registry = registry
         self.syntax = registry.syntax  # Direct access to the syntax
         self.logger = logger or StdlibLoggerAdapter(logging.getLogger(__name__))
-        self.lines_buffer = lines_buffer
-        self.max_line_length = max_line_length
-        self.max_block_size = max_block_size
 
-        # Adapter configuration
-        self.emit_original_events = emit_original_events
-        self.emit_text_deltas = emit_text_deltas
-        self.auto_detect_adapter = auto_detect_adapter
+        # Initialize config
+        if config is None:
+            self.config = ProcessorConfig()
+            # Apply backward compatibility overrides if provided
+            if lines_buffer is not None:
+                self.config.lines_buffer = lines_buffer
+            if max_line_length is not None:
+                self.config.max_line_length = max_line_length
+            if max_block_size is not None:
+                self.config.max_block_size = max_block_size
+            if emit_original_events is not None:
+                self.config.emit_original_events = emit_original_events
+            if emit_text_deltas is not None:
+                self.config.emit_text_deltas = emit_text_deltas
+            if auto_detect_adapter is not None:
+                self.config.auto_detect_adapter = auto_detect_adapter
+        else:
+            self.config = config
 
         # Processing state
-        self._buffer: deque[str] = deque(maxlen=lines_buffer)
+        self._buffer: deque[str] = deque(maxlen=self.config.lines_buffer)
         self._candidates: list[BlockCandidate] = []
         self._line_counter = 0
-        self._accumulated_text: list[str] = []
+        self._stream_buffer = StreamBuffer(self.config.max_line_length)
 
         # Adapter state (for process_chunk)
         self._adapter: StreamAdapter[Any] | None = None
@@ -96,7 +168,7 @@ class StreamBlockProcessor:
         self,
         chunk: TChunk,
         adapter: StreamAdapter[TChunk] | None = None,
-    ) -> list[TChunk | StreamEvent[BaseMetadata, BaseContent]]:
+    ) -> list[TChunk | StreamEvent[TMetadata, TContent]]:
         """Process a single chunk and return resulting events.
 
         This method is stateful - it maintains internal state between calls.
@@ -110,29 +182,14 @@ class StreamBlockProcessor:
         Returns:
             List of events generated from this chunk. May be empty if chunk only
             accumulates text without completing any lines.
-
-        Example:
-            >>> processor = StreamBlockProcessor(registry)
-            >>> response = await client.generate_content_stream(...)
-            >>> async for chunk in response:
-            ...     events = processor.process_chunk(chunk)
-            ...     for event in events:
-            ...         if isinstance(event, BlockExtractedEvent):
-            ...             print(f"Block: {event.block.metadata.id}")
-            ...
-            >>> # Finalize at stream end
-            >>> final_events = processor.finalize()
-            >>> for event in final_events:
-            ...     if isinstance(event, BlockRejectedEvent):
-            ...         print(f"Incomplete block: {event.reason}")
         """
-        events: list[TChunk | StreamEvent[BaseMetadata, BaseContent]] = []
+        events: list[TChunk | StreamEvent[TMetadata, TContent]] = []
 
         # Auto-detect adapter on first chunk
         if not self._first_chunk_processed:
             if adapter:
                 self._adapter = adapter
-            elif self.auto_detect_adapter:
+            elif self.config.auto_detect_adapter:
                 detected = AdapterDetector.detect(chunk)
                 if detected:
                     self._adapter = detected
@@ -151,7 +208,7 @@ class StreamBlockProcessor:
 
         # Emit original chunk (passthrough)
         # Only emit for non-text streams to avoid duplication
-        if self.emit_original_events and not isinstance(self._adapter, IdentityAdapter):
+        if self.config.emit_original_events and not isinstance(self._adapter, IdentityAdapter):
             events.append(chunk)
 
         # Extract text from chunk
@@ -166,16 +223,16 @@ class StreamBlockProcessor:
             return events
 
         # Log stream processing start on first chunk with text
-        if self._line_counter == 0 and not self._accumulated_text:
+        if self._line_counter == 0 and self._stream_buffer.is_empty:
             self.logger.debug(
                 "stream_processing_started",
                 syntax=_get_syntax_name(self.syntax),
-                lines_buffer=self.lines_buffer,
-                max_block_size=self.max_block_size,
+                lines_buffer=self.config.lines_buffer,
+                max_block_size=self.config.max_block_size,
             )
 
         # Emit text delta for real-time streaming
-        if self.emit_text_deltas and text:
+        if self.config.emit_text_deltas and text:
             # Check if we're inside a block
             inside_block = len(self._candidates) > 0
             block_section = None
@@ -192,34 +249,17 @@ class StreamBlockProcessor:
                 )
             )
 
-        # Accumulate chunks until we have complete lines
-        self._accumulated_text.append(text)
-
-        # Check if we have complete lines
-        full_text = "".join(self._accumulated_text)
-        lines = full_text.split("\n")
-
-        # Keep incomplete line for next iteration
-        if not full_text.endswith("\n"):
-            self._accumulated_text = [lines[-1]]
-            lines = lines[:-1]
-        else:
-            self._accumulated_text = []
-
         # Process complete lines
+        lines = self._stream_buffer.add_text(text)
         for line in lines:
-            # Enforce max line length
-            truncated_line = line[: self.max_line_length] if len(line) > self.max_line_length else line
-
             self._line_counter += 1
-
             # Process line through detection pipeline
-            line_events = self._process_line_sync(truncated_line)
+            line_events = self._process_line_sync(line)
             events.extend(line_events)
 
         return events
 
-    def finalize(self) -> list[StreamEvent[BaseMetadata, BaseContent]]:
+    def finalize(self) -> list[StreamEvent[TMetadata, TContent]]:
         """Finalize processing and flush any incomplete blocks.
 
         Call this method after processing all chunks to get rejection events
@@ -232,37 +272,15 @@ class StreamBlockProcessor:
         Returns:
             List of events including processed final line and rejection events
             for incomplete blocks
-
-        Example:
-            >>> processor = StreamBlockProcessor(registry)
-            >>> async for chunk in stream:
-            ...     events = processor.process_chunk(chunk)
-            ...     # ... handle events
-            ...
-            >>> # Stream ended, process remaining text and flush incomplete blocks
-            >>> final_events = processor.finalize()
-            >>> for event in final_events:
-            ...     if isinstance(event, BlockRejectedEvent):
-            ...         print(f"Incomplete block: {event.reason}")
         """
-        events: list[StreamEvent[BaseMetadata, BaseContent]] = []
+        events: list[StreamEvent[TMetadata, TContent]] = []
 
         # Process any remaining accumulated text as a final line
-        if self._accumulated_text:
-            final_line = "".join(self._accumulated_text)
+        final_lines = self._stream_buffer.flush()
+        for line in final_lines:
             self._line_counter += 1
-
-            # Enforce max line length
-            truncated_line = (
-                final_line[: self.max_line_length] if len(final_line) > self.max_line_length else final_line
-            )
-
-            # Process final line
-            line_events = self._process_line_sync(truncated_line)
+            line_events = self._process_line_sync(line)
             events.extend(line_events)
-
-            # Clear accumulated text
-            self._accumulated_text.clear()
 
         # Now flush any remaining candidates
         flush_events = self._flush_candidates_sync()
@@ -283,16 +301,6 @@ class StreamBlockProcessor:
         Returns:
             True if event is from the native provider, False if it's a StreamBlocks
             event or if detection is not possible
-
-        Example:
-            >>> processor = StreamBlockProcessor(registry)
-            >>> async for event in processor.process_stream(gemini_stream):
-            ...     if processor.is_native_event(event):
-            ...         # Handle Gemini event (provider-agnostic!)
-            ...         usage = getattr(event, 'usage_metadata', None)
-            ...     elif isinstance(event, BlockExtractedEvent):
-            ...         # Handle StreamBlocks event
-            ...         print(f"Block: {event.block.metadata.id}")
         """
         # Check if it's a known StreamBlocks event
         if isinstance(
@@ -323,7 +331,7 @@ class StreamBlockProcessor:
         self,
         stream: AsyncIterator[TChunk],
         adapter: StreamAdapter[TChunk] | None = None,
-    ) -> AsyncGenerator[TChunk | StreamEvent[BaseMetadata, BaseContent]]:
+    ) -> AsyncGenerator[TChunk | StreamEvent[TMetadata, TContent]]:
         """Process stream and yield mixed events.
 
         This method processes chunks from any stream format, extracting text
@@ -340,19 +348,6 @@ class StreamBlockProcessor:
             - Original chunks (if emit_original_events=True)
             - TextDeltaEvent (if emit_text_deltas=True)
             - RawTextEvent, BlockOpenedEvent, BlockDeltaEvent, BlockExtractedEvent, BlockRejectedEvent
-
-        Example:
-            >>> # Plain text (backward compatible)
-            >>> async for event in processor.process_stream(text_stream):
-            ...     if isinstance(event, BlockExtractedEvent):
-            ...         print(f"Extracted: {event.block}")
-            >>>
-            >>> # With Gemini adapter (auto-detected)
-            >>> async for event in processor.process_stream(gemini_stream):
-            ...     if hasattr(event, 'usage_metadata'):
-            ...         print(f"Tokens: {event.usage_metadata}")
-            ...     elif isinstance(event, BlockExtractedEvent):
-            ...         print(f"Extracted: {event.block}")
         """
         # Set adapter if provided, otherwise will auto-detect
         if adapter:
@@ -361,7 +356,7 @@ class StreamBlockProcessor:
 
         async for chunk in stream:
             # Auto-detection on first chunk
-            if not self._first_chunk_processed and self.auto_detect_adapter:
+            if not self._first_chunk_processed and self.config.auto_detect_adapter:
                 detected = AdapterDetector.detect(chunk)
                 if detected:
                     self._adapter = detected
@@ -378,7 +373,7 @@ class StreamBlockProcessor:
 
             # Emit original chunk (passthrough)
             # Only emit for non-text streams to avoid duplication with plain text
-            if self.emit_original_events and not isinstance(self._adapter, IdentityAdapter):
+            if self.config.emit_original_events and not isinstance(self._adapter, IdentityAdapter):
                 yield chunk
 
             # Extract text from chunk
@@ -393,16 +388,16 @@ class StreamBlockProcessor:
                 continue
 
             # Log stream processing start on first chunk with text
-            if self._line_counter == 0 and not self._accumulated_text:
+            if self._line_counter == 0 and self._stream_buffer.is_empty:
                 self.logger.debug(
                     "stream_processing_started",
                     syntax=_get_syntax_name(self.syntax),
-                    lines_buffer=self.lines_buffer,
-                    max_block_size=self.max_block_size,
+                    lines_buffer=self.config.lines_buffer,
+                    max_block_size=self.config.max_block_size,
                 )
 
             # Emit text delta for real-time streaming
-            if self.emit_text_deltas and text:
+            if self.config.emit_text_deltas and text:
                 # Check if we're inside a block
                 inside_block = len(self._candidates) > 0
                 block_section = None
@@ -417,47 +412,20 @@ class StreamBlockProcessor:
                     block_section=block_section,
                 )
 
-            # Accumulate chunks until we have complete lines
-            self._accumulated_text.append(text)
-
-            # Check if we have complete lines
-            full_text = "".join(self._accumulated_text)
-            lines = full_text.split("\n")
-
-            # Keep incomplete line for next iteration
-            if not full_text.endswith("\n"):
-                self._accumulated_text = [lines[-1]]
-                lines = lines[:-1]
-            else:
-                self._accumulated_text = []
-
             # Process complete lines
+            lines = self._stream_buffer.add_text(text)
             for line in lines:
-                # Enforce max line length
-                truncated_line = line[: self.max_line_length] if len(line) > self.max_line_length else line
-
                 self._line_counter += 1
-
                 # Process line through detection pipeline
-                async for event in self._process_line(truncated_line):
+                async for event in self._process_line(line):
                     yield event
 
         # Process any remaining accumulated text as a final line
-        if self._accumulated_text:
-            final_line = "".join(self._accumulated_text)
+        final_lines = self._stream_buffer.flush()
+        for line in final_lines:
             self._line_counter += 1
-
-            # Enforce max line length
-            truncated_line = (
-                final_line[: self.max_line_length] if len(final_line) > self.max_line_length else final_line
-            )
-
-            # Process final line
-            async for event in self._process_line(truncated_line):
+            async for event in self._process_line(line):
                 yield event
-
-            # Clear accumulated text
-            self._accumulated_text.clear()
 
         # Flush remaining candidates at stream end
         async for event in self._flush_candidates():
@@ -466,7 +434,7 @@ class StreamBlockProcessor:
     def _process_line_sync(
         self,
         line: str,
-    ) -> list[StreamEvent[BaseMetadata, BaseContent]]:
+    ) -> list[StreamEvent[TMetadata, TContent]]:
         """Process a single line through detection (synchronous version).
 
         Args:
@@ -475,7 +443,7 @@ class StreamBlockProcessor:
         Returns:
             List of StreamEvent objects generated from this line
         """
-        events: list[StreamEvent[BaseMetadata, BaseContent]] = []
+        events: list[StreamEvent[TMetadata, TContent]] = []
 
         # Add to buffer
         self._buffer.append(line)
@@ -522,7 +490,7 @@ class StreamBlockProcessor:
                 candidate.add_line(line)
 
                 # Check size limit
-                if len(candidate.raw_text) > self.max_block_size:
+                if len(candidate.raw_text) > self.config.max_block_size:
                     events.append(
                         self._create_rejection_event(
                             candidate,
@@ -602,7 +570,7 @@ class StreamBlockProcessor:
     async def _process_line(
         self,
         line: str,
-    ) -> AsyncGenerator[StreamEvent[BaseMetadata, BaseContent]]:
+    ) -> AsyncGenerator[StreamEvent[TMetadata, TContent]]:
         """Process a single line through detection (async wrapper).
 
         Args:
@@ -618,7 +586,7 @@ class StreamBlockProcessor:
     def _try_extract_block(
         self,
         candidate: BlockCandidate,
-    ) -> BlockExtractedEvent[BaseMetadata, BaseContent] | BlockRejectedEvent[BaseMetadata, BaseContent]:
+    ) -> BlockExtractedEvent[TMetadata, TContent] | BlockRejectedEvent[TMetadata, TContent]:
         """Try to parse and validate a complete block.
 
         Args:
@@ -675,8 +643,13 @@ class StreamBlockProcessor:
             hash_id=candidate.compute_hash(),
         )
 
+        # Cast to generic types since we can't verify them at runtime easily
+        # The user is responsible for ensuring the processor types match the syntax
+        typed_block = cast(ExtractedBlock[TMetadata, TContent], block)
+
         # Additional validation from syntax
-        if not candidate.syntax.validate_block(block):
+        # We cast to Any because of invariance issues with Generics
+        if not candidate.syntax.validate_block(cast(Any, typed_block)):
             self.logger.warning(
                 "syntax_validation_failed",
                 block_type=block_type,
@@ -685,7 +658,7 @@ class StreamBlockProcessor:
             return self._create_rejection_event(candidate, "Syntax validation failed")
 
         # Registry validation (user-defined validators)
-        if not self.registry.validate_block(block):
+        if not self.registry.validate_block(typed_block):
             self.logger.warning(
                 "registry_validation_failed",
                 block_type=block_type,
@@ -704,7 +677,7 @@ class StreamBlockProcessor:
 
         return BlockExtractedEvent(
             data=candidate.raw_text,
-            block=block,
+            block=typed_block,
         )
 
     def _create_rejection_event(
@@ -712,7 +685,7 @@ class StreamBlockProcessor:
         candidate: BlockCandidate,
         reason: str = "Validation failed",
         exception: Exception | None = None,
-    ) -> BlockRejectedEvent[BaseMetadata, BaseContent]:
+    ) -> BlockRejectedEvent[TMetadata, TContent]:
         """Create a rejection event.
 
         Args:
@@ -741,13 +714,13 @@ class StreamBlockProcessor:
             exception=exception,
         )
 
-    def _flush_candidates_sync(self) -> list[StreamEvent[BaseMetadata, BaseContent]]:
+    def _flush_candidates_sync(self) -> list[StreamEvent[TMetadata, TContent]]:
         """Flush remaining candidates as rejected (synchronous version).
 
         Returns:
             List of rejection events for remaining candidates
         """
-        events: list[StreamEvent[BaseMetadata, BaseContent]] = []
+        events: list[StreamEvent[TMetadata, TContent]] = []
         for candidate in self._candidates:
             events.append(
                 self._create_rejection_event(
@@ -758,7 +731,7 @@ class StreamBlockProcessor:
         self._candidates.clear()
         return events
 
-    async def _flush_candidates(self) -> AsyncGenerator[StreamEvent[BaseMetadata, BaseContent]]:
+    async def _flush_candidates(self) -> AsyncGenerator[StreamEvent[TMetadata, TContent]]:
         """Flush remaining candidates as rejected (async wrapper).
 
         Yields:

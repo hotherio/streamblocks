@@ -1,13 +1,10 @@
-"""Speculative Agent Stream - The key innovation for parallel tool execution.
+"""Thinking Agent Stream - Dynamic thinking mode control.
 
-This module implements speculative continuation:
-- LLM streams continuously (never stops at tool calls)
-- Tools execute in parallel via asyncio.create_task()
-- When tool completes:
-  - If LLM finished → inject result, start new call
-  - If LLM still streaming → cancel stream, inject result, resume
+This module implements speculative continuation with dynamic thinking:
+- First LLM call uses thinking mode (thinking_budget=128)
+- Subsequent calls after tool injection use NO thinking (thinking_budget=0)
 
-This pattern is adapted from PausableGeminiStream in live_feedback examples.
+This demonstrates the flexibility of controlling model behavior per-call.
 """
 
 from __future__ import annotations
@@ -23,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from google.genai.types import GenerateContentConfig, ThinkingConfig
 
-from examples.agent.blocks import FinalAnswer, ToolCall, ToolCallContent, ToolCallMetadata, Wait
+from examples.agent.blocks import FinalAnswer, ToolCall, Wait
 from examples.agent.events import (
     AnswerEvent,
     LLMCallEndEvent,
@@ -49,16 +46,17 @@ if TYPE_CHECKING:
     from examples.agent.executor import ToolDefinition, ToolExecutor, ToolResult
 
 
-class SpeculativeAgentStream:
-    """Stream controller with parallel tool execution.
+class ThinkingAgentStream:
+    """Stream controller with dynamic thinking mode.
 
     Key Features:
+    - First call uses thinking mode (better reasoning for complex tasks)
+    - Subsequent calls disable thinking (faster response after feedback)
     - Tools execute in background while LLM continues streaming
     - Results are injected as soon as available
-    - Speculative content may be discarded (regenerated with real results)
 
     Usage:
-        stream = SpeculativeAgentStream(client, executor, tools)
+        stream = ThinkingAgentStream(client, executor, tools)
         async for event in stream.run("What is 2+2?"):
             if isinstance(event, AnswerEvent):
                 print(f"Answer: {event.answer}")
@@ -72,8 +70,10 @@ class SpeculativeAgentStream:
         model_id: str = "gemini-2.5-flash",
         max_iterations: int = 10,
         context: RunContext[Any] | None = None,
+        first_call_thinking_budget: int = 128,
+        subsequent_thinking_budget: int = 0,
     ) -> None:
-        """Initialize the speculative stream.
+        """Initialize the thinking stream.
 
         Args:
             client: Gemini client instance
@@ -82,6 +82,8 @@ class SpeculativeAgentStream:
             model_id: Model to use
             max_iterations: Maximum number of LLM calls
             context: Optional RunContext for dependency injection
+            first_call_thinking_budget: Thinking budget for first LLM call
+            subsequent_thinking_budget: Thinking budget for subsequent calls
         """
         self.client = client
         self.executor = executor
@@ -89,14 +91,16 @@ class SpeculativeAgentStream:
         self.model_id = model_id
         self.max_iterations = max_iterations
         self.context = context
+        self.first_call_thinking_budget = first_call_thinking_budget
+        self.subsequent_thinking_budget = subsequent_thinking_budget
 
         # Build system prompt
         self.system_prompt = build_system_prompt(tools)
 
-        # Chat instance (created per run)
-        self._chat: Any = None
+        # Conversation history (managed manually since we create new chats)
+        self._conversation_history: list[dict[str, str]] = []
 
-        # Next message to send to chat
+        # Next message to send
         self._next_message: str | None = None
 
         # Tool execution state
@@ -108,6 +112,7 @@ class SpeculativeAgentStream:
         self._done = False
         self._tools_called = 0
         self._tool_call_counter = 0
+        self._is_first_call = True  # Track if this is the first LLM call
 
         # Metrics tracking
         self._llm_call_count = 0
@@ -118,7 +123,7 @@ class SpeculativeAgentStream:
         self._total_thoughts_tokens = 0
         self._call_metrics: list[dict[str, Any]] = []
 
-        # Setup StreamBlocks registry (processor created fresh each iteration)
+        # Setup StreamBlocks registry
         self._syntax = DelimiterFrontmatterSyntax(
             start_delimiter="!!start",
             end_delimiter="!!end",
@@ -137,6 +142,12 @@ class SpeculativeAgentStream:
         """Create a fresh StreamBlockProcessor for each iteration."""
         return StreamBlockProcessor(self._registry, emit_text_deltas=True)
 
+    def _get_thinking_budget(self) -> int:
+        """Get the thinking budget for the current call."""
+        if self._is_first_call:
+            return self.first_call_thinking_budget
+        return self.subsequent_thinking_budget
+
     async def run(self, task: str) -> AsyncIterator[Any]:
         """Run the agent on a task, yielding events.
 
@@ -147,24 +158,16 @@ class SpeculativeAgentStream:
             Various events: TextDeltaEvent, ActionEvent, ToolStartedEvent,
             ObservationEvent, StreamCancelledEvent, AnswerEvent
         """
-        # Create chat with system instruction and disabled thinking
-        self._chat = self.client.aio.chats.create(
-            model=self.model_id,
-            config=GenerateContentConfig(
-                system_instruction=self.system_prompt,
-                thinking_config=ThinkingConfig(thinking_budget=0),
-            ),
-        )
-
         # First message is the task
         self._next_message = f"Task: {task}"
+        self._conversation_history = []
 
         iteration = 0
-        consecutive_no_progress = 0  # Track iterations without any blocks
+        consecutive_no_progress = 0
 
         while not self._done and iteration < self.max_iterations:
             iteration += 1
-            made_progress = False  # Track if we extracted any blocks this iteration
+            made_progress = False
 
             # Stream from LLM with injection support
             async for event in self._stream_with_injection():
@@ -172,12 +175,11 @@ class SpeculativeAgentStream:
 
                 # Handle extracted blocks
                 if isinstance(event, BlockExtractedEvent):
-                    made_progress = True  # We got at least one block
+                    made_progress = True
                     block = event.block
                     block_type = block.metadata.block_type
 
                     if block_type == "tool_call":
-                        # Tool call detected - start execution in background
                         self._tool_call_counter += 1
                         tool_name = block.metadata.tool_name  # type: ignore[attr-defined]
                         tool_id = block.metadata.id
@@ -189,7 +191,6 @@ class SpeculativeAgentStream:
                             parameters=parameters,
                         )
 
-                        # Start tool in background - LLM continues!
                         task_obj = asyncio.create_task(self._execute_tool(tool_name, tool_id, parameters))
                         self._pending_tools[tool_id] = task_obj
                         self._tools_called += 1
@@ -204,7 +205,6 @@ class SpeculativeAgentStream:
                                 self._awaited_tool_ids.add(tid)
 
                     elif block_type == "final_answer":
-                        # Done! Cancel any pending tools
                         await self._cancel_pending_tools()
                         self._done = True
 
@@ -219,16 +219,14 @@ class SpeculativeAgentStream:
                             total_thoughts_tokens=self._total_thoughts_tokens,
                         )
 
-                # Also count tool results as progress (tool results came back)
                 elif isinstance(event, ToolCallResultEvent):
                     made_progress = True
 
-            # Track consecutive iterations without progress to detect stuck loops
+            # Track consecutive iterations without progress
             if made_progress:
                 consecutive_no_progress = 0
             else:
                 consecutive_no_progress += 1
-                # If 2 consecutive iterations have no blocks, LLM isn't following format
                 if consecutive_no_progress >= 2:
                     self._done = True
                     yield AnswerEvent(
@@ -242,16 +240,13 @@ class SpeculativeAgentStream:
                         total_thoughts_tokens=self._total_thoughts_tokens,
                     )
 
-            # If no next message but still have pending tools, wait for them
+            # Wait for pending tools if no next message
             if self._next_message is None and not self._done and self._pending_tools:
-                # Wait for at least one tool to complete
                 if self._pending_tools:
-                    # Wait for any pending tool to complete
                     _done, _ = await asyncio.wait(
                         list(self._pending_tools.values()),
                         return_when=asyncio.FIRST_COMPLETED,
                     )
-                    # Collect results
                     pending_tool_results: list[str] = []
                     while not self._tool_results.empty():
                         tool_name, tool_id, result = await self._tool_results.get()
@@ -271,7 +266,6 @@ class SpeculativeAgentStream:
                     if pending_tool_results:
                         self._next_message = "\n\n".join(pending_tool_results)
 
-        # If we exited without final_answer, yield a timeout message
         if not self._done:
             yield AnswerEvent(
                 answer="Max iterations reached without final answer.",
@@ -285,26 +279,16 @@ class SpeculativeAgentStream:
             )
 
     async def _stream_with_injection(self) -> AsyncIterator[Any]:
-        """Stream from LLM, checking for tool results to inject.
-
-        This is the core of speculative continuation:
-        - Stream chunks from LLM via chat.send_message_stream()
-        - Check for completed tools after each chunk
-        - If tool completed: inject result as next message, break to restart
-        """
+        """Stream from LLM, checking for tool results to inject."""
         self._is_streaming = True
-
-        # Create fresh processor for this iteration (important: reset state)
         self.processor = self._create_processor()
 
-        # Get the message to send (task or tool observation)
         message_to_send = self._next_message
         if message_to_send is None:
-            # No message to send - this shouldn't happen
             self._is_streaming = False
             return
 
-        # Track metrics for this call
+        # Track metrics
         self._llm_call_count += 1
         call_number = self._llm_call_count
         call_start_time = time.time()
@@ -313,27 +297,41 @@ class SpeculativeAgentStream:
         last_usage_metadata: Any = None
         was_cancelled = False
 
-        # Emit call start event
+        # Determine thinking budget for this call
+        thinking_budget = self._get_thinking_budget()
+
+        # After first call, mark as no longer first
+        if self._is_first_call:
+            self._is_first_call = False
+
         yield LLMCallStartEvent(call_number=call_number, timestamp=call_start_time)
 
         try:
-            # Use chat interface - it manages conversation history automatically
-            response = await self._chat.send_message_stream(message_to_send)
+            # Create NEW chat for each call with appropriate thinking config
+            # This allows dynamic control of thinking mode
+            chat = self.client.aio.chats.create(
+                model=self.model_id,
+                config=GenerateContentConfig(
+                    system_instruction=self.system_prompt,
+                    thinking_config=ThinkingConfig(thinking_budget=thinking_budget),
+                ),
+                history=self._conversation_history,
+            )
+
+            response = await chat.send_message_stream(message_to_send)
 
             accumulated = ""
 
             async for chunk in response:
-                # Track first token timing
                 if first_token_time is None:
                     first_token_time = time.time()
                     ttft = first_token_time - call_start_time
                     yield LLMFirstTokenEvent(call_number=call_number, ttft=ttft)
 
-                # Extract usage metadata (Gemini provides this on chunks)
                 if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
                     last_usage_metadata = chunk.usage_metadata
 
-                # Check if any tool completed while we were streaming
+                # Check for completed tools
                 while not self._tool_results.empty():
                     tool_name, tool_id, result = await self._tool_results.get()
 
@@ -347,7 +345,6 @@ class SpeculativeAgentStream:
 
                     # Only cancel stream if an awaited tool completed
                     if is_awaited:
-                        # AWAITED TOOL COMPLETED - cancel stream and inject all results
                         yield StreamCancelledEvent(
                             reason=f"Awaited tool {tool_name} completed",
                             accumulated_text=accumulated,
@@ -355,7 +352,6 @@ class SpeculativeAgentStream:
 
                         was_cancelled = True
 
-                        # Emit call end event before injecting results
                         for end_event in self._emit_call_end_event(
                             call_number, call_start_time, ttft, last_usage_metadata, cancelled=True
                         ):
@@ -381,28 +377,29 @@ class SpeculativeAgentStream:
                         self._queued_results.clear()
                         self._next_message = "\n\n".join(tool_result_msgs)
 
-                        # Break to restart with injected results
+                        # Update conversation history
+                        self._conversation_history.append({"role": "user", "parts": [{"text": message_to_send}]})
+                        self._conversation_history.append({"role": "model", "parts": [{"text": accumulated}]})
+
                         self._is_streaming = False
                         return
 
-                # Process chunk through StreamBlocks
                 if hasattr(chunk, "text") and chunk.text:
                     accumulated += chunk.text
 
-                # Yield chunk for StreamBlocks processing
                 async for event in self._process_chunk(chunk):
                     yield event
 
-            # Stream finished naturally - chat history is auto-managed
+            # Stream finished - update history
+            self._conversation_history.append({"role": "user", "parts": [{"text": message_to_send}]})
+            self._conversation_history.append({"role": "model", "parts": [{"text": accumulated}]})
 
-            # Emit call end event for natural completion
             if not was_cancelled:
                 for end_event in self._emit_call_end_event(
                     call_number, call_start_time, ttft, last_usage_metadata, cancelled=False
                 ):
                     yield end_event
 
-            # CRITICAL: Finalize processor to emit any remaining blocks
             if self.processor is not None:
                 final_events = self.processor.finalize()
                 for event in final_events:
@@ -410,12 +407,12 @@ class SpeculativeAgentStream:
 
             # Wait for any awaited tools that haven't completed yet
             if self._awaited_tool_ids:
-                # Get tasks for awaited tools
                 awaited_tasks = [
-                    self._pending_tools[tid] for tid in self._awaited_tool_ids if tid in self._pending_tools
+                    self._pending_tools[tid]
+                    for tid in self._awaited_tool_ids
+                    if tid in self._pending_tools
                 ]
                 if awaited_tasks:
-                    # Wait for all awaited tools to complete
                     await asyncio.gather(*awaited_tasks, return_exceptions=True)
 
             # Collect any results that came in while waiting
@@ -424,8 +421,7 @@ class SpeculativeAgentStream:
                 self._awaited_tool_ids.discard(tool_id)
                 self._queued_results.append((tool_name, tool_id, result))
 
-            # Check for any pending tool results and inject them
-            # Collect all pending results first (include queued results)
+            # Process pending tool results (include queued results)
             pending_tool_results: list[str] = []
             pending_events: list[ToolCallResultEvent] = []
 
@@ -450,7 +446,6 @@ class SpeculativeAgentStream:
             # Then, process any additional results from the queue
             while not self._tool_results.empty():
                 tool_name, tool_id, result = await self._tool_results.get()
-
                 tool_result_msg = format_tool_result(
                     tool_name,
                     str(result.result) if result.success else str(result.error),
@@ -466,15 +461,12 @@ class SpeculativeAgentStream:
                     )
                 )
 
-            # Yield all tool result events
             for result_event in pending_events:
                 yield result_event
 
-            # If we have pending tool results, combine them and set as next message
             if pending_tool_results:
                 self._next_message = "\n\n".join(pending_tool_results)
             else:
-                # No pending tools - clear next message (LLM finished naturally)
                 self._next_message = None
 
             # Clear awaited tool IDs for next iteration
@@ -495,7 +487,6 @@ class SpeculativeAgentStream:
         """Create and track metrics for an LLM call end event."""
         duration = time.time() - call_start_time
 
-        # Extract token counts from usage metadata
         prompt_tokens = 0
         completion_tokens = 0
         total_tokens = 0
@@ -509,14 +500,12 @@ class SpeculativeAgentStream:
             cached_tokens = getattr(usage_metadata, "cached_content_token_count", 0) or 0
             thoughts_tokens = getattr(usage_metadata, "thoughts_token_count", 0) or 0
 
-        # Update totals
         self._total_prompt_tokens += prompt_tokens
         self._total_completion_tokens += completion_tokens
         self._total_tokens += total_tokens
         self._total_cached_tokens += cached_tokens
         self._total_thoughts_tokens += thoughts_tokens
 
-        # Store call metrics
         self._call_metrics.append(
             {
                 "call_number": call_number,
@@ -546,24 +535,15 @@ class SpeculativeAgentStream:
 
     async def _process_chunk(self, chunk: Any) -> AsyncIterator[Any]:
         """Process a single chunk through StreamBlocks."""
-        # Use the processor's synchronous chunk processing
         events = self.processor.process_chunk(chunk)
         for event in events:
             yield event
 
     async def _execute_tool(self, tool_name: str, tool_id: str, parameters: dict[str, Any]) -> ToolResult:
-        """Execute a tool and queue the result.
-
-        This runs in the background while the LLM continues streaming.
-        """
+        """Execute a tool and queue the result."""
         result = await self.executor.execute(tool_name, parameters, context=self.context)
-
-        # Queue result for injection
         await self._tool_results.put((tool_name, tool_id, result))
-
-        # Remove from pending
         self._pending_tools.pop(tool_id, None)
-
         return result
 
     async def _cancel_pending_tools(self) -> None:

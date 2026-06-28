@@ -43,6 +43,24 @@ tools_called: <number>
 <Your final answer here>
 !!end
 
+## Wait Block
+
+When you need results from specific tools before continuing (for example, when one tool's output is needed as input to another), emit a wait block:
+
+!!start
+---
+id: wait_<number>
+block_type: wait
+---
+- tool_call_1
+- tool_call_2
+!!end
+
+This tells the system to wait for those specific tools to complete before giving you their results. Use this when:
+- You need product IDs from search_products before calling create_order
+- One tool's output is required as input for another tool
+- You want to ensure you have the data before proceeding
+
 ## Important Rules
 
 1. CRITICAL: Every block MUST end with !!end on its own line. A block without !!end will be REJECTED and you will need to retry.
@@ -52,6 +70,7 @@ tools_called: <number>
 5. Always use the exact block format shown above
 6. Parameters must be valid YAML
 7. Do not ask anything to the user - you do not have tool for this.
+8. Use a wait block when you need results from specific tools before continuing (e.g., search before order).
 """
 
 
