@@ -81,7 +81,7 @@ def _assert_round_trip(registry: Registry, *, allow_text: bool = True) -> int:
         started = sum(isinstance(e, BlockStartEvent) for e in events)
         ended = [e for e in events if isinstance(e, BlockEndEvent)]
         assert started == len(ended), text
-        assert text.count(_block_marker(registry)) == started, text
+        assert f"{text}\n".count(_block_marker(registry)) == started, text
         for event in ended:
             assert event.block_type in registry.registered_blocks
             assert event.get_block() is not None
@@ -144,7 +144,7 @@ def test_syntax_without_grammar_support() -> None:
 def test_to_grammar_output_shape() -> None:
     text = Registry(syntax=XmlTagSyntax(), blocks=ARTIFACT_BLOCKS).to_grammar(dialect=GBNF)
     lines = text.splitlines()
-    assert lines[0] == "root ::= (block | text-line)* last-line?"
+    assert lines[0] == 'root ::= (block "\\n" | text-line)* (block | last-line)?'
     assert "block ::= block-file | block-patch | block-document" in lines
     assert any(line.startswith('block-file ::= "<artifact type=\\"file\\" id=\\"" identifier') for line in lines)
     assert '("create" | "overwrite")' in text
@@ -155,7 +155,7 @@ def test_to_grammar_output_shape() -> None:
     assert all(name.replace("-", "").isalnum() for name in names)
 
     blocks_only = Registry(syntax=XmlTagSyntax(), blocks=ARTIFACT_BLOCKS).to_grammar(allow_text=False)
-    assert blocks_only.splitlines()[0] == "root ::= block*"
+    assert blocks_only.splitlines()[0] == 'root ::= (block "\\n")* block?'
     assert "text-line" not in blocks_only
 
 
@@ -301,7 +301,7 @@ def test_min_blocks_must_not_be_negative() -> None:
 
 
 @pytest.mark.parametrize("syntax", [XmlTagSyntax(), DelimiterFrontmatterSyntax()])
-def test_last_text_line_may_be_unterminated(syntax: Any) -> None:
+def test_answer_may_end_without_a_line_break(syntax: Any) -> None:
     """A model that stops right after its last word must not be forced to keep writing."""
     registry = Registry(syntax=syntax, blocks=ARTIFACT_BLOCKS)
     grammar = build_grammar(registry)
@@ -309,5 +309,7 @@ def test_last_text_line_may_be_unterminated(syntax: Any) -> None:
 
     assert accepts(grammar, "Done.")
     assert accepts(grammar, f"Here you go:\n{block}\nDone.")
-    assert not accepts(grammar, f"Here you go:\n{block}")
+    assert accepts(grammar, f"Here you go:\n{block}")
+    assert accepts(build_grammar(registry, min_blocks=1), block)
+    assert accepts(build_grammar(registry, allow_text=False), f"{block}\n{block}")
     assert not accepts(build_grammar(registry, allow_text=False), f"{block}\nDone.")

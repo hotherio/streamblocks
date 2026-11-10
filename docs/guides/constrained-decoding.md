@@ -14,13 +14,14 @@ The result is [GBNF](https://github.com/ggml-org/llama.cpp/blob/master/grammars/
 
 | Part | Constraint |
 |------|------------|
-| Text around blocks | Any lines that cannot be mistaken for a block opening. Pass `allow_text=False` to allow blocks only. The last line may end without a line break. |
+| Text around blocks | Any lines that cannot be mistaken for a block opening. Pass `allow_text=False` to allow blocks only. |
 | Number of blocks | Any number, including none. Pass `min_blocks=1` to require at least one block: without it, a model that ignores the format can still answer in plain text only. |
 | Block type | One of the registered types |
 | `id` | Letters, digits, underscores and dashes |
 | Metadata fields | Required fields present, optional fields optional, in declaration order. Enumerations, integers, numbers and booleans are typed. In frontmatter, strings and ids may be double-quoted or written bare, as long as YAML cannot read the bare form as another type. |
 | Content | Any lines that are not a block marker, unless the content class defines its own grammar |
 | Closing marker | Always present |
+| End of the answer | Right after a closing marker or a line of text. A final line break is optional, so a model is never pushed to keep writing. |
 
 Fields the grammar cannot type (lists, nested objects) are left as free text, so they can still fail validation.
 

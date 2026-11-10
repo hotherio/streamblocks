@@ -20,7 +20,7 @@ from hother.streamblocks.core.models import Block, BlockCandidate
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockErrorCode, BlockErrorEvent
 from hother.streamblocks.grammar import FieldKind, GrammarError, accepts, build_grammar, render_gbnf
-from hother.streamblocks.grammar.nodes import ROOT_RULE, CharSet, Grammar, Repeat, without_line_break
+from hother.streamblocks.grammar.nodes import ROOT_RULE, CharSet, Grammar, Repeat, seq, without_line_break
 from hother.streamblocks.grammar.spec import block_spec
 from hother.streamblocks.guards import path_within
 
@@ -135,13 +135,17 @@ def test_bounded_repetition_renders_as_a_range() -> None:
     grammar = Grammar(rules={ROOT_RULE: Repeat(letter, LOWER, UPPER)})
 
     assert render_gbnf(grammar) == "root ::= [a-z]{2,3}\n"
-    assert (
-        Registry(syntax=XmlTagSyntax(), blocks=ARTIFACT_BLOCKS)
-        .to_grammar(allow_text=False, min_blocks=LOWER)
-        .startswith("root ::= block{2,}\n")
-    )
+    assert accepts(grammar, "ab")
+    assert accepts(grammar, "abc")
+    assert not accepts(grammar, "a")
+    assert not accepts(grammar, "abcd")
 
 
 def test_without_line_break_needs_a_terminated_line() -> None:
     with pytest.raises(ValueError, match="line break"):
         without_line_break(CharSet(chars="a"))
+    with pytest.raises(ValueError, match="line break"):
+        without_line_break(seq("a"))
+
+    assert without_line_break(seq("a", "b\n")) == seq("a", "b")
+    assert without_line_break(seq("a", "\n")) == seq("a")

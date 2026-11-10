@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 
 from hother.streamblocks.grammar.gbnf import render_gbnf
 from hother.streamblocks.grammar.nodes import (
+    NEWLINE,
     ROOT_RULE,
     Grammar,
     Node,
     Ref,
-    Repeat,
     choice,
     optional,
     seq,
@@ -38,8 +38,9 @@ def build_grammar(registry: Registry, *, allow_text: bool = True, min_blocks: in
 
     The grammar accepts any number of blocks of the registered types, written
     in the registry's syntax. With ``allow_text`` it also accepts lines of free
-    text between them, as long as they cannot be mistaken for a block; the
-    last line of text may be left without a line break.
+    text between them, as long as they cannot be mistaken for a block. The
+    output may stop right after a closing marker or a last line of text,
+    without a final line break.
 
     Args:
         registry: Registry holding the syntax and the block types
@@ -61,15 +62,20 @@ def build_grammar(registry: Registry, *, allow_text: bool = True, min_blocks: in
     syntax_grammar = registry.syntax.grammar_rules(specs)
 
     grammar = Grammar()
+    # A block rule stops before its final line break, so that an answer may end right after a block
     block, text = Ref(_BLOCK_RULE), Ref(_TEXT_LINE_RULE)
-    root: Node = Repeat(block, min_blocks)
-    if allow_text:
-        required = [seq(zero_or_more(text), block)] * min_blocks
-        root = seq(*required, zero_or_more(choice(block, text)), optional(Ref(_LAST_LINE_RULE)))
+    lead: list[Node] = [zero_or_more(text)] if allow_text else []
+    item: Node = choice(seq(block, NEWLINE), text) if allow_text else seq(block, NEWLINE)
+    ending: Node = optional(choice(block, Ref(_LAST_LINE_RULE)) if allow_text else block)
+    if min_blocks:
+        required = [seq(*lead, block, NEWLINE)] * (min_blocks - 1)
+        root = seq(*required, *lead, block, optional(seq(NEWLINE, zero_or_more(item), ending)))
+    else:
+        root = seq(zero_or_more(item), ending)
     grammar.rules[ROOT_RULE] = root
     grammar.rules[_BLOCK_RULE] = choice(*(Ref(_BLOCK_RULE_PREFIX + block_type) for block_type in syntax_grammar.blocks))
     for block_type, node in syntax_grammar.blocks.items():
-        grammar.rules[_BLOCK_RULE_PREFIX + block_type] = node
+        grammar.rules[_BLOCK_RULE_PREFIX + block_type] = without_line_break(node)
     if allow_text:
         grammar.rules[_TEXT_LINE_RULE] = syntax_grammar.text_line
         grammar.rules[_LAST_LINE_RULE] = without_line_break(syntax_grammar.text_line)
