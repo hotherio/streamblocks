@@ -116,7 +116,7 @@ class BlockStateMachine:
         events: list[Event] = []
 
         # 1. Handle active candidates
-        handled, candidate_events = self._process_active_candidates(line, line_number)
+        handled, candidate_events, remainder = self._process_active_candidates(line, line_number)
         events.extend(candidate_events)
 
         # 2. Check for new blocks if not handled
@@ -124,36 +124,46 @@ class BlockStateMachine:
             new_block_events = self._check_new_blocks(line, line_number)
             events.extend(new_block_events)
 
+        # 3. Text that followed a closing marker on the same line is a line of its own
+        if remainder:
+            events.extend(self.process_line(remainder, line_number))
+
         return events
 
-    def _process_active_candidates(self, line: str, line_number: int) -> tuple[bool, list[Event]]:
+    def _process_active_candidates(self, line: str, line_number: int) -> tuple[bool, list[Event], str | None]:
         """Process line against all active candidates.
 
         Returns:
-            Tuple of (handled, events)
+            Tuple of (handled, events, remainder). ``remainder`` is the text that
+            followed a closing marker on this line, to be re-processed by the caller.
         """
         events: list[Event] = []
         handled = False
+        remainder: str | None = None
 
         for candidate in list(self._candidates):
             try:
-                consumed, candidate_events = self._advance_candidate(candidate, line, line_number)
+                consumed, candidate_events, candidate_remainder = self._advance_candidate(candidate, line, line_number)
             except Exception as exc:  # user syntaxes, parsers and validators must not kill the stream
                 if candidate in self._candidates:
                     self._candidates.remove(candidate)
                 consumed = True
+                candidate_remainder = None
                 candidate_events = [
                     self._create_error_event(
                         candidate, line_number, f"Unexpected error: {exc}", BlockErrorCode.PARSE_FAILED, exc
                     )
                 ]
             handled = handled or consumed
+            remainder = candidate_remainder or remainder
             events.extend(candidate_events)
 
-        return handled, events
+        return handled, events, remainder
 
-    def _advance_candidate(self, candidate: BlockCandidate, line: str, line_number: int) -> tuple[bool, list[Event]]:
-        """Feed one line to a candidate. Returns (consumed, events)."""
+    def _advance_candidate(
+        self, candidate: BlockCandidate, line: str, line_number: int
+    ) -> tuple[bool, list[Event], str | None]:
+        """Feed one line to a candidate. Returns (consumed, events, remainder)."""
         # Capture section BEFORE detect_line (which may modify it)
         old_section = candidate.current_section
         detection = candidate.syntax.detect_line(line, candidate)
@@ -167,7 +177,12 @@ class BlockStateMachine:
             error = self._create_error_event(
                 candidate, line_number - 1, "Block interrupted by a new opening marker", BlockErrorCode.UNCLOSED_BLOCK
             )
-            return False, [error]
+            return False, [error], None
+
+        # Only the closing marker belongs to the block; the remainder is re-processed by the caller
+        remainder = detection.remainder if detection.is_closing else None
+        if remainder:
+            line = line.rstrip().removesuffix(remainder).rstrip()
 
         candidate.add_line(line)
         if candidate.size > self._max_block_size:
@@ -175,13 +190,13 @@ class BlockStateMachine:
             error = self._create_error_event(
                 candidate, line_number, "Block size exceeded", BlockErrorCode.SIZE_EXCEEDED
             )
-            return True, [error]
+            return True, [error], remainder
 
         if detection.is_closing:
-            return True, self._handle_closing(candidate, line_number)
+            return True, self._handle_closing(candidate, line_number), remainder
         if detection.is_metadata_boundary:
-            return True, self._handle_boundary(candidate, line, line_number, old_section)
-        return True, [self._create_section_delta_event(candidate, line, line_number)]
+            return True, self._handle_boundary(candidate, line, line_number, old_section), None
+        return True, [self._create_section_delta_event(candidate, line, line_number)], None
 
     def _handle_closing(self, candidate: BlockCandidate, line_number: int) -> list[Event]:
         """Handle block closing detection."""

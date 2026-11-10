@@ -18,6 +18,20 @@ if TYPE_CHECKING:
 _MIN_BLOCK_LINES = 2
 
 
+def _remainder_after(text: str, marker: str) -> str | None:
+    """Return the text following ``marker`` when ``text`` starts with it, else None.
+
+    This is the lenient-close policy: models often keep writing right after a
+    closing marker without a newline (``!!endYour answer``). Any non-blank text
+    after the marker counts, so a content line that itself starts with the
+    marker is read as a close; disable ``lenient_close`` on the syntax if block
+    content can legitimately start with the closing marker.
+    """
+    if not text.startswith(marker):
+        return None
+    return text[len(marker) :].strip() or None
+
+
 @runtime_checkable
 class ContentParser(Protocol):
     """Protocol for content classes with a parse method."""
@@ -70,11 +84,15 @@ class DelimiterPreambleSyntax(BaseSyntax):
 
     Args:
         delimiter: Opening delimiter string (default: "!!")
+        lenient_close: Treat ``!!end`` followed by text on the same line as a
+            close, and re-process that text as a new line (default: True)
     """
 
     def __init__(
         self,
         delimiter: str = "!!",
+        *,
+        lenient_close: bool = True,
     ) -> None:
         """Initialize delimiter preamble syntax.
 
@@ -82,6 +100,8 @@ class DelimiterPreambleSyntax(BaseSyntax):
             delimiter: Delimiter string to use
         """
         self.delimiter = delimiter
+        self.lenient_close = lenient_close
+        self._end_marker = f"{delimiter}end"
         self._opening_pattern = re.compile(rf"^{re.escape(delimiter)}(\w+):(\w+)(:.+?)?\s*$")
         self._closing_pattern = re.compile(rf"^{re.escape(delimiter)}end\s*$")
 
@@ -109,6 +129,11 @@ class DelimiterPreambleSyntax(BaseSyntax):
         # Check for closing
         elif self._closing_pattern.match(line):
             return DetectionResult(is_closing=True)
+        # An opening marker such as "!!endpoint:type" is never a lenient close
+        elif self.lenient_close and not self._opening_pattern.match(line):
+            remainder = _remainder_after(line, self._end_marker)
+            if remainder:
+                return DetectionResult(is_closing=True, remainder=remainder)
 
         return DetectionResult()
 
@@ -295,12 +320,16 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     Args:
         start_delimiter: Opening delimiter string (default: "!!start")
         end_delimiter: Closing delimiter string (default: "!!end")
+        lenient_close: Treat the closing delimiter followed by text on the same
+            line as a close, and re-process that text as a new line (default: True)
     """
 
     def __init__(
         self,
         start_delimiter: str = "!!start",
         end_delimiter: str = "!!end",
+        *,
+        lenient_close: bool = True,
     ) -> None:
         """Initialize delimiter frontmatter syntax.
 
@@ -310,6 +339,7 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         """
         self.start_delimiter = start_delimiter
         self.end_delimiter = end_delimiter
+        self.lenient_close = lenient_close
         self._frontmatter_pattern = re.compile(r"^---\s*$")
 
     def detect_line(self, line: str, candidate: BlockCandidate | None = None) -> DetectionResult:
@@ -336,10 +366,19 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
                 return DetectionResult(is_metadata_boundary=True)
             candidate.metadata_lines.append(line)
         elif candidate.current_section == SectionType.CONTENT:
-            if line.strip() == self.end_delimiter:
-                return DetectionResult(is_closing=True)
-            candidate.content_lines.append(line)
+            return self._detect_in_content(line, candidate)
 
+        return DetectionResult()
+
+    def _detect_in_content(self, line: str, candidate: BlockCandidate) -> DetectionResult:
+        """Detect the closing delimiter in the content section, else accumulate the line."""
+        stripped = line.strip()
+        if stripped == self.end_delimiter:
+            return DetectionResult(is_closing=True)
+        remainder = _remainder_after(stripped, self.end_delimiter) if self.lenient_close else None
+        if remainder:
+            return DetectionResult(is_closing=True, remainder=remainder)
+        candidate.content_lines.append(line)
         return DetectionResult()
 
     def should_accumulate_metadata(self, candidate: BlockCandidate) -> bool:
