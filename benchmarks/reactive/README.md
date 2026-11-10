@@ -198,12 +198,42 @@ Hypotheses and decision rule, written before the first run (9 episodes per cell)
    or more it is material. In between, undecided.
 4. Resent prompts are mostly served from the provider's cache (reported, no threshold).
 
+Run of 2026-11-10, temperature 0.7, 9 episodes per cell (3 scenarios × 3 seeds). Compliant episodes,
+median failed checks, median completion tokens, then median time: wall-clock for hosted models, virtual
+(`local` cost model) for local ones.
+
+| Model | `turn_boundary` | `cancel_resend` | `inject` |
+|---|---|---|---|
+| gpt-4.1-mini | 9/9 · 5 failed · 1232 tok · 11.2 s | 2/9 · 3 failed · 575 tok · 5.8 s | not possible |
+| gpt-5.4-mini | 9/9 · 5 failed · 1120 tok · 6.8 s | 5/9 · 3 failed · 723 tok · 5.7 s | not possible |
+| Gemma 4 E4B | 7/9 · 5 failed · 1538 tok · 52 s | 3/9 · 3 failed · 553 tok · 19 s | 7/9 · 5 failed · 1262 tok · 42 s |
+| Llama 3.1 8B | 7/9 · 17 failed · 2654 tok · 93 s | 1/9 · 3 failed · 574 tok · 19 s | 3/9 · 17 failed · 4000 tok · 134 s |
+
+- **Hypothesis 1 fails.** `cancel_resend` leaves a median of 3 failed checks, not 2, and `inject` does no
+  better than `turn_boundary` (5 on Gemma, 17 on Llama, which rewrites files in a loop until the token limit).
+- **Hypothesis 2 is not answered.** `cancel_resend` is faster because it does less: in 22 of its 25 failed
+  episodes the model repaired what was reported and stopped without writing the remaining files. Each
+  interruption costs it the plan. Where both finish as often (Gemma, `inject` against `turn_boundary`,
+  7/9 each), injection takes 42 virtual seconds against 52, with one call instead of two.
+- **Decision rule: injection is not dropped.** `inject` is compliant more often than `cancel_resend` on both
+  local models (7 against 3, 3 against 1). On the hosted models, time to first token of the resend calls
+  is a median of 20% (gpt-4.1-mini) and 28% (gpt-5.4-mini) of an episode's wall-clock time, about 0.5
+  and 0.7 s per call. That share is inflated by the episodes that stopped early.
+- **Hypothesis 4 holds for interrupted calls**: a median of 78–83% of a resent prompt comes from the cache.
+- **Waiting for the end of the turn is the most reliable delivery on every model**, at about twice the tokens.
+
+What this says: on a task with several files, the problem with reacting early is keeping the plan, not
+speed. Cancelling loses it most, injecting loses it less, and neither wrote fewer wrong files than
+predicted. The untested fix for `cancel_resend` is a resend message that lists the files still missing;
+until that is run, its low scores may be this harness's prompt rather than the delivery itself.
+
 ## Limits
 
 - Five scenarios, 15 episodes per cell: enough for a go/no-go, not for effect sizes.
 - The regex check accepts a guide that mentions the new term once and avoids the old one.
 - Dispatch seeds differ little: the task leaves the model few choices, so 15 episodes are closer to 5.
-- Hosted models are not covered yet (they can only do `turn_boundary` and `cancel_resend`).
+- Hosted models are covered in the build scenario only. Their streamed chunks are counted as tokens.
+- Build: 9 episodes per cell, one task, and a library error that names its own fix.
 - The Pie backend asks for one token per round trip, which keeps runs deterministic but does not use
   Pie's batching; throughput there is not measured.
 - On llama.cpp the cache is kept in all three deliveries, so `uncached_prompt_tokens` understates
