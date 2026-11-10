@@ -2839,6 +2839,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#hother.streamblocks.core.types.DetectionResult.remainder" class="md-nav__link">
+    <span class="md-ellipsis">
+      remainder
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5164,6 +5173,15 @@
   <a href="#hother.streamblocks.core.types.DetectionResult.metadata" class="md-nav__link">
     <span class="md-ellipsis">
       metadata
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hother.streamblocks.core.types.DetectionResult.remainder" class="md-nav__link">
+    <span class="md-ellipsis">
+      remainder
     </span>
   </a>
   
@@ -10395,6 +10413,107 @@ accumulation. Useful for UIs to prepare display elements.</p>
         <p>Result from syntax detection attempt.</p>
 
 
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="is_opening
+
+
+  
+      class-attribute
+      instance-attribute
+   (hother.streamblocks.core.types.DetectionResult.is_opening)" href="#hother.streamblocks.core.types.DetectionResult.is_opening">is_opening</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The line opens a new block.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="is_closing
+
+
+  
+      class-attribute
+      instance-attribute
+   (hother.streamblocks.core.types.DetectionResult.is_closing)" href="#hother.streamblocks.core.types.DetectionResult.is_closing">is_closing</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The line closes the active block.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="is_metadata_boundary
+
+
+  
+      class-attribute
+      instance-attribute
+   (hother.streamblocks.core.types.DetectionResult.is_metadata_boundary)" href="#hother.streamblocks.core.types.DetectionResult.is_metadata_boundary">is_metadata_boundary</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The line is a metadata section boundary.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="metadata
+
+
+  
+      class-attribute
+      instance-attribute
+   (hother.streamblocks.core.types.DetectionResult.metadata)" href="#hother.streamblocks.core.types.DetectionResult.metadata">metadata</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Inline metadata parsed from the opening line, if any.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="remainder
+
+
+  
+      class-attribute
+      instance-attribute
+   (hother.streamblocks.core.types.DetectionResult.remainder)" href="#hother.streamblocks.core.types.DetectionResult.remainder">remainder</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Text following a closing marker on the same line (for
+example <code>Your text</code> in <code>!!endYour text</code>). It must be a suffix
+of the line; the state machine re-processes it as a new line.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
 
 
 
@@ -10410,14 +10529,36 @@ accumulation. Useful for UIs to prepare display elements.</p>
 <span class="normal"><a href="#__codelineno-0-489">489</a></span>
 <span class="normal"><a href="#__codelineno-0-490">490</a></span>
 <span class="normal"><a href="#__codelineno-0-491">491</a></span>
-<span class="normal"><a href="#__codelineno-0-492">492</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-485" name="__codelineno-0-485"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-492">492</a></span>
+<span class="normal"><a href="#__codelineno-0-493">493</a></span>
+<span class="normal"><a href="#__codelineno-0-494">494</a></span>
+<span class="normal"><a href="#__codelineno-0-495">495</a></span>
+<span class="normal"><a href="#__codelineno-0-496">496</a></span>
+<span class="normal"><a href="#__codelineno-0-497">497</a></span>
+<span class="normal"><a href="#__codelineno-0-498">498</a></span>
+<span class="normal"><a href="#__codelineno-0-499">499</a></span>
+<span class="normal"><a href="#__codelineno-0-500">500</a></span>
+<span class="normal"><a href="#__codelineno-0-501">501</a></span>
+<span class="normal"><a href="#__codelineno-0-502">502</a></span>
+<span class="normal"><a href="#__codelineno-0-503">503</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-485" name="__codelineno-0-485"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a id="__codelineno-0-486" name="__codelineno-0-486"></a><span class="k">class</span><span class="w"> </span><span class="nc">DetectionResult</span><span class="p">:</span>
-<a id="__codelineno-0-487" name="__codelineno-0-487"></a><span class="w">    </span><span class="sd">"""Result from syntax detection attempt."""</span>
+<a id="__codelineno-0-487" name="__codelineno-0-487"></a><span class="w">    </span><span class="sd">"""Result from syntax detection attempt.</span>
 <a id="__codelineno-0-488" name="__codelineno-0-488"></a>
-<a id="__codelineno-0-489" name="__codelineno-0-489"></a>    <span class="n">is_opening</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-490" name="__codelineno-0-490"></a>    <span class="n">is_closing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-491" name="__codelineno-0-491"></a>    <span class="n">is_metadata_boundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-492" name="__codelineno-0-492"></a>    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-489" name="__codelineno-0-489"></a><span class="sd">    Attributes:</span>
+<a id="__codelineno-0-490" name="__codelineno-0-490"></a><span class="sd">        is_opening: The line opens a new block.</span>
+<a id="__codelineno-0-491" name="__codelineno-0-491"></a><span class="sd">        is_closing: The line closes the active block.</span>
+<a id="__codelineno-0-492" name="__codelineno-0-492"></a><span class="sd">        is_metadata_boundary: The line is a metadata section boundary.</span>
+<a id="__codelineno-0-493" name="__codelineno-0-493"></a><span class="sd">        metadata: Inline metadata parsed from the opening line, if any.</span>
+<a id="__codelineno-0-494" name="__codelineno-0-494"></a><span class="sd">        remainder: Text following a closing marker on the same line (for</span>
+<a id="__codelineno-0-495" name="__codelineno-0-495"></a><span class="sd">            example ``Your text`` in ``!!endYour text``). It must be a suffix</span>
+<a id="__codelineno-0-496" name="__codelineno-0-496"></a><span class="sd">            of the line; the state machine re-processes it as a new line.</span>
+<a id="__codelineno-0-497" name="__codelineno-0-497"></a><span class="sd">    """</span>
+<a id="__codelineno-0-498" name="__codelineno-0-498"></a>
+<a id="__codelineno-0-499" name="__codelineno-0-499"></a>    <span class="n">is_opening</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-500" name="__codelineno-0-500"></a>    <span class="n">is_closing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-501" name="__codelineno-0-501"></a>    <span class="n">is_metadata_boundary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-502" name="__codelineno-0-502"></a>    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-503" name="__codelineno-0-503"></a>    <span class="n">remainder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div></td></tr></tbody></table></div>
               </details>
 
@@ -10515,6 +10656,29 @@ accumulation. Useful for UIs to prepare display elements.</p>
 
 </h4>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">metadata</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="hother.streamblocks.core.types.DetectionResult.remainder" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">remainder</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">remainder</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10981,25 +11145,25 @@ accumulation. Useful for UIs to prepare display elements.</p>
 
               <details class="quote">
                 <summary>Source code in <code>src/hother/streamblocks/core/types.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-495">495</a></span>
-<span class="normal"><a href="#__codelineno-0-496">496</a></span>
-<span class="normal"><a href="#__codelineno-0-497">497</a></span>
-<span class="normal"><a href="#__codelineno-0-498">498</a></span>
-<span class="normal"><a href="#__codelineno-0-499">499</a></span>
-<span class="normal"><a href="#__codelineno-0-500">500</a></span>
-<span class="normal"><a href="#__codelineno-0-501">501</a></span>
-<span class="normal"><a href="#__codelineno-0-502">502</a></span>
-<span class="normal"><a href="#__codelineno-0-503">503</a></span>
-<span class="normal"><a href="#__codelineno-0-504">504</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-495" name="__codelineno-0-495"></a><span class="k">class</span><span class="w"> </span><span class="nc">ParseResult</span><span class="p">[</span><span class="n">TMetadata</span><span class="p">:</span> <span class="n">BaseMetadata</span><span class="p">,</span> <span class="n">TContent</span><span class="p">:</span> <span class="n">BaseContent</span><span class="p">](</span><span class="n">BaseModel</span><span class="p">):</span>
-<a id="__codelineno-0-496" name="__codelineno-0-496"></a><span class="w">    </span><span class="sd">"""Result from parsing attempt."""</span>
-<a id="__codelineno-0-497" name="__codelineno-0-497"></a>
-<a id="__codelineno-0-498" name="__codelineno-0-498"></a>    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-499" name="__codelineno-0-499"></a>
-<a id="__codelineno-0-500" name="__codelineno-0-500"></a>    <span class="n">success</span><span class="p">:</span> <span class="nb">bool</span>
-<a id="__codelineno-0-501" name="__codelineno-0-501"></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">TMetadata</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-502" name="__codelineno-0-502"></a>    <span class="n">content</span><span class="p">:</span> <span class="n">TContent</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-503" name="__codelineno-0-503"></a>    <span class="n">error</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-504" name="__codelineno-0-504"></a>    <span class="n">exception</span><span class="p">:</span> <span class="ne">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+                <div class="highlight"><table class="highlighttable"><tbody><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-506">506</a></span>
+<span class="normal"><a href="#__codelineno-0-507">507</a></span>
+<span class="normal"><a href="#__codelineno-0-508">508</a></span>
+<span class="normal"><a href="#__codelineno-0-509">509</a></span>
+<span class="normal"><a href="#__codelineno-0-510">510</a></span>
+<span class="normal"><a href="#__codelineno-0-511">511</a></span>
+<span class="normal"><a href="#__codelineno-0-512">512</a></span>
+<span class="normal"><a href="#__codelineno-0-513">513</a></span>
+<span class="normal"><a href="#__codelineno-0-514">514</a></span>
+<span class="normal"><a href="#__codelineno-0-515">515</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-506" name="__codelineno-0-506"></a><span class="k">class</span><span class="w"> </span><span class="nc">ParseResult</span><span class="p">[</span><span class="n">TMetadata</span><span class="p">:</span> <span class="n">BaseMetadata</span><span class="p">,</span> <span class="n">TContent</span><span class="p">:</span> <span class="n">BaseContent</span><span class="p">](</span><span class="n">BaseModel</span><span class="p">):</span>
+<a id="__codelineno-0-507" name="__codelineno-0-507"></a><span class="w">    </span><span class="sd">"""Result from parsing attempt."""</span>
+<a id="__codelineno-0-508" name="__codelineno-0-508"></a>
+<a id="__codelineno-0-509" name="__codelineno-0-509"></a>    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-510" name="__codelineno-0-510"></a>
+<a id="__codelineno-0-511" name="__codelineno-0-511"></a>    <span class="n">success</span><span class="p">:</span> <span class="nb">bool</span>
+<a id="__codelineno-0-512" name="__codelineno-0-512"></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">TMetadata</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-513" name="__codelineno-0-513"></a>    <span class="n">content</span><span class="p">:</span> <span class="n">TContent</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-514" name="__codelineno-0-514"></a>    <span class="n">error</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-515" name="__codelineno-0-515"></a>    <span class="n">exception</span><span class="p">:</span> <span class="ne">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div></td></tr></tbody></table></div>
               </details>
 
