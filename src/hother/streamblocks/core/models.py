@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from hother.streamblocks.core.constants import LIMITS
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, BlockState, SectionType
+from hother.streamblocks.core.utils import load_yaml
 
 if TYPE_CHECKING:
     from hother.streamblocks.syntaxes.base import BaseSyntax
@@ -301,7 +302,7 @@ class Block[TMetadata: BaseMetadata, TContent: BaseContent](BaseModel):
             msg = f"Invalid frontmatter in examples file: {file_path}"
             raise ValueError(msg)
 
-        parsed = yaml.safe_load(parts[1].strip())
+        parsed = load_yaml(parts[1].strip())
         if not isinstance(parsed, dict):
             msg = f"Frontmatter must be a YAML mapping: {file_path}"
             raise TypeError(msg)

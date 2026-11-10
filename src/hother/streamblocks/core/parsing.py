@@ -10,6 +10,7 @@ import yaml
 from pydantic import ValidationError
 
 from hother.streamblocks.core.types import BaseContent
+from hother.streamblocks.core.utils import load_yaml
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -46,7 +47,7 @@ def parse_as_yaml[T: BaseContent](
                 return cls_inner(raw_content=raw_text)
 
             try:
-                loaded_data: dict[str, Any] | str | None = yaml.safe_load(raw_text)
+                loaded_data: dict[str, Any] | str | None = load_yaml(raw_text)
                 if isinstance(loaded_data, dict):
                     data: dict[str, Any] = loaded_data
                 elif handle_non_dict and loaded_data is not None:
