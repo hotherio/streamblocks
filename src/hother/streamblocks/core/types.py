@@ -14,6 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import ExtractedBlock
+    from hother.streamblocks.grammar.nodes import Node
+    from hother.streamblocks.grammar.spec import LineFactory
 
 
 # ============== Content/Metadata Base Models ==============
@@ -94,6 +96,19 @@ class BaseContent(BaseModel):
         Override this in subclasses to add custom parsing logic.
         """
         return cls(raw_content=raw_text)
+
+    @classmethod
+    def grammar(cls, line: LineFactory) -> Node | None:
+        """Grammar of this content, for constrained decoding.
+
+        Return None (the default) to accept any lines. Override to constrain
+        the content format; build every line with ``line(...)`` so the block
+        syntax's own markers stay excluded.
+
+        Args:
+            line: Factory for a content line that avoids the syntax markers
+        """
+        return None
 
 
 # ============== Event Types ==============

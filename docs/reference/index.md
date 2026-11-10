@@ -25,6 +25,13 @@ from hother.streamblocks import Registry, StreamBlockProcessor, BlockEndEvent
 - `BlockCandidate`: in-flight block accumulation
 - `BaseMetadata`, `BaseContent`: base Pydantic models for block typing
 
+## Grammar
+
+[Grammar](grammar.md)
+
+- `compile_grammar`, `build_grammar`, `GrammarError`
+- See also `Registry.to_grammar()` and the [Constrained Decoding](../guides/constrained-decoding.md) guide
+
 ## Prompts
 
 [Prompts](prompts.md)

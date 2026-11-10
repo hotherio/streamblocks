@@ -43,3 +43,9 @@ Chains multiple validators (metadata, content, and general block validators) on 
 Builds an LLM system prompt from a registry with `Registry.to_prompt()` and `generate_block_prompt()` — the syntax format, block docstrings, content-format hints, and serialized examples — entirely offline. See the [Generating Prompts](../guides/generate-prompts.md) guide.
 
 #! src/hother/streamblocks_examples/01_basics/07_prompt_generation.py
+
+## Grammar Export
+
+Compiles a registry into a GBNF grammar with `Registry.to_grammar()` for constrained decoding on local models, then samples from the grammar to check that everything it allows parses cleanly. See the [Constrained Decoding](../guides/constrained-decoding.md) guide.
+
+#! src/hother/streamblocks_examples/01_basics/08_grammar_export.py

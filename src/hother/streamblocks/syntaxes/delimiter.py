@@ -9,10 +9,33 @@ import yaml
 
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult, SectionType
+from hother.streamblocks.grammar.nodes import (
+    CharSet,
+    Choice,
+    Literal,
+    Node,
+    Ref,
+    SharedLines,
+    line_not_starting_with,
+    one_or_more,
+    optional,
+    seq,
+)
+from hother.streamblocks.grammar.spec import BlockSpec, GrammarError, MetadataField, SyntaxGrammar
+from hother.streamblocks.grammar.values import IDENTIFIER, IDENTIFIER_RULE, WORD, WORD_RULE, quoted_string, scalar
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
+
+# Positional preamble parameters are metadata fields named param_0, param_1, ...
+_PARAM_FIELD_PATTERN = re.compile(r"^param_(\d+)$")
+_WORD_PATTERN = re.compile(r"^\w+$")
+
+# Characters a double-quoted YAML string cannot hold without escaping
+_YAML_STRING_EXCLUDED = "\\\n"
 
 # Minimum lines required for a block (header + closing delimiter)
 _MIN_BLOCK_LINES = 2
@@ -268,6 +291,52 @@ class DelimiterPreambleSyntax(BaseSyntax):
             f"- Closing line: {self.delimiter}end"
         )
 
+    def grammar_rules(self, blocks: Sequence[BlockSpec]) -> SyntaxGrammar:
+        """Grammar rules for delimiter preamble blocks.
+
+        Metadata fields other than positional parameters (``param_0``, ...)
+        cannot be written in this syntax, so a block that requires one is
+        rejected.
+        """
+        line = SharedLines(self.delimiter)
+        rules: dict[str, Node] = {}
+        for block in blocks:
+            if not _WORD_PATTERN.match(block.block_type):
+                msg = f"Block type {block.block_type!r} cannot be written in a preamble (letters, digits, underscores)"
+                raise GrammarError(msg)
+            rules[block.block_type] = seq(
+                self.delimiter,
+                Ref(WORD_RULE),
+                f":{block.block_type}",
+                *self._param_nodes(block),
+                "\n",
+                block.content(line),
+                f"{self._end_marker}\n",
+            )
+        text_line = line_not_starting_with(self.delimiter)
+        return SyntaxGrammar(text_line=text_line, blocks=rules, shared={**line.rules, WORD_RULE: WORD})
+
+    @staticmethod
+    def _param_nodes(block: BlockSpec) -> list[Node]:
+        """Positional parameters, in order; other required fields cannot be expressed."""
+        params: dict[int, MetadataField] = {}
+        for metadata_field in block.fields:
+            match = _PARAM_FIELD_PATTERN.match(metadata_field.name)
+            if match:
+                params[int(match.group(1))] = metadata_field
+            elif metadata_field.required:
+                msg = (
+                    f"Block {block.block_type!r} requires field {metadata_field.name!r}, which a preamble cannot carry"
+                )
+                raise GrammarError(msg)
+
+        value = one_or_more(CharSet(chars=":\n", negated=True))
+        nodes: list[Node] = []
+        for index in sorted(params):
+            param = seq(":", scalar(params[index], string=value, fallback=value))
+            nodes.append(param if params[index].required else optional(param))
+        return nodes
+
 
 class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
     """Syntax: Delimiter markers with YAML frontmatter.
@@ -481,3 +550,43 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
             "- Content: any text after the metadata section\n"
             f"- Closing marker: {self.end_delimiter}"
         )
+
+    def grammar_rules(self, blocks: Sequence[BlockSpec]) -> SyntaxGrammar:
+        """Grammar rules for delimiter frontmatter blocks.
+
+        The frontmatter lists ``id`` and ``block_type`` first, then the block's
+        metadata fields in declaration order. String values are double-quoted.
+        """
+        line = SharedLines(self.end_delimiter, self.start_delimiter)
+        rules: dict[str, Node] = {}
+        for block in blocks:
+            rules[block.block_type] = seq(
+                f'{self.start_delimiter}\n---\nid: "',
+                Ref(IDENTIFIER_RULE),
+                f'"\nblock_type: {block.block_type}\n',
+                *(self._field_line(metadata_field) for metadata_field in block.fields),
+                "---\n",
+                block.content(line),
+                f"{self.end_delimiter}\n",
+            )
+        return SyntaxGrammar(
+            text_line=line_not_starting_with(self.start_delimiter),
+            blocks=rules,
+            shared={**line.rules, IDENTIFIER_RULE: IDENTIFIER},
+        )
+
+    @staticmethod
+    def _field_line(metadata_field: MetadataField) -> Node:
+        """One ``name: value`` frontmatter line, optional when the field is."""
+        if metadata_field.choices:
+            value: Node = seq(*_quoted_choices(metadata_field.choices))
+        else:
+            string = quoted_string(_YAML_STRING_EXCLUDED, non_empty=metadata_field.non_empty)
+            value = scalar(metadata_field, string=string)
+        field_line = seq(f"{metadata_field.name}: ", value, "\n")
+        return field_line if metadata_field.required else optional(field_line)
+
+
+def _quoted_choices(choices: tuple[str, ...]) -> tuple[Node]:
+    """Enum values as double-quoted YAML strings, so they are never read as another type."""
+    return (Choice(tuple(Literal(f'"{value}"') for value in choices)),)

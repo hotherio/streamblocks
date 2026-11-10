@@ -16,8 +16,11 @@ from hother.streamblocks.core.types import BaseMetadata, ParseResult
 from hother.streamblocks.core.utils import load_yaml
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
     from hother.streamblocks.core.types import BaseContent, DetectionResult
+    from hother.streamblocks.grammar.spec import BlockSpec, SyntaxGrammar
 
 # Module-level logger for debugging YAML parsing failures
 _logger = logging.getLogger(__name__)
@@ -332,3 +335,22 @@ class BaseSyntax(ABC):
             A description of the block format for this syntax
         """
         return f"{type(self).__name__}: no format description available."
+
+    def grammar_rules(self, blocks: Sequence[BlockSpec]) -> SyntaxGrammar:
+        """Return the grammar rules for ``blocks`` written in this syntax.
+
+        Used by :meth:`Registry.to_grammar` for constrained decoding. The
+        shipped delimiter and XML tag syntaxes override this. A custom syntax
+        that wants grammar export should override it as well.
+
+        Args:
+            blocks: The registered block types and their metadata fields
+
+        Returns:
+            The free-text line rule and one rule per block type
+
+        Raises:
+            NotImplementedError: If the concrete syntax does not implement it
+        """
+        msg = f"{type(self).__name__} does not implement grammar_rules()"
+        raise NotImplementedError(msg)

@@ -16,12 +16,16 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, cast
 
 from pydantic import BaseModel, Field, model_validator
 
 from hother.streamblocks.core.models import Block
 from hother.streamblocks.core.types import BaseContent, BaseMetadata
+from hother.streamblocks.grammar.nodes import Node, one_or_more, seq, zero_or_more
+
+if TYPE_CHECKING:
+    from hother.streamblocks.grammar.spec import LineFactory
 
 FileOperationLiteral = Literal["create", "overwrite"]
 DocumentFormatLiteral = Literal["markdown", "text", "html"]
@@ -38,6 +42,12 @@ _HUNK_PATTERN = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 _LINE_END = "\n"
+
+# Canonical marker lines, and the prefixes that hunk lines must avoid
+_SEARCH_LINE = "<<<<<<< SEARCH"
+_DIVIDER_LINE = "======="
+_REPLACE_LINE = ">>>>>>> REPLACE"
+_HUNK_MARKER_PREFIXES = ("<<<<<", "=====", ">>>>>")
 
 # A hunk's search text must match exactly once in the text it is applied to
 _EXPECTED_MATCHES = 1
@@ -160,6 +170,20 @@ class PatchArtifactContent(BaseContent):
             ValueError: If a hunk is malformed, or no hunk is present
         """
         return cls(raw_content=raw_text)
+
+    @classmethod
+    def grammar(cls, line: LineFactory) -> Node:
+        """One or more hunks; the search side has at least one non-blank first line."""
+        body = line(*_HUNK_MARKER_PREFIXES)
+        hunk = seq(
+            f"{_SEARCH_LINE}\n",
+            line(*_HUNK_MARKER_PREFIXES, non_blank=True),
+            zero_or_more(body),
+            f"{_DIVIDER_LINE}\n",
+            zero_or_more(body),
+            f"{_REPLACE_LINE}\n",
+        )
+        return one_or_more(hunk)
 
     def apply(self, original: str) -> str:
         """Apply every hunk, in order, to ``original`` and return the edited text.

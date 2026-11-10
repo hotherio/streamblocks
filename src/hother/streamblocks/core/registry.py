@@ -10,6 +10,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
+from hother.streamblocks.grammar.compiler import GBNF, compile_grammar
 from hother.streamblocks.prompts.builder import build_block_context
 from hother.streamblocks.prompts.manager import TemplateManager
 from hother.streamblocks.syntaxes.factory import get_syntax_instance
@@ -127,6 +128,28 @@ class Registry:
     def registered_blocks(self) -> Mapping[str, type[Block[Any, Any]]]:
         """Read-only view of registered block types mapped to block classes."""
         return MappingProxyType(self._block_classes)
+
+    def to_grammar(self, *, dialect: str = GBNF, allow_text: bool = True) -> str:
+        """Generate a grammar that constrains a model to this registry's blocks.
+
+        Pass the result to a server that supports grammar-constrained decoding
+        (llama.cpp, LM Studio, ...). The model can then only produce blocks of
+        the registered types, in this registry's syntax, with well-formed
+        metadata; the output parses with no malformed block.
+
+        Args:
+            dialect: Grammar dialect (``"gbnf"``)
+            allow_text: Allow free text around blocks. Disable to force the
+                output to consist of blocks only.
+
+        Returns:
+            The grammar text
+
+        Raises:
+            GrammarError: If no block is registered or the dialect is unknown
+            NotImplementedError: If the syntax does not support grammars
+        """
+        return compile_grammar(self, dialect=dialect, allow_text=allow_text)
 
     def to_prompt(self, *, include_examples: bool = True, template_version: str = "default") -> str:
         """Generate an LLM system prompt documenting all registered blocks.
