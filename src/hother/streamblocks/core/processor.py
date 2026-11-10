@@ -20,6 +20,7 @@ from hother.streamblocks.core.types import (
     BlockContentDeltaEvent,
     BlockContentEndEvent,
     BlockEndEvent,
+    BlockErrorCode,
     BlockErrorEvent,
     BlockHeaderDeltaEvent,
     BlockMetadataDeltaEvent,
@@ -69,6 +70,9 @@ class ProcessorConfig:
             Controls BlockMetadataEndEvent and BlockContentEndEvent emission for early validation.
         auto_detect_adapter: Whether to auto-detect input adapter from first chunk (default: True).
             When False, uses IdentityInputAdapter. Disable for performance with known adapter.
+        abort_stream_on_failure: Whether to stop processing when a stream validator rejects a
+            block (default: False). The processor then ignores the rest of the stream and
+            ``process_stream`` closes the upstream iterator, so a model stops generating.
 
     Example:
         >>> # Custom configuration for large blocks
@@ -93,6 +97,7 @@ class ProcessorConfig:
     emit_text_deltas: bool = True
     emit_section_end_events: bool = True
     auto_detect_adapter: bool = True
+    abort_stream_on_failure: bool = False
 
 
 if TYPE_CHECKING:
@@ -153,10 +158,16 @@ class StreamBlockProcessor:
             logger=self.logger,
         )
         self._stream_state = StreamState()
+        self._aborted = False
 
         # Adapter state
         self._adapter: InputProtocolAdapter[Any] | None = None
         self._first_chunk_processed = False
+
+    @property
+    def aborted(self) -> bool:
+        """Whether a stream validator stopped this stream (see ``abort_stream_on_failure``)."""
+        return self._aborted
 
     def process_chunk(
         self,
@@ -328,6 +339,14 @@ class StreamBlockProcessor:
         async for chunk in stream:
             for output in self._iter_chunk_outputs(chunk, None, context="process_stream"):
                 yield output
+            if self._aborted:
+                break
+
+        if self._aborted:
+            # Stop the producer: for a model stream this ends generation
+            close = getattr(stream, "aclose", None)
+            if close is not None:
+                await close()
 
         # Process remaining text and flush incomplete blocks at stream end
         for event in self._iter_finalize_outputs():
@@ -376,6 +395,9 @@ class StreamBlockProcessor:
                 first chunk when not provided.
             context: Caller name used in :class:`AdapterNotConfiguredError`.
         """
+        if self._aborted:
+            return
+
         # Auto-detect adapter on first chunk
         self._ensure_adapter(chunk, adapter)
 
@@ -402,6 +424,13 @@ class StreamBlockProcessor:
             line_events = self._block_machine.process_line(line, line_number)
             self._update_stats(line_events)
             yield from line_events
+            if self.config.abort_stream_on_failure and any(
+                isinstance(event, BlockErrorEvent) and event.error_code == BlockErrorCode.ABORTED
+                for event in line_events
+            ):
+                self._aborted = True
+                self.logger.info("stream_aborted", line_number=line_number)
+                return
 
     def _iter_finalize_outputs(self) -> Iterator[Event]:
         """Yield the final line's events and rejection events for incomplete blocks.
@@ -409,6 +438,10 @@ class StreamBlockProcessor:
         Shared by :meth:`finalize` (consumed via ``list()``) and the tail of
         :meth:`process_stream`.
         """
+        # Nothing after an abort is processed, so there is nothing left to flush
+        if self._aborted:
+            return
+
         # Process any remaining accumulated text as a final line
         final_line = self._line_accumulator.finalize()
         if final_line:

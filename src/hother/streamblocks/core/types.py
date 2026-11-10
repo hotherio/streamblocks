@@ -13,6 +13,8 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from hother.streamblocks.core.models import ExtractedBlock
     from hother.streamblocks.grammar.nodes import Node
     from hother.streamblocks.grammar.spec import LineFactory
@@ -175,6 +177,8 @@ class BlockErrorCode(StrEnum):
             Parse succeeded but returned None for content.
         SYNTAX_ERROR: Syntax-specific error (custom validation).
             Used for syntax-specific validation failures.
+        ABORTED: A stream validator rejected the block while it was still being written.
+            The rest of the block is not accumulated.
 
     Example:
         >>> # Handle different error codes appropriately
@@ -196,6 +200,7 @@ class BlockErrorCode(StrEnum):
     MISSING_METADATA = "MISSING_METADATA"
     MISSING_CONTENT = "MISSING_CONTENT"
     SYNTAX_ERROR = "SYNTAX_ERROR"
+    ABORTED = "ABORTED"
 
 
 class SectionType(StrEnum):
@@ -208,6 +213,32 @@ class SectionType(StrEnum):
     HEADER = "header"  # Block opening line(s) with inline metadata
     METADATA = "metadata"  # Dedicated metadata section (e.g., YAML frontmatter)
     CONTENT = "content"  # Main block content
+
+
+@dataclass(frozen=True, slots=True)
+class PartialBlock:
+    """A block that is still being written, as seen by a stream validator.
+
+    Attributes:
+        block_type: Block type, or None while it is not known yet (for example
+            before a frontmatter section is complete)
+        metadata: Parsed metadata, or None while it is not complete
+        section: Section the latest line belongs to
+        line: The latest line
+        line_number: Line number of the latest line in the stream
+        lines: Every line of the block so far, opening line included (do not mutate)
+        content_lines: The content lines so far (do not mutate)
+        size: Size of the block so far, in characters
+    """
+
+    block_type: str | None
+    metadata: dict[str, Any] | None
+    section: SectionType
+    line: str
+    line_number: int
+    lines: Sequence[str]
+    content_lines: Sequence[str]
+    size: int
 
 
 # ============== Base Event ==============

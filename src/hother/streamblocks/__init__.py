@@ -26,7 +26,12 @@ from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBloc
 from hother.streamblocks.core.parsing import ParseStrategy, parse_as_json, parse_as_yaml
 from hother.streamblocks.core.processor import StreamBlockProcessor, StreamState
 from hother.streamblocks.core.protocol_processor import ProtocolStreamProcessor
-from hother.streamblocks.core.registry import MetadataValidationFailureMode, Registry, ValidationResult
+from hother.streamblocks.core.registry import (
+    MetadataValidationFailureMode,
+    Registry,
+    StreamValidatorFunc,
+    ValidationResult,
+)
 from hother.streamblocks.core.types import (
     BaseContent,
     BaseEvent,
@@ -46,6 +51,7 @@ from hother.streamblocks.core.types import (
     Event,
     EventType,
     ParseResult,
+    PartialBlock,
     StreamErrorEvent,
     StreamFinishedEvent,
     StreamStartedEvent,
@@ -106,6 +112,7 @@ __all__ = [
     # Validation
     "MetadataValidationFailureMode",
     "ParseResult",
+    "PartialBlock",
     # Parsing
     "ParseStrategy",
     # Processors
@@ -117,6 +124,7 @@ __all__ = [
     "StreamFinishedEvent",
     "StreamStartedEvent",
     "StreamState",
+    "StreamValidatorFunc",
     "TemplateManager",
     "TextContentEvent",
     "TextDeltaEvent",

@@ -24,6 +24,7 @@ from hother.streamblocks.core.types import (
     BlockState,
     Event,
     ParseResult,
+    PartialBlock,
     SectionType,
     TextContentEvent,
 )
@@ -192,11 +193,58 @@ class BlockStateMachine:
             )
             return True, [error], remainder
 
+        # The complete block is validated at close; stream validators guard it until then
+        if not detection.is_closing:
+            abort = self._validate_partial(candidate, line, line_number)
+            if abort is not None:
+                return True, [abort], None
+
         if detection.is_closing:
             return True, self._handle_closing(candidate, line_number), remainder
         if detection.is_metadata_boundary:
             return True, self._handle_boundary(candidate, line, line_number, old_section), None
         return True, [self._create_section_delta_event(candidate, line, line_number)], None
+
+    def _validate_partial(self, candidate: BlockCandidate, line: str, line_number: int) -> BlockErrorEvent | None:
+        """Run stream validators on a block in progress.
+
+        Returns an ``ABORTED`` error event, after dropping the candidate, when a
+        validator rejects the block; None otherwise.
+        """
+        if not self._registry.has_stream_validators:
+            return None
+
+        syntax = candidate.syntax
+        if candidate.parsed_metadata is None and not (
+            syntax.should_accumulate_metadata(candidate) and candidate.current_section != SectionType.CONTENT
+        ):
+            candidate.parsed_metadata = syntax.parse_metadata_early(candidate)
+        metadata = candidate.parsed_metadata
+        block_type = metadata.get("block_type") if metadata else None
+
+        partial = PartialBlock(
+            block_type=str(block_type) if block_type is not None else None,
+            metadata=metadata,
+            section=candidate.current_section,
+            line=line,
+            line_number=line_number,
+            lines=candidate.lines,
+            content_lines=candidate.content_lines,
+            size=candidate.size,
+        )
+        try:
+            result = self._registry.validate_partial(partial)
+        except Exception as exc:  # a failing validator must not kill the stream
+            self._candidates.remove(candidate)
+            return self._create_error_event(
+                candidate, line_number, f"Stream validator error: {exc}", BlockErrorCode.PARSE_FAILED, exc
+            )
+        if result.passed:
+            return None
+
+        self._candidates.remove(candidate)
+        reason = result.error or "Rejected by a stream validator"
+        return self._create_error_event(candidate, line_number, reason, BlockErrorCode.ABORTED)
 
     def _handle_closing(self, candidate: BlockCandidate, line_number: int) -> list[Event]:
         """Handle block closing detection."""
@@ -305,6 +353,11 @@ class BlockStateMachine:
                 start_line=candidate.start_line,
                 inline_metadata=bool(detection.metadata),
             )
+
+            # A stream validator may reject the block from its opening line
+            abort = self._validate_partial(candidate, line, line_number)
+            if abort is not None:
+                events.append(abort)
 
         # If no candidates and no openings, emit text content
         if not opening_found:

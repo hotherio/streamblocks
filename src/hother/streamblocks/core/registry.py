@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
     from hother.streamblocks.core._logger import Logger
     from hother.streamblocks.core.models import Block, ExtractedBlock
+    from hother.streamblocks.core.types import PartialBlock
     from hother.streamblocks.syntaxes.base import BaseSyntax
 
 
@@ -32,6 +33,7 @@ type SyntaxName = str
 type ValidatorFunc = Callable[[ExtractedBlock[Any, Any]], bool]
 type MetadataValidatorFunc = Callable[[str, dict[str, Any] | None], ValidationResult]
 type ContentValidatorFunc = Callable[[str, dict[str, Any] | None], ValidationResult]
+type StreamValidatorFunc = Callable[[PartialBlock], ValidationResult]
 
 
 class MetadataValidationFailureMode(StrEnum):
@@ -110,6 +112,7 @@ class Registry:
         self._validators: dict[BlockType, list[ValidatorFunc]] = {}
         self._metadata_validators: dict[BlockType, list[MetadataValidatorFunc]] = {}
         self._content_validators: dict[BlockType, list[ContentValidatorFunc]] = {}
+        self._stream_validators: dict[BlockType | None, list[StreamValidatorFunc]] = {}
         self._metadata_failure_mode = metadata_failure_mode
         self._template_manager: TemplateManager | None = None
         self.logger = logger or StdlibLoggerAdapter(logging.getLogger(__name__))
@@ -332,6 +335,42 @@ class Registry:
             validator_name=validator.__name__,
             total_validators=len(self._content_validators[block_type]),
         )
+
+    def add_stream_validator(self, validator: StreamValidatorFunc, block_type: BlockType | None = None) -> None:
+        """Add a validator that runs on every line of a block while it is being written.
+
+        A stream validator sees the block so far as a :class:`PartialBlock` and
+        can reject it before it is complete. The block is then dropped with a
+        ``BlockErrorEvent`` whose code is ``ABORTED``, and, when the processor
+        is configured with ``abort_stream_on_failure``, processing stops there.
+
+        Args:
+            validator: Function that returns a ValidationResult for a partial block
+            block_type: Block type to validate, or None to validate every block
+                (including while its type is not known yet)
+        """
+        self._stream_validators.setdefault(block_type, []).append(validator)
+        self.logger.debug(
+            "stream_validator_added",
+            block_type=block_type,
+            validator_name=getattr(validator, "__name__", type(validator).__name__),
+        )
+
+    @property
+    def has_stream_validators(self) -> bool:
+        """Whether any stream validator is registered."""
+        return bool(self._stream_validators)
+
+    def validate_partial(self, partial: PartialBlock) -> ValidationResult:
+        """Run the stream validators that apply to ``partial``; the first failure wins."""
+        validators = self._stream_validators.get(None, [])
+        if partial.block_type is not None:
+            validators = [*validators, *self._stream_validators.get(partial.block_type, [])]
+        for validator in validators:
+            result = validator(partial)
+            if not result.passed:
+                return result
+        return ValidationResult.success()
 
     def validate_metadata(
         self,
