@@ -692,6 +692,8 @@
       
         
       
+        
+      
     
     
     
@@ -773,6 +775,29 @@
   
   <span class="md-ellipsis">
     Generating Prompts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/constrained-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Constrained Decoding
     
   </span>
   
@@ -1167,6 +1192,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#grammar-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      Grammar Export
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1329,6 +1363,8 @@
       
         
       
+        
+      
     
     
     
@@ -1433,6 +1469,29 @@
   
   <span class="md-ellipsis">
     Prompts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/grammar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Grammar
     
   </span>
   
@@ -1694,6 +1753,15 @@
   <a href="#prompt-generation" class="md-nav__link">
     <span class="md-ellipsis">
       Prompt Generation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grammar-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      Grammar Export
     </span>
   </a>
   
@@ -2828,6 +2896,51 @@
 <a id="__codelineno-6-69" name="__codelineno-6-69" href="#__codelineno-6-69"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
 <em><a href="https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/01_basics/07_prompt_generation.py">View source on GitHub</a></em><p></p>
+<h2 id="grammar-export">Grammar Export</h2>
+<p>Compiles a registry into a GBNF grammar with <code>Registry.to_grammar()</code> for constrained decoding on local models, then samples from the grammar to check that everything it allows parses cleanly. See the <a href="../../guides/constrained-decoding/">Constrained Decoding</a> guide.</p>
+<p></p><div class="highlight"><span class="filename">src/hother/streamblocks_examples/01_basics/08_grammar_export.py</span><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="kn">import</span> <span class="n">Random</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Registry</span><span class="p">,</span> <span class="n">StreamBlockProcessor</span><span class="p">,</span> <span class="n">XmlTagSyntax</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks.blocks.artifacts</span><span class="w"> </span><span class="kn">import</span> <span class="n">ARTIFACT_BLOCKS</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks.core.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">BlockEndEvent</span><span class="p">,</span> <span class="n">BlockErrorEvent</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_grammar</span><span class="p">,</span> <span class="n">sample</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">SAMPLES</span> <span class="o">=</span> <span class="mi">50</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="n">SEED</span> <span class="o">=</span> <span class="mi">7</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">    </span><span class="sd">"""Build a grammar, then check that what it allows always parses."""</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    <span class="n">registry</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span><span class="n">syntax</span><span class="o">=</span><span class="n">XmlTagSyntax</span><span class="p">(),</span> <span class="n">blocks</span><span class="o">=</span><span class="n">ARTIFACT_BLOCKS</span><span class="p">)</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="c1"># GBNF text for llama.cpp, LM Studio and other compatible servers.</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>    <span class="c1"># With the OpenAI client and LM Studio:</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>    <span class="c1">#   client.chat.completions.create(..., extra_body={"grammar": grammar})</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>    <span class="n">grammar</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">to_grammar</span><span class="p">()</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">line</span><span class="p">[:</span><span class="mi">110</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">grammar</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()))</span>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>    <span class="c1"># Anything the grammar can produce is extracted with no malformed block</span>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>    <span class="n">rng</span> <span class="o">=</span> <span class="n">Random</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>    <span class="n">blocks</span> <span class="o">=</span> <span class="n">errors</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">SAMPLES</span><span class="p">):</span>
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>        <span class="n">processor</span> <span class="o">=</span> <span class="n">StreamBlockProcessor</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">build_grammar</span><span class="p">(</span><span class="n">registry</span><span class="p">),</span> <span class="n">rng</span><span class="p">)</span>
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>        <span class="n">events</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">processor</span><span class="o">.</span><span class="n">process_chunk</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="o">*</span><span class="n">processor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()]</span>
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>        <span class="n">blocks</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockEndEvent</span><span class="p">)</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">)</span>
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>        <span class="n">errors</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockErrorEvent</span><span class="p">)</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">)</span>
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">SAMPLES</span><span class="si">}</span><span class="s2"> random strings from the grammar: </span><span class="si">{</span><span class="n">blocks</span><span class="si">}</span><span class="s2"> blocks extracted, </span><span class="si">{</span><span class="n">errors</span><span class="si">}</span><span class="s2"> malformed"</span><span class="p">)</span>
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>    <span class="k">if</span> <span class="n">errors</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">blocks</span><span class="p">:</span>
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>        <span class="n">msg</span> <span class="o">=</span> <span class="s2">"the grammar produced text the parser rejects"</span>
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a>    <span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+<em><a href="https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/01_basics/08_grammar_export.py">View source on GitHub</a></em><p></p>
 
 
 
