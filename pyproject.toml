@@ -228,6 +228,7 @@ line-ending = "auto"
 "tests/**/*" = [
     "S101",    # Use of assert
     "S110",    # try-except-pass (acceptable in tests)
+    "S311",    # Pseudo-random generators (seeded sampling in tests, not cryptography)
     "S603",    # subprocess call (acceptable in test runner)
     "PLR2004", # Magic value comparison
     "ARG001",  # Unused function argument

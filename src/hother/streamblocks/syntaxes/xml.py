@@ -9,9 +9,24 @@ from typing import TYPE_CHECKING, Any
 
 from hother.streamblocks.core.models import extract_block_types
 from hother.streamblocks.core.types import BaseContent, BaseMetadata, DetectionResult, ParseResult
+from hother.streamblocks.grammar.nodes import (
+    CharSet,
+    Node,
+    Ref,
+    SharedLines,
+    line_not_starting_with,
+    one_or_more,
+    optional,
+    seq,
+    zero_or_more,
+)
+from hother.streamblocks.grammar.spec import BlockSpec, MetadataField, SyntaxGrammar
+from hother.streamblocks.grammar.values import IDENTIFIER, IDENTIFIER_RULE, scalar
 from hother.streamblocks.syntaxes.base import BaseSyntax
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
 
 # Minimum lines required for a block (opening tag + closing tag)
@@ -27,6 +42,9 @@ _GENERATED_ID_DIGEST_SIZE = 4
 _TAG_NAME_PATTERN = re.compile(r"^[A-Za-z_][\w.-]*$")
 _ATTRIBUTE_PATTERN = re.compile(r"""([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
 _SELF_CLOSING_SUFFIX = "/"
+
+# Characters an attribute value cannot hold without escaping
+_ATTRIBUTE_VALUE_CHAR = CharSet(chars='"<>&\n', negated=True)
 
 
 class XmlTagSyntax(BaseSyntax):
@@ -203,3 +221,36 @@ class XmlTagSyntax(BaseSyntax):
             "- Content: the lines between the tags, written verbatim with no escaping\n"
             f"- Closing tag: </{self.tag}> alone on its own line"
         )
+
+    def grammar_rules(self, blocks: Sequence[BlockSpec]) -> SyntaxGrammar:
+        """Grammar rules for XML tag blocks.
+
+        The opening tag lists ``type`` and ``id`` first, then the block's
+        metadata fields in declaration order.
+        """
+        opening, closing = f"<{self.tag}", f"</{self.tag}"
+        line = SharedLines(closing, opening)
+        rules: dict[str, Node] = {}
+        for block in blocks:
+            rules[block.block_type] = seq(
+                f'{opening} {_TYPE_ATTRIBUTE}="{escape(block.block_type, quote=True)}" {_ID_ATTRIBUTE}="',
+                Ref(IDENTIFIER_RULE),
+                '"',
+                *(self._attribute(metadata_field) for metadata_field in block.fields),
+                ">\n",
+                block.content(line),
+                f"{closing}>\n",
+            )
+        return SyntaxGrammar(
+            text_line=line_not_starting_with(opening),
+            blocks=rules,
+            shared={**line.rules, IDENTIFIER_RULE: IDENTIFIER},
+        )
+
+    @staticmethod
+    def _attribute(metadata_field: MetadataField) -> Node:
+        """One `` name="value"`` attribute, optional when the field is."""
+        string = one_or_more(_ATTRIBUTE_VALUE_CHAR) if metadata_field.non_empty else zero_or_more(_ATTRIBUTE_VALUE_CHAR)
+        value = scalar(metadata_field, string=string, fallback=zero_or_more(_ATTRIBUTE_VALUE_CHAR))
+        attribute = seq(f' {metadata_field.name}="', value, '"')
+        return attribute if metadata_field.required else optional(attribute)
