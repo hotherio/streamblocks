@@ -82,8 +82,8 @@ class DelimiterPreambleSyntax(BaseSyntax):
             delimiter: Delimiter string to use
         """
         self.delimiter = delimiter
-        self._opening_pattern = re.compile(rf"^{re.escape(delimiter)}(\w+):(\w+)(:.+)?$")
-        self._closing_pattern = re.compile(rf"^{re.escape(delimiter)}end$")
+        self._opening_pattern = re.compile(rf"^{re.escape(delimiter)}(\w+):(\w+)(:.+?)?\s*$")
+        self._closing_pattern = re.compile(rf"^{re.escape(delimiter)}end\s*$")
 
     def detect_line(self, line: str, candidate: BlockCandidate | None = None) -> DetectionResult:
         """Detect delimiter-based markers."""

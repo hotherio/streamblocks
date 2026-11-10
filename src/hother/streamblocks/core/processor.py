@@ -56,9 +56,9 @@ class ProcessorConfig:
     Attributes:
         lines_buffer: Number of recent lines to keep in buffer for context (default: 5).
             Used for debugging and error messages.
-        max_line_length: Maximum line length in bytes before truncation (default: 16,384).
+        max_line_length: Maximum line length in characters before truncation (default: 16,384).
             Lines exceeding this limit are truncated to prevent memory issues.
-        max_block_size: Maximum block size in bytes before rejection (default: 1,048,576 = 1MB).
+        max_block_size: Maximum block size in characters before rejection (default: 1,048,576 = 1MB).
             Blocks exceeding this limit are rejected with SIZE_EXCEEDED error.
         emit_original_events: Whether to pass through original provider events (default: True).
             When False, only StreamBlocks events are emitted. Set to False when using
