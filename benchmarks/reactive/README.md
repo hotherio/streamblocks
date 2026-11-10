@@ -19,12 +19,26 @@ steps exist and steps 3–6 follow the correction (regex check, no judge model).
 
 ```bash
 uv run --with llama-cpp-python python -m benchmarks.reactive.pilot --model path/to/model.gguf
+uv run --with pie-client python -m benchmarks.reactive.pilot --backend pie --model qwen3.5-4b
 uv run python -m benchmarks.reactive.pilot --summarize runs/reactive/pilot.jsonl
 ```
+
+## Backends
+
+| Backend | How `inject` works | Decoding |
+|---|---|---|
+| `llamacpp` | tokens appended in a hand-driven decode loop, cache kept | sampled, seeded |
+| `pie` | [Pie](https://pie-project.org) runs `pie_inferlet.py` next to the model; the client asks for one token at a time and can append text to the same working set | greedy |
+
+StreamBlocks parses on the client in both cases. Pie inferlets run standard-library Python only, so
+the inferlet has no dependencies. The Pie backend needs `pie serve` running; on macOS 15 that means the
+WebGPU build (`PIE_FLAVOR=wgpu`) with `max_forward_tokens = 1024` and `max_forward_requests = 8`.
 
 Metrics are token counts, so they do not depend on machine speed:
 `reaction_latency_tokens` (event available → delivered), `wasted_tokens` (steps written after the
 event and later rewritten), `completion_tokens`, `uncached_prompt_tokens`, `llm_calls`.
+`virtual_time_s` turns those counts into seconds under a named cost model (`--cost local|hosted`,
+see `clock.py`), so a run replays to the same numbers.
 
 ## Gate
 
@@ -53,10 +67,21 @@ Compliant episodes, then median completion tokens and model calls per episode:
 
 Differences of two or three episodes between cells are within noise at this sample size.
 
+Same scenario on Pie 0.6.0 (WebGPU), Qwen3.5-4B, greedy, 5 episodes per cell, `local` cost model:
+
+| `turn_boundary` | `cancel_resend` | `inject` |
+|---|---|---|
+| 3/5 · 349 tok · 12.1 s | 3/5 · 169 tok · 6.0 s | 5/5 · 256 tok · 8.7 s |
+
+Injection works on Pie as well, with no malformed blocks. Each `begin` on Pie starts a new working set,
+so the two-call deliveries re-evaluate the whole prompt (about 560–670 tokens against 230 for `inject`).
+
 ## Limits
 
 - Five scenarios, 15 episodes per cell: enough for a go/no-go, not for effect sizes.
 - The regex check accepts a guide that mentions the new term once and avoids the old one.
 - Hosted models are not covered yet (they can only do `turn_boundary` and `cancel_resend`).
+- The Pie backend asks for one token per round trip, which keeps runs deterministic but does not use
+  Pie's batching; throughput there is not measured.
 - On llama.cpp the cache is kept in all three deliveries, so `uncached_prompt_tokens` understates
   what `cancel_resend` costs on an API without prefix caching (`resent_prompt_tokens` is that cost).

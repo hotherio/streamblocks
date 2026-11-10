@@ -1,6 +1,7 @@
 """Steering scenario logic, driven by a scripted backend (no model)."""
 
 from benchmarks.reactive.backend import ScriptedBackend
+from benchmarks.reactive.clock import COSTS
 from benchmarks.reactive.steering import SCENARIOS, Delivery, run_episode
 
 DATABASE = SCENARIOS[0]
@@ -58,3 +59,12 @@ def test_event_waits_for_a_line_boundary_outside_any_block() -> None:
 
     assert episode.reaction_latency_tokens == 2  # the rest of step 3, already begun
     assert not episode.compliant  # step 3 was finished under the old plan
+
+
+def test_virtual_time_is_replayable_and_orders_the_deliveries() -> None:
+    def seconds(delivery: Delivery) -> float:
+        backend = ScriptedBackend([OLD_PLAN, NEW_TAIL], after_inject=NEW_TAIL)
+        return run_episode(backend, DATABASE, delivery, cost=COSTS["hosted"]).virtual_time_s
+
+    assert seconds(Delivery.INJECT) == seconds(Delivery.INJECT)
+    assert seconds(Delivery.INJECT) < seconds(Delivery.CANCEL_RESEND) < seconds(Delivery.TURN_BOUNDARY)

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from benchmarks.reactive.clock import COSTS, CostModel, VirtualClock
 from hother.streamblocks import DelimiterPreambleSyntax, Registry, StreamBlockProcessor
 from hother.streamblocks.core.processor import ProcessorConfig
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, BlockStartEvent
@@ -128,16 +129,25 @@ class Episode:
     resent_prompt_tokens: int = 0
     uncached_prompt_tokens: int = 0
     malformed_blocks: int = 0
+    virtual_time_s: float = 0.0
     transcript: str = ""
     guide: dict[str, str] = field(default_factory=dict[str, str])
 
 
-def run_episode(backend: Backend, scenario: Scenario, delivery: Delivery, *, max_tokens: int = 1500) -> Episode:
-    return _Run(backend, scenario, delivery).run(max_tokens)
+def run_episode(
+    backend: Backend,
+    scenario: Scenario,
+    delivery: Delivery,
+    *,
+    max_tokens: int = 1500,
+    cost: CostModel = COSTS["local"],
+) -> Episode:
+    return _Run(backend, scenario, delivery, cost).run(max_tokens)
 
 
 class _Run:
-    def __init__(self, backend: Backend, scenario: Scenario, delivery: Delivery) -> None:
+    def __init__(self, backend: Backend, scenario: Scenario, delivery: Delivery, cost: CostModel) -> None:
+        self.clock = VirtualClock(cost)
         self.backend = backend
         self.scenario = scenario
         self.delivery = delivery
@@ -161,7 +171,7 @@ class _Run:
     def run(self, max_tokens: int) -> Episode:
         episode, backend = self.episode, self.backend
         prompt_before, uncached_before = backend.prompt_tokens, backend.uncached_prompt_tokens
-        backend.begin(self.messages)
+        self.begin()
 
         while episode.completion_tokens < max_tokens:
             piece = backend.next_piece()
@@ -172,6 +182,7 @@ class _Run:
                 self.deliver_as_new_turn()
                 continue
             episode.completion_tokens += 1
+            self.clock.generated()
             self.turn.append(piece)
             self.feed(piece)
             if episode.event_at_token is None and self.steps_closed >= self.scenario.event_after_step:
@@ -186,8 +197,14 @@ class _Run:
         episode.resent_prompt_tokens = backend.prompt_tokens - prompt_before
         episode.uncached_prompt_tokens = backend.uncached_prompt_tokens - uncached_before
         episode.transcript = "".join(self.transcript)
+        episode.virtual_time_s = round(self.clock.now, 3)
         _score(episode, self.scenario)
         return episode
+
+    def begin(self) -> None:
+        before = self.backend.uncached_prompt_tokens
+        self.backend.begin(self.messages)
+        self.clock.call(self.backend.uncached_prompt_tokens - before)
 
     @property
     def event_pending(self) -> bool:
@@ -196,7 +213,7 @@ class _Run:
     def deliver_now(self) -> None:
         if self.delivery is Delivery.INJECT:
             self.episode.delivered_at_token = self.episode.completion_tokens
-            self.backend.inject(self.scenario.event_block)
+            self.clock.prefill(self.backend.inject(self.scenario.event_block))
             self.turn.append(self.scenario.event_block)
             self.feed(self.scenario.event_block)
         else:
@@ -208,7 +225,7 @@ class _Run:
         self.messages.append({"role": "assistant", "content": "".join(self.turn)})
         self.messages.append({"role": "user", "content": self.scenario.event_block + note})
         self.turn.clear()
-        self.backend.begin(self.messages)
+        self.begin()
         self.episode.llm_calls += 1
         self.transcript.append(f"\n[user] {self.scenario.event_block}")
 
