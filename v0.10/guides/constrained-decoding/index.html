@@ -1772,6 +1772,10 @@
 <td>Any lines that cannot be mistaken for a block opening. Pass <code>allow_text=False</code> to allow blocks only.</td>
 </tr>
 <tr>
+<td>Number of blocks</td>
+<td>Any number, including none. Pass <code>min_blocks=1</code> to require at least one block: without it, a model that ignores the format can still answer in plain text only.</td>
+</tr>
+<tr>
 <td>Block type</td>
 <td>One of the registered types</td>
 </tr>
@@ -1790,6 +1794,10 @@
 <tr>
 <td>Closing marker</td>
 <td>Always present</td>
+</tr>
+<tr>
+<td>End of the answer</td>
+<td>Right after a closing marker or a line of text. A final line break is optional, so a model is never pushed to keep writing.</td>
 </tr>
 </tbody>
 </table>

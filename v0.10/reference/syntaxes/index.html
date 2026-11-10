@@ -11581,7 +11581,7 @@ syntax = get_syntax_instance(my_syntax)</p>
 <a id="__codelineno-0-57" name="__codelineno-0-57"></a>                <span class="k">return</span> <span class="n">DelimiterPreambleSyntax</span><span class="p">()</span>
 <a id="__codelineno-0-58" name="__codelineno-0-58"></a>            <span class="k">case</span> <span class="n">Syntax</span><span class="o">.</span><span class="n">MARKDOWN_FRONTMATTER</span><span class="p">:</span>
 <a id="__codelineno-0-59" name="__codelineno-0-59"></a>                <span class="k">return</span> <span class="n">MarkdownFrontmatterSyntax</span><span class="p">()</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>            <span class="k">case</span> <span class="n">Syntax</span><span class="o">.</span><span class="n">XML_TAG</span><span class="p">:</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>            <span class="k">case</span> <span class="n">Syntax</span><span class="o">.</span><span class="n">XML_TAG</span><span class="p">:</span>  <span class="c1"># pragma: no branch - the match is exhaustive</span>
 <a id="__codelineno-0-61" name="__codelineno-0-61"></a>                <span class="k">return</span> <span class="n">XmlTagSyntax</span><span class="p">()</span>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a>
 <a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="n">unchecked</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"object"</span><span class="p">,</span> <span class="n">syntax</span><span class="p">)</span>
@@ -11978,7 +11978,7 @@ syntax = get_syntax_instance(my_syntax)</p>
 <a id="__codelineno-0-57" name="__codelineno-0-57"></a>                <span class="k">return</span> <span class="n">DelimiterPreambleSyntax</span><span class="p">()</span>
 <a id="__codelineno-0-58" name="__codelineno-0-58"></a>            <span class="k">case</span> <span class="n">Syntax</span><span class="o">.</span><span class="n">MARKDOWN_FRONTMATTER</span><span class="p">:</span>
 <a id="__codelineno-0-59" name="__codelineno-0-59"></a>                <span class="k">return</span> <span class="n">MarkdownFrontmatterSyntax</span><span class="p">()</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>            <span class="k">case</span> <span class="n">Syntax</span><span class="o">.</span><span class="n">XML_TAG</span><span class="p">:</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>            <span class="k">case</span> <span class="n">Syntax</span><span class="o">.</span><span class="n">XML_TAG</span><span class="p">:</span>  <span class="c1"># pragma: no branch - the match is exhaustive</span>
 <a id="__codelineno-0-61" name="__codelineno-0-61"></a>                <span class="k">return</span> <span class="n">XmlTagSyntax</span><span class="p">()</span>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a>
 <a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="n">unchecked</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">"object"</span><span class="p">,</span> <span class="n">syntax</span><span class="p">)</span>
