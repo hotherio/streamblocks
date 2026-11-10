@@ -21,6 +21,7 @@ nav:
     - guides/index.md
     - Defining Custom Blocks: guides/define-custom-blocks.md
     - Generating Prompts: guides/generate-prompts.md
+    - Constrained Decoding: guides/constrained-decoding.md
     - Validation: guides/validation.md
     - Error Handling: guides/error-handling.md
     - OpenAI, Anthropic & Gemini: guides/providers.md
@@ -42,6 +43,7 @@ nav:
     - Processors: reference/processors.md
     - Registry & Models: reference/registry-and-models.md
     - Prompts: reference/prompts.md
+    - Grammar: reference/grammar.md
     - Events: reference/events.md
     - Syntaxes: reference/syntaxes.md
     - Adapters: reference/adapters.md

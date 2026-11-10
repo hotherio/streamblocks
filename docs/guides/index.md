@@ -6,6 +6,7 @@ Task-oriented guides for common StreamBlocks workflows. Each guide is backed by 
 
 - [Defining Custom Blocks](define-custom-blocks.md): typed metadata/content models, custom parsing, JSON/YAML content.
 - [Generating Prompts](generate-prompts.md): build an LLM system prompt from your registry.
+- [Constrained Decoding](constrained-decoding.md): export a grammar so a local model can only produce well-formed blocks.
 - [Validation](validation.md): registry validators, failure modes, early validation.
 - [Error Handling](error-handling.md): error codes, unclosed blocks, size limits.
 
