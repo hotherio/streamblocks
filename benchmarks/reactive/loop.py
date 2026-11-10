@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
@@ -37,6 +38,7 @@ class Record:
     uncached_prompt_tokens: int = 0
     malformed_blocks: int = 0
     virtual_time_s: float = 0.0
+    wall_time_s: float = 0.0
     transcript: str = ""
 
 
@@ -47,14 +49,21 @@ class Run[R: Record]:
     interrupted_note = "Your output was interrupted by this event. Continue where you stopped."
 
     def __init__(
-        self, backend: Backend, record: R, delivery: Delivery, system: str, task: str, cost: CostModel
+        self,
+        backend: Backend,
+        record: R,
+        delivery: Delivery,
+        system: str,
+        task: str,
+        cost: CostModel,
+        registry: Registry | None = None,
     ) -> None:
         self.backend = backend
         self.record = record
         self.delivery = delivery
         self.clock = VirtualClock(cost)
         self.processor = StreamBlockProcessor(
-            Registry(syntax=DelimiterPreambleSyntax()),
+            registry or Registry(syntax=DelimiterPreambleSyntax()),
             ProcessorConfig(emit_text_deltas=False, emit_original_events=False, auto_detect_adapter=False),
         )
         self.messages: list[Message] = [{"role": "system", "content": system}, {"role": "user", "content": task}]
@@ -80,6 +89,7 @@ class Run[R: Record]:
     def run(self, max_tokens: int) -> R:
         record, backend = self.record, self.backend
         prompt_before, uncached_before = backend.prompt_tokens, backend.uncached_prompt_tokens
+        started = time.perf_counter()
         self.begin()
 
         while record.completion_tokens < max_tokens:
@@ -105,6 +115,7 @@ class Run[R: Record]:
         record.uncached_prompt_tokens = backend.uncached_prompt_tokens - uncached_before
         record.transcript = "".join(self.transcript)
         record.virtual_time_s = round(self.clock.now, 3)
+        record.wall_time_s = round(time.perf_counter() - started, 3)
         self.score()
         return record
 
