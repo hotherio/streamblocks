@@ -2,6 +2,12 @@
 
 Examples of concrete, ready-to-use block types for agent-style workflows. They build on the reusable block library shipped with the examples at [`src/hother/streamblocks_examples/blocks/`](https://github.com/hotherio/streamblocks/tree/main/src/hother/streamblocks_examples/blocks), which provides file operations, patches, tool calls, memory, visualization, and interactive block definitions you can import directly. All examples run offline with no API keys. To define your own block types, see the [Defining Custom Blocks guide](../guides/define-custom-blocks.md).
 
+## Artifact Blocks
+
+The built-in artifact blocks shipped with the library (`hother.streamblocks.blocks.artifacts`): `FileArtifact`, `PatchArtifact` and `DocumentArtifact`, here with `XmlTagSyntax`. A file and a search/replace patch are extracted from prose as they stream and applied to an in-memory project.
+
+#! src/hother/streamblocks_examples/04_blocks/06_artifact_blocks.py
+
 ## Patch Content
 
 A deep dive into `PatchContent` with various patch formats (unified diff, search/replace, ...), showing how patch blocks are parsed and applied.

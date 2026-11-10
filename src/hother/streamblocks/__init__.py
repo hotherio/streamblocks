@@ -57,6 +57,7 @@ from hother.streamblocks.syntaxes import (
     DelimiterFrontmatterSyntax,
     DelimiterPreambleSyntax,
     MarkdownFrontmatterSyntax,
+    XmlTagSyntax,
 )
 
 # Rebuild event models to resolve forward references to ExtractedBlock
@@ -120,6 +121,7 @@ __all__ = [
     "TextContentEvent",
     "TextDeltaEvent",
     "ValidationResult",
+    "XmlTagSyntax",
     "generate_block_prompt",
     "parse_as_json",
     "parse_as_yaml",

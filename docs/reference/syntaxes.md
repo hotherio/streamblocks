@@ -8,6 +8,8 @@ Built-in syntaxes, the base class for custom syntaxes, and the syntax factory. S
 
 ::: hother.streamblocks.syntaxes.markdown
 
+::: hother.streamblocks.syntaxes.xml
+
 ::: hother.streamblocks.syntaxes.factory
 
 ::: hother.streamblocks.syntaxes.models

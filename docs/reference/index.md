@@ -48,7 +48,7 @@ from hother.streamblocks import Registry, StreamBlockProcessor, BlockEndEvent
 
 [Syntaxes](syntaxes.md)
 
-- `DelimiterPreambleSyntax`, `DelimiterFrontmatterSyntax`, `MarkdownFrontmatterSyntax`
+- `DelimiterPreambleSyntax`, `DelimiterFrontmatterSyntax`, `MarkdownFrontmatterSyntax`, `XmlTagSyntax`
 - `BaseSyntax`: base class for custom syntaxes
 - `Syntax`: enum for factory-based selection
 - `DetectionResult`, `ParseResult`

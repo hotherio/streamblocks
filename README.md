@@ -128,6 +128,37 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+### Streaming Artifacts
+
+Built-in blocks for files, patches and documents that a model writes inside its answer.
+
+```python
+import asyncio
+from collections.abc import AsyncIterator
+
+from hother.streamblocks import BlockEndEvent, Registry, StreamBlockProcessor, XmlTagSyntax
+from hother.streamblocks.blocks.artifacts import ARTIFACT_BLOCKS
+
+
+async def main() -> None:
+    registry = Registry(syntax=XmlTagSyntax(), blocks=ARTIFACT_BLOCKS)
+    processor = StreamBlockProcessor(registry)
+    print(registry.to_prompt()[:60])  # the same registry documents the format for the model
+
+    async def text_stream() -> AsyncIterator[str]:
+        yield 'Here you go:\n<artifact type="file" path="src/main.py">\n'
+        yield 'print("hello")\n</artifact>\n'
+
+    async for event in processor.process_stream(text_stream()):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block:
+                print(block.metadata.path, "->", block.content.raw_content)
+
+
+asyncio.run(main())
+```
+
 ### Processing AI Provider Streams
 
 ```python
@@ -195,6 +226,7 @@ processor = StreamBlockProcessor(registry)
 | **Delimiter with Preamble** | `!!<id>:<type>\n...\n!!end` | Simple structured blocks |
 | **Markdown with Frontmatter** | ` ```lang\n---\nkey: value\n---\n...\n``` ` | Code blocks with metadata |
 | **Delimiter with Frontmatter** | `!!start\n---\nkey: value\n---\n...\n!!end` | Hybrid structured blocks |
+| **XML Tag** | `<artifact type="file" path="...">\n...\n</artifact>` | Artifacts (files, patches, documents) inside prose |
 
 ## Event Types
 

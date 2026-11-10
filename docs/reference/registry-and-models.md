@@ -5,3 +5,9 @@ The registry that maps block types to block classes, and the block data models. 
 ::: hother.streamblocks.core.registry
 
 ::: hother.streamblocks.core.models
+
+## Built-in blocks
+
+Artifact blocks shipped with the library. See the [artifact example](../examples/blocks.md#artifact-blocks).
+
+::: hother.streamblocks.blocks.artifacts
