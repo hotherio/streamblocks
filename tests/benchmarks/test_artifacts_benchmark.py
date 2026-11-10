@@ -142,3 +142,12 @@ def test_rate_interval_bounds() -> None:
     assert mean == 0.75
     assert 0.0 <= low <= mean <= high <= 1.0
     assert rate_interval([]) == (0.0, 0.0, 0.0)
+
+
+def test_unencodable_characters_do_not_stop_a_sweep() -> None:
+    answer = GOOD_ANSWERS["xml"].replace("Here it is.", "Here it is \udddd.")
+    episode = _episode("xml", answer)
+    assert episode.error is None
+    assert episode.score == 1.0
+    assert "\udddd" not in episode.answer
+    json.dumps(episode.to_record()).encode()

@@ -102,8 +102,10 @@ def run_episode(
             temperature=temperature,
             seed=seed,
         ):
-            pieces.append(piece)
-            reader.feed(piece)
+            # A model can emit half of a multi-byte character; keep the text encodable
+            text = piece.encode("utf-8", "replace").decode("utf-8")
+            pieces.append(text)
+            reader.feed(text)
             if first_artifact_at is None and _first_artifact(reader) is not None:
                 first_artifact_at = time.perf_counter()
     except Exception as exc:  # a backend failure is recorded, not raised, so a sweep keeps going
@@ -122,7 +124,11 @@ def run_episode(
     episode.first_artifact_piece = extraction.first_artifact_piece
     if extraction.first_artifact_piece is not None:
         episode.ttfa_s = (first_artifact_at if first_artifact_at is not None else finished) - started
-    episode.score = float(task.check(extraction.project)) if episode.error is None else 0.0
+    if episode.error is None:
+        try:
+            episode.score = float(task.check(extraction.project))
+        except Exception as exc:  # a check that cannot run is a failed episode, not a failed sweep
+            episode.error = f"check failed: {type(exc).__name__}: {exc}"
     return episode
 
 
