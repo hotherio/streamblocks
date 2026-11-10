@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from enum import StrEnum
 from statistics import mean
 from typing import TYPE_CHECKING
 
@@ -49,6 +50,14 @@ assign it again to another worker with a new block. Do not repeat assignments th
 Stop when every job that is not cancelled has a worker who is online."""
 
 
+class Repair(StrEnum):
+    """What an event says about the work already done."""
+
+    PLAIN = "plain"  # only what changed
+    NAMED = "named"  # plus the jobs that must be assigned again
+    STATE = "state"  # plus every current assignment
+
+
 @dataclass(frozen=True)
 class WorldEvent:
     at_s: float
@@ -73,9 +82,6 @@ class Scenario:
             f"Assign jobs J1 to J{self.jobs}, in order, one block per job, to these workers: "
             f"{', '.join(self.workers)}. Spread the jobs evenly between them."
         )
-
-    def event_block(self, index: int) -> str:
-        return f"!!e{index + 1}:event\n{self.events[index].text}\n!!end\n"
 
 
 def _offline(at_s: float, worker: str) -> WorldEvent:
@@ -103,6 +109,7 @@ class Episode(Record):
     events_delivered: int = 0
     reaction_latency_tokens: float | None = None  # mean over events, availability to delivery
     reaction_latency_s: float | None = None
+    repair: str = Repair.PLAIN.value
     assignments: dict[str, str] = field(default_factory=dict[str, str])
 
 
@@ -113,13 +120,17 @@ def run_episode(
     *,
     max_tokens: int = 1500,
     cost: CostModel = COSTS["local"],
+    repair: Repair = Repair.PLAIN,
 ) -> Episode:
-    return _Run(backend, scenario, delivery, cost).run(max_tokens)
+    return _Run(backend, scenario, delivery, cost, repair).run(max_tokens)
 
 
 class _Run(Run[Episode]):
-    def __init__(self, backend: Backend, scenario: Scenario, delivery: Delivery, cost: CostModel) -> None:
-        episode = Episode(task=scenario.name, delivery=delivery.value)
+    def __init__(
+        self, backend: Backend, scenario: Scenario, delivery: Delivery, cost: CostModel, repair: Repair
+    ) -> None:
+        episode = Episode(task=scenario.name, delivery=delivery.value, repair=repair.value)
+        self.repair = repair
         super().__init__(backend, episode, delivery, SYSTEM_PROMPT, scenario.task, cost)
         self.scenario = scenario
         self.available_at: dict[int, int] = {}  # event index -> completion tokens when it happened
@@ -136,7 +147,18 @@ class _Run(Run[Episode]):
         self.ready = [i for i in range(first, len(events)) if events[i].at_s <= self.clock.now]
         for index in self.ready:
             self.available_at.setdefault(index, self.record.completion_tokens)
-        return "".join(self.scenario.event_block(index) for index in self.ready) or None
+        return "".join(self.event_block(index) for index in self.ready) or None
+
+    def event_block(self, index: int) -> str:
+        event, assignments = self.scenario.events[index], self.record.assignments
+        lines = [event.text]
+        orphans = [job for job, worker in assignments.items() if worker == event.offline]
+        if self.repair is Repair.NAMED and orphans:
+            lines.append(f"Assign these jobs again, they were given to {event.offline}: {', '.join(orphans)}.")
+        if self.repair is Repair.STATE and assignments:
+            lines.append("Current assignments:")
+            lines += [f"{job} -> {worker}" for job, worker in assignments.items()]
+        return "\n".join([f"!!e{index + 1}:event", *lines, "!!end", ""])
 
     def delivered(self) -> None:
         for index in self.ready:

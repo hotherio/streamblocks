@@ -125,6 +125,48 @@ per cell. Compliant episodes, then totals over the cell: stale actions and model
 So the next question for this scenario is repair, not delivery: whether an event that names the jobs
 to move, or a state block listing current assignments, gets them moved.
 
+### Repair
+
+`--repair` changes what an event says about work already done. `plain` (above) says only what changed.
+`named` adds the jobs to move ("Assign these jobs again, they were given to cy: J3, J6."). `state` adds
+the full list of current assignments and leaves the model to find them.
+
+Hypotheses, written before the run. "Offline episodes" are the 12 per cell with a worker going offline.
+
+1. With `named`, `inject` and `cancel_resend` pass at least 6 of 12 offline episodes on at least one
+   model (0 of 12 with `plain`).
+2. `state` passes fewer offline episodes than `named`, and more than `plain`.
+3. Neither variant raises stale actions for `inject` above its `plain` total.
+
+Against injection: `named` still at 0 of 12 for `inject` on both models. Then a model told exactly what
+to redo still cannot go back inside its own turn, and repair needs a new turn.
+
+Run of 2026-11-10, same settings. Offline episodes passed out of 12, then stale actions over the 15
+episodes of the cell:
+
+| Model | Event | `turn_boundary` | `cancel_resend` | `inject` |
+|---|---|---|---|---|
+| Gemma 4 E4B | `plain` | 0 · 36 stale | 0 · 11 stale | 0 · 15 stale |
+| | `named` | 11 · 35 stale | 4 · 17 stale | 3 · 21 stale |
+| | `state` | 6 · 36 stale | 2 · 15 stale | 1 · 12 stale |
+| Llama 3.1 8B | `plain` | 5 · 38 stale | 0 · 7 stale | 0 · 16 stale |
+| | `named` | 11 · 37 stale | 7 · 9 stale | 8 · 11 stale |
+| | `state` | 5 · 40 stale | 0 · 10 stale | 0 · 15 stale |
+
+- **Hypothesis 1 holds on Llama only** (8 of 12 for `inject`, 7 for `cancel_resend`). Gemma reaches 3 and 4.
+- **Hypothesis 2 mostly fails.** `state` is below `named` as predicted, but it barely beats `plain` on
+  Gemma and does not on Llama: a list of assignments is not enough, the event has to say what to redo.
+- **Hypothesis 3 fails for `named` on Gemma** (21 stale against 15) and holds elsewhere.
+- Injection is not ruled out: a model told what to redo can go back inside its own turn.
+- With `named`, end-of-turn delivery passes 11 of 12 on both models, more than either mid-stream
+  delivery. It still executes three times as many stale actions as `inject` on Llama.
+- Gemma's mid-stream failures are momentum: right after the event it writes the next assignment of its
+  round-robin to the offline worker (`J6 -> cy`), then carries on correctly without repairing.
+
+Reacting early and repairing well pull in opposite directions here: the earlier the model is told, the
+fewer mistakes it makes and the less likely it is to go back over them. An event should carry the
+repair to do, not only the change.
+
 ## Limits
 
 - Five scenarios, 15 episodes per cell: enough for a go/no-go, not for effect sizes.
