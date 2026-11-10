@@ -37,6 +37,7 @@ LLMs often embed structured data in their responses: file operations, code block
 - **AG-UI Protocol Support**: Bidirectional adapters that consume AG-UI streams and emit AG-UI events
 - **Type-Safe Models**: Use Pydantic models for block metadata and content
 - **Built-in Artifact Blocks**: Files, search/replace patches and documents, ready to register
+- **Mid-Stream Validation**: Reject a block while it is still being written and stop the stream
 - **Grammar Export**: Generate a GBNF grammar from the registry to constrain local models to well-formed blocks
 - **Event-Driven Architecture**: React to block detection, updates, completion, and rejection
 - **Production Ready**: Comprehensive error handling, logging, and validation

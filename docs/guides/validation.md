@@ -65,6 +65,36 @@ All three kinds combine on a single block type:
 
 A block must pass every registered validator to be delivered through `BlockEndEvent`.
 
+## Validating while the block streams
+
+The validators above run when a section or a block is complete. A *stream validator* runs on every line of a block, starting with its opening line, and can reject the block before the rest of it is written. It receives a `PartialBlock`: the block type and metadata once they are known, the section, the latest line, and the lines so far.
+
+```python
+--8<-- "src/hother/streamblocks_examples/04_blocks/07_guarded_generation.py:setup"
+```
+
+A rejected block is dropped with a `BlockErrorEvent` whose code is `ABORTED`. What happens next depends on `ProcessorConfig.abort_stream_on_failure`:
+
+| `abort_stream_on_failure` | After a rejection |
+|---------------------------|-------------------|
+| `False` (default) | Processing continues. The remaining lines of the rejected block are emitted as plain text, and later blocks are extracted normally. |
+| `True` | The processor ignores the rest of the stream, `processor.aborted` becomes `True`, and `process_stream` closes the upstream iterator. With a model stream this ends generation, so the rest of the output is neither produced nor paid for. |
+
+```python
+--8<-- "src/hother/streamblocks_examples/04_blocks/07_guarded_generation.py:process"
+```
+
+When the metadata becomes available depends on the syntax: on the opening line for `XmlTagSyntax` and `DelimiterPreambleSyntax`, at the end of the frontmatter for the frontmatter syntaxes. Pass a block type as the second argument of `add_stream_validator` to run a validator for that type only.
+
+`hother.streamblocks.guards` ships ready-made stream validators:
+
+| Guard | Rejects a block when |
+|-------|----------------------|
+| `path_within(*roots, field="path")` | its path metadata is absolute, escapes the project, or is outside the allowed directories |
+| `max_lines(limit)` | its content has more than `limit` lines |
+| `max_size(limit)` | it is larger than `limit` characters |
+| `forbid_patterns(*patterns)` | a content line matches one of the regular expressions |
+
 ## Next steps
 
 - [Error Handling](error-handling.md): react to `BlockErrorEvent` and its error codes.
