@@ -269,7 +269,8 @@ def check(scenario: Scenario, path: str, source: str) -> str | None:
     if result.returncode == 0:
         return None
     lines = result.stderr.strip().splitlines()
-    return (lines[-1] if lines else "the check failed")[:_ERROR_LENGTH]
+    # Python's own "Did you mean" hint would point at the library's private names.
+    return (lines[-1] if lines else "the check failed").split(". Did you mean")[0][:_ERROR_LENGTH]
 
 
 @dataclass
