@@ -167,6 +167,37 @@ Reacting early and repairing well pull in opposite directions here: the earlier 
 fewer mistakes it makes and the less likely it is to go back over them. An event should carry the
 repair to do, not only the change.
 
+## Streaming build
+
+The deciding test for injection. The model writes five small Python modules on top of a library whose
+documentation is out of date (three scenarios: a method was renamed, a function was removed, values must
+now be strings). Files are artifact blocks (`XmlTagSyntax`, the built-in `file` block). Each file is
+checked when its block closes, by running its tests in a subprocess; the result is known one virtual
+second later. Only failures are reported, as an event carrying the error. The first error says what changed.
+
+- **Failed checks**: files written on a wrong assumption. **Compliant**: the latest version of all five passes.
+- Hosted models run through an OpenAI-compatible API (`--backend hosted`), which can only do
+  `turn_boundary` and `cancel_resend`. For them the run also records wall-clock time, and per call the
+  time to first token and the prompt tokens served from the provider's cache.
+
+```bash
+uv run --with llama-cpp-python python -m benchmarks.reactive.pilot --scenario build --model path/to/model.gguf
+uv run --with openai python -m benchmarks.reactive.pilot --scenario build --backend hosted --model gpt-4.1-mini
+```
+
+Hypotheses and decision rule, written before the first run (9 episodes per cell):
+
+1. Reacting mid-stream (`cancel_resend`, `inject`) leaves a median of at most 2 failed checks;
+   `turn_boundary` leaves 5.
+2. Reacting mid-stream finishes sooner than `turn_boundary`: in wall-clock time on hosted models, in
+   virtual time on local ones.
+3. **Decision on injection.** On hosted models, the most injection could save over `cancel_resend` is the
+   time to first token of the calls made to deliver an event. If that is under 10% of the episode's
+   wall-clock time, and `inject` is not compliant more often than `cancel_resend` on the local models,
+   injection is dropped as the headline and kept as a cost optimisation for self-hosted runtimes. At 25%
+   or more it is material. In between, undecided.
+4. Resent prompts are mostly served from the provider's cache (reported, no threshold).
+
 ## Limits
 
 - Five scenarios, 15 episodes per cell: enough for a go/no-go, not for effect sizes.
