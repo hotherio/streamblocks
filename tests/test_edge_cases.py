@@ -38,8 +38,7 @@ class TestEmptyAndWhitespaceInput:
 
         events = [e async for e in processor.process_stream(whitespace_stream())]
         text_events = [e for e in events if e.type == EventType.TEXT_CONTENT]
-        # Each yield ending with \n produces 2 events (content + empty trailing line)
-        assert len(text_events) == 6
+        assert [e.content for e in text_events] == ["   ", "\t", ""]
 
     @pytest.mark.asyncio
     async def test_stream_with_only_newlines(self, processor: StreamBlockProcessor) -> None:
@@ -50,8 +49,7 @@ class TestEmptyAndWhitespaceInput:
 
         events = [e async for e in processor.process_stream(newline_stream())]
         text_events = [e for e in events if e.type == EventType.TEXT_CONTENT]
-        # "\n\n\n" splits into 4 segments: ["", "", "", ""]
-        assert len(text_events) == 4
+        assert len(text_events) == 3
 
 
 class TestUnclosedBlocks:
@@ -170,9 +168,7 @@ class TestLineLengthLimits:
         events = [e async for e in processor.process_stream(long_line_stream())]
         text_events = [e for e in events if e.type == EventType.TEXT_CONTENT]
 
-        # 2 events: truncated line + trailing empty line
-        assert len(text_events) == 2
-        # First line should be truncated to max_line_length
+        assert len(text_events) == 1
         assert len(text_events[0].content) == 50
 
 
@@ -223,9 +219,7 @@ class TestChunkProcessing:
         """Basic chunk processing should work."""
         events = processor.process_chunk("Hello\n")
         text_events = [e for e in events if e.type == EventType.TEXT_CONTENT]
-        # 2 events: "Hello" + trailing empty line from \n
-        assert len(text_events) == 2
-        assert text_events[0].content == "Hello"
+        assert [e.content for e in text_events] == ["Hello"]
 
     def test_process_chunk_incomplete_line(self, processor: StreamBlockProcessor) -> None:
         """Incomplete lines should be buffered."""
@@ -234,9 +228,7 @@ class TestChunkProcessing:
 
         events2 = processor.process_chunk("lo\n")
         text_events = [e for e in events2 if e.type == EventType.TEXT_CONTENT]
-        # 2 events: "Hello" + trailing empty line from \n
-        assert len(text_events) == 2
-        assert text_events[0].content == "Hello"
+        assert [e.content for e in text_events] == ["Hello"]
 
     def test_finalize_flushes_incomplete(self, processor: StreamBlockProcessor) -> None:
         """Finalize should flush incomplete lines."""

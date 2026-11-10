@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
 from hother.streamblocks.core._logger import StdlibLoggerAdapter
 from hother.streamblocks.core.constants import LIMITS
@@ -81,7 +80,6 @@ class BlockStateMachine:
 
         # State
         self._candidates: list[BlockCandidate] = []
-        self._block_ids: dict[int, str] = {}  # Maps start_line to block_id
 
     @property
     def candidates(self) -> list[BlockCandidate]:
@@ -93,12 +91,6 @@ class BlockStateMachine:
         """Check if there are active block candidates."""
         return len(self._candidates) > 0
 
-    def get_block_id(self, candidate_start_line: int) -> str:
-        """Get or create a block_id for a candidate."""
-        if candidate_start_line not in self._block_ids:
-            self._block_ids[candidate_start_line] = str(uuid4())
-        return self._block_ids[candidate_start_line]
-
     def get_current_section(self) -> str | None:
         """Get the current section of the first active candidate."""
         if self._candidates:
@@ -108,7 +100,7 @@ class BlockStateMachine:
     def get_current_block_id(self) -> str | None:
         """Get the block_id of the first active candidate."""
         if self._candidates:
-            return self.get_block_id(self._candidates[0].start_line)
+            return self._candidates[0].block_id
         return None
 
     def process_line(self, line: str, line_number: int) -> list[Event]:
@@ -144,30 +136,56 @@ class BlockStateMachine:
         handled = False
 
         for candidate in list(self._candidates):
-            # Capture section BEFORE detect_line (which may modify it)
-            old_section = candidate.current_section
-
-            # Let the syntax check this line in context
-            detection = candidate.syntax.detect_line(line, candidate)
-
-            if detection.is_closing:
-                events.extend(self._handle_closing(candidate, line, line_number))
-                handled = True
-            elif detection.is_metadata_boundary:
-                events.extend(self._handle_boundary(candidate, line, line_number, old_section))
-                handled = True
-            else:
-                events.extend(self._handle_content(candidate, line, line_number))
-                handled = True
+            try:
+                consumed, candidate_events = self._advance_candidate(candidate, line, line_number)
+            except Exception as exc:  # user syntaxes, parsers and validators must not kill the stream
+                if candidate in self._candidates:
+                    self._candidates.remove(candidate)
+                consumed = True
+                candidate_events = [
+                    self._create_error_event(
+                        candidate, line_number, f"Unexpected error: {exc}", BlockErrorCode.PARSE_FAILED, exc
+                    )
+                ]
+            handled = handled or consumed
+            events.extend(candidate_events)
 
         return handled, events
 
-    def _handle_closing(self, candidate: BlockCandidate, line: str, line_number: int) -> list[Event]:
+    def _advance_candidate(self, candidate: BlockCandidate, line: str, line_number: int) -> tuple[bool, list[Event]]:
+        """Feed one line to a candidate. Returns (consumed, events)."""
+        # Capture section BEFORE detect_line (which may modify it)
+        old_section = candidate.current_section
+        detection = candidate.syntax.detect_line(line, candidate)
+
+        # A new opening marker inside a block means the previous one was never closed
+        if (
+            not (detection.is_closing or detection.is_metadata_boundary)
+            and candidate.syntax.detect_line(line, None).is_opening
+        ):
+            self._candidates.remove(candidate)
+            error = self._create_error_event(
+                candidate, line_number - 1, "Block interrupted by a new opening marker", BlockErrorCode.UNCLOSED_BLOCK
+            )
+            return False, [error]
+
+        candidate.add_line(line)
+        if candidate.size > self._max_block_size:
+            self._candidates.remove(candidate)
+            error = self._create_error_event(
+                candidate, line_number, "Block size exceeded", BlockErrorCode.SIZE_EXCEEDED
+            )
+            return True, [error]
+
+        if detection.is_closing:
+            return True, self._handle_closing(candidate, line_number)
+        if detection.is_metadata_boundary:
+            return True, self._handle_boundary(candidate, line, line_number, old_section)
+        return True, [self._create_section_delta_event(candidate, line, line_number)]
+
+    def _handle_closing(self, candidate: BlockCandidate, line_number: int) -> list[Event]:
         """Handle block closing detection."""
         events: list[Event] = []
-
-        # Found closing marker
-        candidate.add_line(line)
         candidate.state = BlockState.CLOSING_DETECTED
 
         # Emit BlockContentEndEvent before extraction (if enabled)
@@ -198,9 +216,6 @@ class BlockStateMachine:
     def _handle_boundary(self, candidate: BlockCandidate, line: str, line_number: int, old_section: str) -> list[Event]:
         """Handle metadata boundary detection."""
         events: list[Event] = []
-
-        # Syntax detected a metadata boundary
-        candidate.add_line(line)
 
         # Emit section-specific delta event with boundary flag
         events.append(self._create_section_delta_event(candidate, line, line_number, is_boundary=True))
@@ -237,30 +252,6 @@ class BlockStateMachine:
 
         return events
 
-    def _handle_content(self, candidate: BlockCandidate, line: str, line_number: int) -> list[Event]:
-        """Handle regular content line."""
-        events: list[Event] = []
-
-        # Regular line inside block
-        candidate.add_line(line)
-
-        # Check size limit
-        if len(candidate.raw_text) > self._max_block_size:
-            events.append(
-                self._create_error_event(
-                    candidate,
-                    line_number,
-                    "Block size exceeded",
-                    BlockErrorCode.SIZE_EXCEEDED,
-                )
-            )
-            self._candidates.remove(candidate)
-            return events
-
-        # Emit section-specific delta event
-        events.append(self._create_section_delta_event(candidate, line, line_number))
-        return events
-
     def _check_new_blocks(self, line: str, line_number: int) -> list[Event]:
         """Check if line starts a new block."""
         events: list[Event] = []
@@ -282,7 +273,7 @@ class BlockStateMachine:
             opening_found = True
 
             # Emit BlockStartEvent
-            block_id = self.get_block_id(candidate.start_line)
+            block_id = candidate.block_id
             events.append(
                 BlockStartEvent(
                     block_id=block_id,
@@ -344,7 +335,6 @@ class BlockStateMachine:
     def reset(self) -> None:
         """Reset the state machine."""
         self._candidates.clear()
-        self._block_ids.clear()
 
     def _parse_candidate(self, candidate: BlockCandidate) -> tuple[str | None, ParseResult[BaseMetadata, BaseContent]]:
         """Extract block type, look up class, and parse the candidate.
@@ -461,7 +451,7 @@ class BlockStateMachine:
             size_bytes=len(block.raw_text),
         )
 
-        block_id = self.get_block_id(candidate.start_line)
+        block_id = candidate.block_id
 
         event = BlockEndEvent(
             block_id=block_id,
@@ -503,7 +493,7 @@ class BlockStateMachine:
             block_type=block_type,
             start_line=candidate.start_line,
             end_line=line_number,
-            size_bytes=len(candidate.raw_text),
+            size_bytes=candidate.size,
         )
 
         # Handle parse failure
@@ -557,10 +547,10 @@ class BlockStateMachine:
         Returns:
             Section-specific delta event
         """
-        block_id = self.get_block_id(candidate.start_line)
+        block_id = candidate.block_id
         section = candidate.current_section or SectionType.CONTENT
         syntax_name = get_syntax_name(candidate.syntax)
-        accumulated_size = len(candidate.raw_text)
+        accumulated_size = candidate.size
 
         if section == SectionType.HEADER:
             return BlockHeaderDeltaEvent(
@@ -619,7 +609,7 @@ class BlockStateMachine:
             exc_info=exception if exception else None,
         )
 
-        block_id = self.get_block_id(candidate.start_line)
+        block_id = candidate.block_id
 
         return BlockErrorEvent(
             block_id=block_id,
@@ -647,7 +637,7 @@ class BlockStateMachine:
         Returns:
             BlockMetadataEndEvent with parsed metadata and validation result
         """
-        block_id = self.get_block_id(candidate.start_line)
+        block_id = candidate.block_id
         syntax_name = get_syntax_name(candidate.syntax)
 
         # Get raw metadata
@@ -698,7 +688,7 @@ class BlockStateMachine:
         Returns:
             BlockContentEndEvent with parsed content and validation result
         """
-        block_id = self.get_block_id(candidate.start_line)
+        block_id = candidate.block_id
         syntax_name = get_syntax_name(candidate.syntax)
 
         # Get raw content

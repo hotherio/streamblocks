@@ -54,13 +54,7 @@ No custom models needed.
     assert block.metadata.id == "note01"
     assert block.metadata.block_type == "notes"
 
-    # Check data has raw_content from BaseContent
-    # The content preserves original formatting including empty lines
-    lines = block.content.raw_content.strip().split("\n")
-    assert len(lines) == 3  # Two text lines and one empty line between
-    assert lines[0] == "This is a simple note."
-    assert lines[1] == ""
-    assert lines[2] == "No custom models needed."
+    assert block.content.raw_content == "This is a simple note.\nNo custom models needed."
 
 
 @pytest.mark.asyncio
@@ -295,11 +289,7 @@ async def test_custom_content_preserves_raw_content() -> None:
                 extracted_blocks.append(block)
 
     block = extracted_blocks[0]
-    lines = block.content.raw_content.strip().split("\n")
-    assert len(lines) == 5
-    assert lines[0] == "- [ ] Buy groceries"
-    assert lines[2] == "- [x] Call mom"
-    assert lines[4] == "- Finish report"
+    assert block.content.raw_content == "- [ ] Buy groceries\n- [x] Call mom\n- Finish report"
 
 
 @pytest.mark.asyncio

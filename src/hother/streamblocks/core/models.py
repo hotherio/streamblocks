@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
+from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel, Field
@@ -57,6 +58,7 @@ class BlockCandidate:
     """Tracks a potential block being accumulated."""
 
     __slots__ = (
+        "block_id",
         "content_lines",
         "content_validation_error",
         "content_validation_passed",
@@ -67,6 +69,7 @@ class BlockCandidate:
         "metadata_validation_passed",
         "parsed_content",
         "parsed_metadata",
+        "size",
         "start_line",
         "state",
         "syntax",
@@ -81,7 +84,9 @@ class BlockCandidate:
         """
         self.syntax = syntax
         self.start_line = start_line
+        self.block_id = str(uuid4())
         self.lines: list[str] = []
+        self.size = 0
         self.state = BlockState.HEADER_DETECTED
         self.metadata_lines: list[str] = []
         self.content_lines: list[str] = []
@@ -98,7 +103,8 @@ class BlockCandidate:
         self.content_validation_error: str | None = None
 
     def add_line(self, line: str) -> None:
-        """Add a line to the candidate."""
+        """Add a line to the candidate, keeping ``size == len(raw_text)``."""
+        self.size += len(line) + bool(self.lines)
         self.lines.append(line)
 
     def transition_to_metadata(self) -> None:

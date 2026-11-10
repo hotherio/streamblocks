@@ -17,9 +17,9 @@ class ProcessingLimits:
     and extracting blocks. They are used as defaults in ProcessorConfig.
 
     Attributes:
-        MAX_BLOCK_SIZE: Maximum block size in bytes (1 MiB).
+        MAX_BLOCK_SIZE: Maximum block size in characters (1 MiB).
             Blocks exceeding this limit are rejected to prevent memory exhaustion.
-        MAX_LINE_LENGTH: Maximum line length in bytes (16 KiB).
+        MAX_LINE_LENGTH: Maximum line length in characters (16 KiB).
             Lines exceeding this limit are truncated to prevent memory issues.
         HASH_PREFIX_LENGTH: Number of characters used for hash computation (64).
             Used when generating block IDs from content hash.
@@ -27,10 +27,10 @@ class ProcessingLimits:
             Used for debugging and error context.
     """
 
-    #: Maximum block size in bytes (1 MiB)
+    #: Maximum block size in characters (1 MiB)
     MAX_BLOCK_SIZE: int = 1_048_576
 
-    #: Maximum line length in bytes (16 KiB)
+    #: Maximum line length in characters (16 KiB)
     MAX_LINE_LENGTH: int = 16_384
 
     #: Number of characters used for hash computation

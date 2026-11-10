@@ -34,6 +34,7 @@ class LineAccumulator:
         """
         self._max_line_length = max_line_length
         self._accumulated_text: list[str] = []
+        self._accumulated_length = 0
         self._line_counter = 0
         self._buffer: deque[str] = deque(maxlen=buffer_size)
 
@@ -57,7 +58,8 @@ class LineAccumulator:
 
         Accumulates text until newlines are found, then returns complete lines.
         Incomplete lines (text without trailing newline) are buffered for the
-        next call or finalize().
+        next call or finalize(). A trailing ``\\r`` is stripped, and the pending
+        buffer never grows beyond ``max_line_length``.
 
         Args:
             text: Text to add (may contain newlines)
@@ -66,37 +68,33 @@ class LineAccumulator:
             List of tuples (line_number, line_content) for each complete line.
             Line numbers are 1-indexed.
         """
-        if not text:
+        *complete, tail = text.split("\n")
+        if not complete:
+            self._accumulate(tail)
             return []
 
-        # Accumulate text
-        self._accumulated_text.append(text)
+        self._accumulate(complete[0])
+        complete[0] = self._take_pending()
+        self._accumulate(tail)
+        return [self._emit(line) for line in complete]
 
-        # Check if we have complete lines
-        full_text = "".join(self._accumulated_text)
-        lines = full_text.split("\n")
+    def _accumulate(self, text: str) -> None:
+        room = self._max_line_length - self._accumulated_length
+        if text and room > 0:
+            self._accumulated_text.append(text[:room])
+            self._accumulated_length += min(len(text), room)
 
-        # Keep incomplete line for next iteration
-        if not full_text.endswith("\n"):
-            self._accumulated_text = [lines[-1]]
-            lines = lines[:-1]
-        else:
-            self._accumulated_text = []
+    def _take_pending(self) -> str:
+        pending = "".join(self._accumulated_text)
+        self._accumulated_text.clear()
+        self._accumulated_length = 0
+        return pending
 
-        # Process complete lines
-        result: list[tuple[int, str]] = []
-        for line in lines:
-            # Enforce max line length
-            truncated = line[: self._max_line_length] if len(line) > self._max_line_length else line
-
-            self._line_counter += 1
-
-            # Add to recent lines buffer
-            self._buffer.append(truncated)
-
-            result.append((self._line_counter, truncated))
-
-        return result
+    def _emit(self, line: str) -> tuple[int, str]:
+        line = line[: self._max_line_length].removesuffix("\r")
+        self._line_counter += 1
+        self._buffer.append(line)
+        return (self._line_counter, line)
 
     def finalize(self) -> tuple[int, str] | None:
         """Finalize and return any remaining incomplete text as a final line.
@@ -110,25 +108,13 @@ class LineAccumulator:
         """
         if not self._accumulated_text:
             return None
-
-        final_line = "".join(self._accumulated_text)
-
-        # Enforce max line length
-        truncated = final_line[: self._max_line_length] if len(final_line) > self._max_line_length else final_line
-
-        self._line_counter += 1
-        self._buffer.append(truncated)
-
-        # Clear accumulated text
-        self._accumulated_text.clear()
-
-        return (self._line_counter, truncated)
+        return self._emit(self._take_pending())
 
     def reset(self) -> None:
         """Reset the accumulator state.
 
         Clears all accumulated text, resets line counter, and clears buffer.
         """
-        self._accumulated_text.clear()
+        self._take_pending()
         self._line_counter = 0
         self._buffer.clear()
