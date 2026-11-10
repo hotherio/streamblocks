@@ -11,3 +11,5 @@ Grammar export for constrained decoding. See the [Constrained Decoding guide](..
 ::: hother.streamblocks.grammar.gbnf
 
 ::: hother.streamblocks.grammar.sampling
+
+::: hother.streamblocks.grammar.matching

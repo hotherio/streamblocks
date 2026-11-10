@@ -17,7 +17,7 @@ The result is [GBNF](https://github.com/ggml-org/llama.cpp/blob/master/grammars/
 | Text around blocks | Any lines that cannot be mistaken for a block opening. Pass `allow_text=False` to allow blocks only. |
 | Block type | One of the registered types |
 | `id` | Letters, digits, underscores and dashes |
-| Metadata fields | Required fields present, optional fields optional, in declaration order. Enumerations, integers, numbers and booleans are typed; strings are quoted. |
+| Metadata fields | Required fields present, optional fields optional, in declaration order. Enumerations, integers, numbers and booleans are typed. In frontmatter, strings and ids may be double-quoted or written bare, as long as YAML cannot read the bare form as another type. |
 | Content | Any lines that are not a block marker, unless the content class defines its own grammar |
 | Closing marker | Always present |
 
@@ -48,6 +48,19 @@ class Answer(BaseContent):
 | `MarkdownFrontmatterSyntax` | Not yet |
 
 A custom syntax opts in by overriding `BaseSyntax.grammar_rules()`.
+
+## Keep the prompt and the grammar in agreement
+
+A grammar only helps when it allows what the model would write anyway. If the prompt shows `path: src/main.py` and the grammar insists on `path: "src/main.py"`, the model is pushed towards unlikely tokens and its output degrades. `accepts` checks that a piece of text, such as a prompt example, is allowed by the grammar:
+
+```python
+from hother.streamblocks.grammar import accepts, build_grammar
+
+grammar = build_grammar(registry)
+for block_class in registry.registered_blocks.values():
+    for example in block_class.get_examples():
+        assert accepts(grammar, registry.serialize_block(example) + "\n")
+```
 
 ## Check a grammar without a model
 

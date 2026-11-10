@@ -20,7 +20,7 @@ from hother.streamblocks import (
 )
 from hother.streamblocks.blocks.artifacts import ARTIFACT_BLOCKS
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, BlockStartEvent, Event
-from hother.streamblocks.grammar import GBNF, FieldKind, GrammarError, build_grammar, render_gbnf, sample
+from hother.streamblocks.grammar import GBNF, FieldKind, GrammarError, accepts, build_grammar, render_gbnf, sample
 from hother.streamblocks.grammar.nodes import CharSet, Grammar, Ref, choice, line_not_starting_with, optional, seq
 from hother.streamblocks.grammar.spec import block_spec
 
@@ -217,3 +217,57 @@ def test_content_class_can_constrain_content() -> None:
         if isinstance(event, BlockEndEvent)
     }
     assert contents == {"yes", "no"}
+
+
+@pytest.mark.parametrize("syntax", [XmlTagSyntax(), DelimiterFrontmatterSyntax()])
+def test_prompt_examples_are_accepted_by_the_grammar(syntax: Any) -> None:
+    """What the prompt shows a model must be text the grammar lets it write."""
+    registry = Registry(syntax=syntax, blocks=ARTIFACT_BLOCKS)
+    grammar = build_grammar(registry)
+    for block_class in ARTIFACT_BLOCKS.values():
+        for example in block_class.get_examples():
+            text = f"Here you go:\n{registry.serialize_block(example)}\nDone.\n"
+            assert accepts(grammar, text), text
+            assert not [e for e in _events(registry, text) if isinstance(e, BlockErrorEvent)]
+
+
+FRONTMATTER_FILE = "!!start\n---\nid: {id}\nblock_type: file\npath: {path}\n{extra}---\nx = 1\n!!end\n"
+
+
+@pytest.mark.parametrize(
+    ("fields", "accepted"),
+    [
+        ({"id": "main", "path": "src/main.py"}, True),
+        ({"id": '"main"', "path": '"src/main.py"'}, True),
+        ({"id": "a", "path": "README"}, True),
+        ({"id": "my-file_2", "path": "docs/My notes.md"}, True),
+        ({"id": "main", "path": "src/main.py", "extra": "language: python\noperation: overwrite\n"}, True),
+        ({"id": "main", "path": "src/main.py", "extra": 'operation: "create"\n'}, True),
+        ({"id": "nope", "path": "no way"}, True),
+        ({"id": "no", "path": "src/main.py"}, False),
+        ({"id": "main", "path": "true"}, False),
+        ({"id": "main", "path": "Null"}, False),
+        ({"id": "main", "path": "no "}, False),
+        ({"id": "main", "path": "123"}, False),
+        ({"id": "main", "path": "a: b"}, False),
+        ({"id": "main", "path": "src/main.py", "extra": "operation: delete\n"}, False),
+        ({"id": "main", "path": "src/main.py", "extra": "operation: overwrite\nlanguage: python\n"}, False),
+    ],
+)
+def test_frontmatter_grammar_accepts_natural_yaml(fields: dict[str, str], accepted: bool) -> None:
+    registry = Registry(syntax=DelimiterFrontmatterSyntax(), blocks=ARTIFACT_BLOCKS)
+    text = FRONTMATTER_FILE.format(**{"extra": "", **fields})
+    assert accepts(build_grammar(registry), text) is accepted
+    if accepted:
+        events = _events(registry, text)
+        assert [type(e).__name__ for e in events if isinstance(e, BlockEndEvent | BlockErrorEvent)] == ["BlockEndEvent"]
+
+
+def test_accepts_matches_what_the_sampler_produces() -> None:
+    registry = Registry(syntax=XmlTagSyntax(), blocks=ARTIFACT_BLOCKS)
+    grammar = build_grammar(registry)
+    rng = Random(SEED)
+    assert all(accepts(grammar, sample(grammar, rng)) for _ in range(50))
+    assert accepts(grammar, "")
+    assert not accepts(grammar, '<artifact type="file" id="a">\nx\n</artifact>\n')
+    assert not accepts(grammar, '<artifact type="file" id="a" path="a.py">\nx\n')
