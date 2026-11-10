@@ -139,6 +139,22 @@ def _avoid(prefixes: tuple[str, ...], *, first: bool = False, non_blank: bool = 
     return rest if non_blank else optional(rest)
 
 
+def without_line_break(line: Node) -> Node:
+    """The same line (or lines) as ``line``, without the final line break.
+
+    Used for the end of an answer, which a model often leaves unterminated.
+
+    Raises:
+        ValueError: If ``line`` is not a sequence ending with a line break
+    """
+    last = line.items[-1] if isinstance(line, Sequence) and line.items else None
+    if not isinstance(line, Sequence) or not isinstance(last, Literal) or not last.text.endswith(NEWLINE):
+        msg = "Expected a sequence ending with a line break"
+        raise ValueError(msg)
+    stripped = last.text.removesuffix(NEWLINE)
+    return Sequence((*line.items[:-1], Literal(stripped)) if stripped else line.items[:-1])
+
+
 class SharedLines:
     """Content-line rules for a syntax, defined once and referred to by name.
 

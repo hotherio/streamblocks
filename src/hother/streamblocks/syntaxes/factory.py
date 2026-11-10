@@ -57,7 +57,7 @@ def get_syntax_instance(
                 return DelimiterPreambleSyntax()
             case Syntax.MARKDOWN_FRONTMATTER:
                 return MarkdownFrontmatterSyntax()
-            case Syntax.XML_TAG:
+            case Syntax.XML_TAG:  # pragma: no branch - the match is exhaustive
                 return XmlTagSyntax()
 
     unchecked = cast("object", syntax)

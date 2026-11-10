@@ -259,7 +259,7 @@ class _EventIdFactory:
 
 
 _new_event_id = _EventIdFactory()
-if hasattr(os, "register_at_fork"):
+if hasattr(os, "register_at_fork"):  # pragma: no branch - absent on Windows only
     os.register_at_fork(after_in_child=_new_event_id.reset)
 
 
