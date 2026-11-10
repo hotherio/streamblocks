@@ -82,5 +82,115 @@ benign, but run sweeps only with models and prompts you trust.
 
 ## Results
 
-No results yet. The first pilot (one model, three seeds) is a smoke test of the harness, not a
-measurement; numbers will be added here with their sample sizes.
+Pilot of 10 November 2026: two local models, 11 tasks, 3 seeds, so **33 episodes per arm and per
+model** (6 to 9 per task family). Run in-process with llama-cpp-python 0.3.36 on Apple silicon,
+temperature and token limit (1200) left at the harness defaults. Intervals are 95% bootstrap
+intervals. At this sample size a difference under about 20 points between two arms is not
+established.
+
+### How the numbers were produced (read this first)
+
+The block arms were run twice. The first round is not a fair measurement and is reported only so
+the change is visible.
+
+- **Round 1** used a prompt that said blocks *can* be used, while the `fenced` and `json` arms were
+  told what they *must* write. Llama 3.1 8B answered in Markdown in most block episodes. Round 1
+  also ran with two grammar defects, since fixed in the library: an answer with no block was
+  accepted, and a line break was required after the closing marker, which pushed a model that stops
+  right there to keep writing until the token limit.
+- **Round 2** gives block arms an instruction as firm as the baselines', requires at least one block
+  in grammar arms (`min_blocks=1`), and uses the fixed grammar. The `fenced`, `json` and
+  `json+schema` records are the round 1 ones: their prompts did not change.
+
+The prompt was changed after seeing round 1 data. Round 2 is therefore a pilot result to be
+confirmed on models and seeds not used to tune the prompt.
+
+### Round 2
+
+Task pass rate, then well-formed rate.
+
+| Arm | Gemma 4 E4B (Q4_0) | Llama 3.1 8B Instruct (Q4_K_M) |
+|---|---|---|
+| `xml` | 76% [61, 88] / 91% | 36% [21, 52] / 76% |
+| `xml+grammar` | 76% [61, 88] / 91% | 39% [24, 55] / 88% |
+| `xml-noex` | 0% / 0% | 0% / 0% |
+| `xml-noex+grammar` | 48% [30, 67] / 79% | 0% / 3% |
+| `frontmatter` | 82% [67, 94] / 97% | 36% [21, 52] / 79% |
+| `frontmatter+grammar` | 82% [67, 94] / 97% | 36% [21, 52] / 85% |
+| `fenced` | 24% [9, 39] / 97% | 27% [12, 42] / 97% |
+| `json` | 42% [24, 61] / 55% | 30% [15, 45] / 39% |
+| `json+schema` | 56% [41, 72] / 94% (n=32) | 36% [21, 55] / 97% |
+
+Task pass rate by family (function 9, project 6, edit 6, verbatim 9, document 3 episodes per cell):
+
+| Model | Arm | function | project | edit | verbatim | document |
+|---|---|---|---|---|---|---|
+| Gemma | `xml` | 78% | 100% | 83% | 44% | 100% |
+| Gemma | `frontmatter` | 89% | 100% | 100% | 44% | 100% |
+| Gemma | `fenced` | 0% | 0% | 100% | 22% | 0% |
+| Gemma | `json+schema` | 88% | 100% | 33% | 0% | 100% |
+| Llama | `xml` | 22% | 100% | 0% | 33% | 33% |
+| Llama | `frontmatter` | 44% | 67% | 0% | 11% | 100% |
+| Llama | `fenced` | 22% | 33% | 67% | 11% | 0% |
+| Llama | `json+schema` | 33% | 100% | 0% | 0% | 100% |
+
+Median completion tokens on the edit family:
+
+| Arm | Gemma | Llama |
+|---|---|---|
+| `xml` | 164 (5/6 pass) | 209 (0/6) |
+| `frontmatter` | 168 (6/6) | 172 (0/6) |
+| `fenced` | 366 (6/6) | 323 (4/6) |
+| `json+schema` | 442 (2/6) | 368 (0/6) |
+
+### Against the hypotheses
+
+1. **Grammar removes malformed output: not confirmed.** With a worked example, grammar arms are 85%
+   to 97% well-formed, not 100%. The rest is truncation at the token limit, and patches that are
+   well-formed but do not apply (counted as malformed here). On Gemma the grammar changes nothing
+   once an example is given. On Llama it lifts the well-formed rate (76% to 88% for XML) without
+   lifting the task pass rate.
+2. **A worked example does most of the work: confirmed on both models.** Without one, `xml-noex` is
+   at 0% on both. Grammar rescues that arm on Gemma (48%) and not on Llama, which writes `<file ...>`
+   tags as free text until the token limit.
+3. **Blocks beat JSON on escape-heavy content: suggestive.** Both JSON arms pass 0 of 9 verbatim
+   episodes on both models; block arms pass 1 to 4 of 9. Small cells.
+4. **Fences break on documents that contain fences: confirmed.** `fenced` passes 0 of 3 on `guide`
+   on both models. Block arms pass 3 of 3 on Gemma; on Llama `frontmatter` passes 3 of 3 and `xml`
+   1 of 3.
+5. **Patches save tokens on edits: true on Gemma, false on Llama.** On Gemma, patches pass at well
+   under half the tokens of a full rewrite. On Llama every patch fails: the model fills the hunk
+   format correctly but uses it wrongly, for example replacing the existing function instead of
+   adding one after it. `fenced`, which rewrites the file, passes 4 of 6.
+6. **Grammar has a speed cost: confirmed**, about 8 against 11 to 12 tokens per second on Gemma and
+   15 against 18 on Llama. Absolute speeds vary between runs because the machine was shared.
+
+### Against StreamBlocks
+
+- Grammar arms are not at 100% well-formed (criterion 1 above).
+- On Llama 3.1 8B, block arms are **no better overall than `json+schema`** (36% to 39% against 36%),
+  and worse than `fenced` on edits. The advantage seen on Gemma (76% to 82% against 56%) does not
+  carry over to this model.
+- The first frontmatter grammar lowered the task pass rate on Gemma from 76% to 28% in round 1,
+  because it forced quoted values the model does not naturally write. Fixed since; with the fix the
+  grammar arm equals the arm without grammar.
+- A grammar cannot stand in for a prompt: without a worked example, no edit task passes on either
+  model, with or without grammar.
+
+### Round 1, for the record
+
+Block arms only, same tasks and seeds, permissive prompt and earlier grammar.
+
+| Arm | Gemma: pass / well-formed | Llama: pass / well-formed |
+|---|---|---|
+| `xml` | 79% / 97% | 0% / 3% |
+| `xml+grammar` | 79% / 97% | 6% / 12% |
+| `xml-noex` | 12% / 15% | 0% / 0% |
+| `xml-noex+grammar` | 45% / 79% | 0% / 6% |
+| `frontmatter` | 76% / 94% | 0% / 3% |
+| `frontmatter+grammar` | 28% / 62% | 6% / 9% |
+
+### Parser only
+
+400 artifacts are extracted identically under 20 random chunkings of the stream, at about 6.3 MB/s
+(measured while a model was running on the same machine).

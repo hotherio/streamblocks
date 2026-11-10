@@ -32,6 +32,10 @@ _INSTRUCTIONS = (
     "You are a coding assistant. Answer the request by writing the files it asks for. "
     "Keep any explanation to one short sentence."
 )
+_BLOCK_INSTRUCTIONS = (
+    "Write every file as a block in the format described below, and nothing else as a file. "
+    "Do not use Markdown code fences."
+)
 _FENCE_PATTERN = re.compile(r"^```(?P<path>[^\s`]+)[ \t]*\n(?P<content>.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
 _APPLY_FAILED = "APPLY_FAILED"
 _INVALID_JSON = "INVALID_JSON"
@@ -215,9 +219,9 @@ def _block_arm(name: str, registry: Registry, *, examples: bool, grammar: bool) 
     prompt = registry.to_prompt(include_examples=examples)
     return Arm(
         name=name,
-        system=f"{_INSTRUCTIONS}\n\n{prompt}",
+        system=f"{_INSTRUCTIONS}\n\n{_BLOCK_INSTRUCTIONS}\n\n{prompt}",
         reader=reader,
-        grammar=registry.to_grammar() if grammar else None,
+        grammar=registry.to_grammar(min_blocks=1) if grammar else None,
     )
 
 
