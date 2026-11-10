@@ -116,6 +116,31 @@ Markdown fenced code blocks with optional YAML frontmatter, useful when the stre
 | `fence` | `` "```" `` | Fence string |
 | `info_string` | `None` | Restricts detection to fences with this info string; also the fallback `block_type` |
 
+## XmlTagSyntax
+
+An XML-style tag whose attributes carry the metadata. It suits artifacts (files, patches, documents) written inside prose, because models follow tag conventions reliably and the content needs no escaping. The `type` attribute selects the block type (it defaults to the tag name) and every other attribute becomes a metadata field. A tag without an `id` attribute gets a stable generated id.
+
+=== "Wire format"
+
+    ```text
+    <artifact type="file" id="main" path="src/main.py">
+    Content lines here, written verbatim
+    </artifact>
+    ```
+
+=== "Usage"
+
+    ```python
+    --8<-- "src/hother/streamblocks_examples/04_blocks/06_artifact_blocks.py:setup"
+    ```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `tag` | `"artifact"` | Tag name |
+| `lenient_close` | `True` | Accept text after the closing tag on the same line and re-process it as text |
+
+The opening and closing tags must each sit on their own line: a tag in the middle of a line is not detected, and a line that looks like an opening tag inside the content interrupts the block.
+
 ## How a syntax is chosen
 
 Pass either a `Syntax` enum member or a configured instance to the registry:
@@ -136,6 +161,7 @@ registry = Registry(syntax=DelimiterFrontmatterSyntax(start_delimiter="<<begin",
 | `Syntax.DELIMITER_PREAMBLE` (default) | `DelimiterPreambleSyntax` |
 | `Syntax.DELIMITER_FRONTMATTER` | `DelimiterFrontmatterSyntax` |
 | `Syntax.MARKDOWN_FRONTMATTER` | `MarkdownFrontmatterSyntax` |
+| `Syntax.XML_TAG` | `XmlTagSyntax` |
 
 Because a registry holds a single syntax, processing one stream with several wire formats requires separate processors or a custom syntax that recognizes multiple patterns.
 
