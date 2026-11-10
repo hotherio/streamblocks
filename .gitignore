@@ -345,3 +345,6 @@ sandbox/
 
 # Auto Claude data directory
 .auto-claude/
+
+# Benchmark run outputs
+runs/
