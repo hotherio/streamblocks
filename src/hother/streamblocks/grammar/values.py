@@ -52,7 +52,7 @@ def scalar(metadata_field: MetadataField, *, string: Node, fallback: Node | None
             return _BOOLEAN
         case FieldKind.STRING:
             return string
-        case FieldKind.ANY:
+        case FieldKind.ANY:  # pragma: no branch - the match is exhaustive
             return fallback if fallback is not None else one_or_more(LINE_CHAR)
 
 

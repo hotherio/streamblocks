@@ -146,7 +146,7 @@ class BlockStateMachine:
             try:
                 consumed, candidate_events, candidate_remainder = self._advance_candidate(candidate, line, line_number)
             except Exception as exc:  # user syntaxes, parsers and validators must not kill the stream
-                if candidate in self._candidates:
+                if candidate in self._candidates:  # pragma: no branch - it may already be gone
                     self._candidates.remove(candidate)
                 consumed = True
                 candidate_remainder = None

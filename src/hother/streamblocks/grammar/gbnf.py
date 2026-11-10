@@ -44,7 +44,7 @@ def _render(node: Node) -> str:
             return " | ".join(_render(option) for option in options)
         case Repeat(item=item, minimum=minimum, maximum=maximum):
             return f"{_render_operand(item, repeated=True)}{_quantifier(minimum, maximum)}"
-        case Ref(name=name):
+        case Ref(name=name):  # pragma: no branch - the match is exhaustive
             return rule_name(name)
 
 

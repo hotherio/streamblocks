@@ -45,7 +45,7 @@ class _Matcher:
                 return {end for option in options for end in self.ends(option, start)}
             case Repeat():
                 return self._repeat(node, start)
-            case Ref(name=name):
+            case Ref(name=name):  # pragma: no branch - the match is exhaustive
                 return set(self.ends(self._grammar.rules[name], start))
 
     def _repeat(self, node: Repeat, start: int) -> set[int]:

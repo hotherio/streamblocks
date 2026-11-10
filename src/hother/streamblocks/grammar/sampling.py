@@ -35,7 +35,7 @@ def _sample(node: Node, grammar: Grammar, rng: Random) -> str:
         case Repeat(item=item, minimum=minimum, maximum=maximum):
             upper = minimum + _MAX_EXTRA_REPEATS if maximum is None else maximum
             return "".join(_sample(item, grammar, rng) for _ in range(rng.randint(minimum, upper)))
-        case Ref(name=name):
+        case Ref(name=name):  # pragma: no branch - the match is exhaustive
             return _sample(grammar.rules[name], grammar, rng)
 
 
