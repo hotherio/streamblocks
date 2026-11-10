@@ -16,13 +16,22 @@ from hother.streamblocks.grammar.nodes import (
     Node,
     Ref,
     SharedLines,
+    choice,
     line_not_starting_with,
     one_or_more,
     optional,
     seq,
 )
 from hother.streamblocks.grammar.spec import BlockSpec, GrammarError, MetadataField, SyntaxGrammar
-from hother.streamblocks.grammar.values import IDENTIFIER, IDENTIFIER_RULE, WORD, WORD_RULE, quoted_string, scalar
+from hother.streamblocks.grammar.values import (
+    IDENTIFIER,
+    IDENTIFIER_RULE,
+    WORD,
+    WORD_RULE,
+    quoted_string,
+    scalar,
+    word_not_in,
+)
 from hother.streamblocks.syntaxes.base import BaseSyntax, YAMLFrontmatterMixin
 
 if TYPE_CHECKING:
@@ -36,6 +45,35 @@ _WORD_PATTERN = re.compile(r"^\w+$")
 
 # Characters a double-quoted YAML string cannot hold without escaping
 _YAML_STRING_EXCLUDED = "\\\n"
+
+# Bare words that YAML reads as a boolean or null instead of a string
+_YAML_KEYWORDS = tuple(
+    variant
+    for word in ("true", "false", "yes", "no", "on", "off", "null")
+    for variant in (word, word.capitalize(), word.upper())
+)
+_BARE_WORD_PATTERN = re.compile(r"^[A-Za-z][\w-]*$")
+_LETTERS = (("A", "Z"), ("a", "z"))
+_DIGITS = (("0", "9"),)
+
+# An unquoted identifier, as models naturally write it: `id: main`
+_YAML_IDENTIFIER_RULE = "yaml-identifier"
+_YAML_IDENTIFIER = word_not_in(
+    _YAML_KEYWORDS,
+    first=CharSet(chars="_", ranges=_LETTERS),
+    rest=CharSet(chars="_-", ranges=(*_LETTERS, *_DIGITS)),
+)
+
+# An unquoted string, as models naturally write it: `path: src/main.py`, `title: Release notes`.
+# It starts with a letter, "_" or "/" (so it is never a number or a date) and avoids YAML's
+# indicator characters.
+_YAML_STRING_RULE = "yaml-string"
+_YAML_STRING = word_not_in(
+    _YAML_KEYWORDS,
+    first=CharSet(chars="_/", ranges=_LETTERS),
+    rest=CharSet(chars=" \t\n:#\"'{}[],&*!|>%@`", negated=True),
+    space=CharSet(chars=" "),
+)
 
 # Minimum lines required for a block (header + closing delimiter)
 _MIN_BLOCK_LINES = 2
@@ -561,9 +599,9 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         rules: dict[str, Node] = {}
         for block in blocks:
             rules[block.block_type] = seq(
-                f'{self.start_delimiter}\n---\nid: "',
-                Ref(IDENTIFIER_RULE),
-                f'"\nblock_type: {block.block_type}\n',
+                f"{self.start_delimiter}\n---\nid: ",
+                choice(seq('"', Ref(IDENTIFIER_RULE), '"'), Ref(_YAML_IDENTIFIER_RULE)),
+                f"\nblock_type: {block.block_type}\n",
                 *(self._field_line(metadata_field) for metadata_field in block.fields),
                 "---\n",
                 block.content(line),
@@ -572,21 +610,28 @@ class DelimiterFrontmatterSyntax(BaseSyntax, YAMLFrontmatterMixin):
         return SyntaxGrammar(
             text_line=line_not_starting_with(self.start_delimiter),
             blocks=rules,
-            shared={**line.rules, IDENTIFIER_RULE: IDENTIFIER},
+            shared={
+                **line.rules,
+                IDENTIFIER_RULE: IDENTIFIER,
+                _YAML_IDENTIFIER_RULE: _YAML_IDENTIFIER,
+                _YAML_STRING_RULE: _YAML_STRING,
+            },
         )
 
     @staticmethod
     def _field_line(metadata_field: MetadataField) -> Node:
         """One ``name: value`` frontmatter line, optional when the field is."""
         if metadata_field.choices:
-            value: Node = seq(*_quoted_choices(metadata_field.choices))
+            value: Node = _yaml_choices(metadata_field.choices)
         else:
-            string = quoted_string(_YAML_STRING_EXCLUDED, non_empty=metadata_field.non_empty)
-            value = scalar(metadata_field, string=string)
+            quoted = quoted_string(_YAML_STRING_EXCLUDED, non_empty=metadata_field.non_empty)
+            value = scalar(metadata_field, string=choice(quoted, Ref(_YAML_STRING_RULE)))
         field_line = seq(f"{metadata_field.name}: ", value, "\n")
         return field_line if metadata_field.required else optional(field_line)
 
 
-def _quoted_choices(choices: tuple[str, ...]) -> tuple[Node]:
-    """Enum values as double-quoted YAML strings, so they are never read as another type."""
-    return (Choice(tuple(Literal(f'"{value}"') for value in choices)),)
+def _yaml_choices(choices: tuple[str, ...]) -> Node:
+    """Enum values, double-quoted or bare when YAML cannot read the bare form as another type."""
+    quoted = [Literal(f'"{value}"') for value in choices]
+    bare = [Literal(value) for value in choices if _BARE_WORD_PATTERN.match(value) and value not in _YAML_KEYWORDS]
+    return Choice((*quoted, *bare))

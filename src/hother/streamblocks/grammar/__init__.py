@@ -8,6 +8,7 @@ case.
 
 from hother.streamblocks.grammar.compiler import GBNF, build_grammar, compile_grammar
 from hother.streamblocks.grammar.gbnf import render_gbnf
+from hother.streamblocks.grammar.matching import accepts
 from hother.streamblocks.grammar.nodes import Grammar
 from hother.streamblocks.grammar.sampling import sample
 from hother.streamblocks.grammar.spec import (
@@ -28,6 +29,7 @@ __all__ = [
     "LineFactory",
     "MetadataField",
     "SyntaxGrammar",
+    "accepts",
     "build_grammar",
     "compile_grammar",
     "render_gbnf",
