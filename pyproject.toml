@@ -225,6 +225,11 @@ line-ending = "auto"
     "RET504",  # Unnecessary assignment before return (readability in hooks)
     "PLR0911", # Too many return statements (complex hook logic)
 ]
+"benchmarks/**/*" = [
+    "S101",    # Use of assert (benchmark self-checks)
+    "S603",    # subprocess call (task checks run generated code in a subprocess)
+    "S311",    # Pseudo-random generators (seeded bootstrap and sampling, not cryptography)
+]
 "tests/**/*" = [
     "S101",    # Use of assert
     "S110",    # try-except-pass (acceptable in tests)
