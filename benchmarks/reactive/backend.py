@@ -27,8 +27,8 @@ class Backend(Protocol):
         """Generate the next piece of the turn, or None when the model ends it."""
         ...
 
-    def inject(self, text: str) -> None:
-        """Append `text` to the turn in progress; generation continues after it."""
+    def inject(self, text: str) -> int:
+        """Append `text` to the turn in progress; generation continues after it. Returns tokens appended."""
         ...
 
 
@@ -58,6 +58,7 @@ class ScriptedBackend:
     def next_piece(self) -> str | None:
         return self._pending.pop(0) if self._pending else None
 
-    def inject(self, text: str) -> None:
+    def inject(self, text: str) -> int:
         self.injected.append(text)
         self._pending = list(self._after_inject)
+        return len(text.split())

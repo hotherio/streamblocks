@@ -60,8 +60,10 @@ class LlamaCppBackend:
         self._llm.eval([token])
         return self._decoder.decode(self._llm.detokenize([token]))
 
-    def inject(self, text: str) -> None:
-        self._llm.eval(self._llm.tokenize(text.encode(), add_bos=False, special=False))
+    def inject(self, text: str) -> int:
+        tokens = self._llm.tokenize(text.encode(), add_bos=False, special=False)
+        self._llm.eval(tokens)
+        return len(tokens)
 
     def _special(self, token: int) -> str:
         return self._llm.detokenize([token], special=True).decode()
