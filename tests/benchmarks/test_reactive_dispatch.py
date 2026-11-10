@@ -2,7 +2,7 @@
 
 from benchmarks.reactive.backend import ScriptedBackend
 from benchmarks.reactive.clock import CostModel
-from benchmarks.reactive.dispatch import Scenario, WorldEvent, run_episode
+from benchmarks.reactive.dispatch import Repair, Scenario, WorldEvent, run_episode
 from benchmarks.reactive.loop import Delivery
 
 ONE_PIECE_PER_SECOND = CostModel(decode_tps=1, prefill_tps=float("inf"), call_overhead_s=0)
@@ -57,3 +57,19 @@ def test_an_idle_model_is_woken_when_the_event_happens() -> None:
     assert episode.compliant
     assert (episode.stale_actions, episode.llm_calls, episode.reaction_latency_s) == (0, 2, 0.0)
     assert episode.virtual_time_s == LATE.events[0].at_s + len(REPAIR)
+
+
+def test_a_named_event_lists_the_jobs_the_offline_worker_had() -> None:
+    backend = ScriptedBackend([ROUND_ROBIN], after_inject=WITHOUT_CY)
+    run_episode(backend, SCENARIO, Delivery.INJECT, cost=ONE_PIECE_PER_SECOND, repair=Repair.NAMED)
+
+    assert backend.injected == [
+        "!!e1:event\ncy went offline.\nAssign these jobs again, they were given to cy: J3.\n!!end\n"
+    ]
+
+
+def test_a_state_event_lists_every_current_assignment() -> None:
+    backend = ScriptedBackend([ROUND_ROBIN], after_inject=WITHOUT_CY)
+    run_episode(backend, SCENARIO, Delivery.INJECT, cost=ONE_PIECE_PER_SECOND, repair=Repair.STATE)
+
+    assert backend.injected[0].splitlines()[2:6] == ["Current assignments:", "J1 -> ana", "J2 -> ben", "J3 -> cy"]

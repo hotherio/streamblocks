@@ -125,6 +125,22 @@ per cell. Compliant episodes, then totals over the cell: stale actions and model
 So the next question for this scenario is repair, not delivery: whether an event that names the jobs
 to move, or a state block listing current assignments, gets them moved.
 
+### Repair
+
+`--repair` changes what an event says about work already done. `plain` (above) says only what changed.
+`named` adds the jobs to move ("Assign these jobs again, they were given to cy: J3, J6."). `state` adds
+the full list of current assignments and leaves the model to find them.
+
+Hypotheses, written before the run. "Offline episodes" are the 12 per cell with a worker going offline.
+
+1. With `named`, `inject` and `cancel_resend` pass at least 6 of 12 offline episodes on at least one
+   model (0 of 12 with `plain`).
+2. `state` passes fewer offline episodes than `named`, and more than `plain`.
+3. Neither variant raises stale actions for `inject` above its `plain` total.
+
+Against injection: `named` still at 0 of 12 for `inject` on both models. Then a model told exactly what
+to redo still cannot go back inside its own turn, and repair needs a new turn.
+
 ## Limits
 
 - Five scenarios, 15 episodes per cell: enough for a go/no-go, not for effect sizes.

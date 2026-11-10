@@ -34,6 +34,7 @@ EXTRA_COLUMNS = {
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--scenario", choices=sorted(MODULES), default="steering")
+    parser.add_argument("--repair", choices=[r.value for r in dispatch.Repair], help="dispatch only")
     parser.add_argument("--backend", choices=["llamacpp", "pie"], default="llamacpp")
     parser.add_argument("--model", help="llamacpp: path to a GGUF model. pie: label of the model `pie serve` runs")
     parser.add_argument("--summarize", type=Path, help="Print the summary of an existing run and exit")
@@ -59,6 +60,7 @@ def main() -> None:
     out_path = args.out or Path(f"runs/reactive/{args.scenario}.jsonl")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     episodes: list[Record] = []
+    options = {"repair": dispatch.Repair(args.repair)} if args.repair else {}
     tags = {"scenario": args.scenario, "backend": args.backend, "model": Path(args.model).name, "cost": args.cost}
     with out_path.open("a") as out:
         for rep in range(args.reps):
@@ -66,7 +68,7 @@ def main() -> None:
                 for delivery in Delivery:
                     backend.set_seed(rep)
                     episode = module.run_episode(
-                        backend, scenario, delivery, max_tokens=args.max_tokens, cost=COSTS[args.cost]
+                        backend, scenario, delivery, max_tokens=args.max_tokens, cost=COSTS[args.cost], **options
                     )
                     episodes.append(episode)
                     out.write(json.dumps({**tags, "seed": rep, **asdict(episode)}) + "\n")
