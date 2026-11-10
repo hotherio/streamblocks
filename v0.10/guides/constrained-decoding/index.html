@@ -880,6 +880,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keep-the-prompt-and-the-grammar-in-agreement" class="md-nav__link">
+    <span class="md-ellipsis">
+      Keep the prompt and the grammar in agreement
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#check-a-grammar-without-a-model" class="md-nav__link">
     <span class="md-ellipsis">
       Check a grammar without a model
@@ -1705,6 +1714,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keep-the-prompt-and-the-grammar-in-agreement" class="md-nav__link">
+    <span class="md-ellipsis">
+      Keep the prompt and the grammar in agreement
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#check-a-grammar-without-a-model" class="md-nav__link">
     <span class="md-ellipsis">
       Check a grammar without a model
@@ -1763,7 +1781,7 @@
 </tr>
 <tr>
 <td>Metadata fields</td>
-<td>Required fields present, optional fields optional, in declaration order. Enumerations, integers, numbers and booleans are typed; strings are quoted.</td>
+<td>Required fields present, optional fields optional, in declaration order. Enumerations, integers, numbers and booleans are typed. In frontmatter, strings and ids may be double-quoted or written bare, as long as YAML cannot read the bare form as another type.</td>
 </tr>
 <tr>
 <td>Content</td>
@@ -1815,17 +1833,26 @@
 </tbody>
 </table>
 <p>A custom syntax opts in by overriding <code>BaseSyntax.grammar_rules()</code>.</p>
+<h2 id="keep-the-prompt-and-the-grammar-in-agreement">Keep the prompt and the grammar in agreement</h2>
+<p>A grammar only helps when it allows what the model would write anyway. If the prompt shows <code>path: src/main.py</code> and the grammar insists on <code>path: "src/main.py"</code>, the model is pushed towards unlikely tokens and its output degrades. <code>accepts</code> checks that a piece of text, such as a prompt example, is allowed by the grammar:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">hother.streamblocks.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">accepts</span><span class="p">,</span> <span class="n">build_grammar</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">grammar</span> <span class="o">=</span> <span class="n">build_grammar</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">for</span> <span class="n">block_class</span> <span class="ow">in</span> <span class="n">registry</span><span class="o">.</span><span class="n">registered_blocks</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">block_class</span><span class="o">.</span><span class="n">get_examples</span><span class="p">():</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="k">assert</span> <span class="n">accepts</span><span class="p">(</span><span class="n">grammar</span><span class="p">,</span> <span class="n">registry</span><span class="o">.</span><span class="n">serialize_block</span><span class="p">(</span><span class="n">example</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
 <h2 id="check-a-grammar-without-a-model">Check a grammar without a model</h2>
 <p><code>hother.streamblocks.grammar.sample</code> draws random strings from a grammar. Feeding them to the processor verifies that everything the grammar allows is extracted cleanly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Anything the grammar can produce is extracted with no malformed block</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">rng</span> <span class="o">=</span> <span class="n">Random</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">blocks</span> <span class="o">=</span> <span class="n">errors</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">SAMPLES</span><span class="p">):</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">processor</span> <span class="o">=</span> <span class="n">StreamBlockProcessor</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">build_grammar</span><span class="p">(</span><span class="n">registry</span><span class="p">),</span> <span class="n">rng</span><span class="p">)</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">events</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">processor</span><span class="o">.</span><span class="n">process_chunk</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="o">*</span><span class="n">processor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()]</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">blocks</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockEndEvent</span><span class="p">)</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">errors</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockErrorEvent</span><span class="p">)</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Anything the grammar can produce is extracted with no malformed block</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">rng</span> <span class="o">=</span> <span class="n">Random</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">blocks</span> <span class="o">=</span> <span class="n">errors</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">SAMPLES</span><span class="p">):</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">processor</span> <span class="o">=</span> <span class="n">StreamBlockProcessor</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">build_grammar</span><span class="p">(</span><span class="n">registry</span><span class="p">),</span> <span class="n">rng</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">events</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">processor</span><span class="o">.</span><span class="n">process_chunk</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="o">*</span><span class="n">processor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()]</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">blocks</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockEndEvent</span><span class="p">)</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">)</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">errors</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">BlockErrorEvent</span><span class="p">)</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">)</span>
 </code></pre></div>
 
 
