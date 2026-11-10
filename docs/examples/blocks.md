@@ -8,6 +8,12 @@ The built-in artifact blocks shipped with the library (`hother.streamblocks.bloc
 
 #! src/hother/streamblocks_examples/04_blocks/06_artifact_blocks.py
 
+## Guarded Generation
+
+Stream validators reject an artifact from its opening line (a file outside the allowed directories) and stop the stream, so a model does not keep generating output that will be discarded.
+
+#! src/hother/streamblocks_examples/04_blocks/07_guarded_generation.py
+
 ## Patch Content
 
 A deep dive into `PatchContent` with various patch formats (unified diff, search/replace, ...), showing how patch blocks are parsed and applied.
