@@ -18,7 +18,7 @@ from hother.streamblocks import (
     StreamBlockProcessor,
     XmlTagSyntax,
 )
-from hother.streamblocks.blocks.artifacts import ARTIFACT_BLOCKS
+from hother.streamblocks.blocks.artifacts import ARTIFACT_BLOCKS, FileArtifact
 from hother.streamblocks.core.types import BlockEndEvent, BlockErrorEvent, BlockStartEvent, Event
 from hother.streamblocks.grammar import GBNF, FieldKind, GrammarError, accepts, build_grammar, render_gbnf, sample
 from hother.streamblocks.grammar.nodes import CharSet, Grammar, Ref, choice, line_not_starting_with, optional, seq
@@ -26,6 +26,7 @@ from hother.streamblocks.grammar.spec import block_spec
 
 SAMPLES = 300
 MIN_BLOCKS = 100
+REQUIRED_BLOCKS = 2
 SEED = 20261110
 
 
@@ -143,7 +144,7 @@ def test_syntax_without_grammar_support() -> None:
 def test_to_grammar_output_shape() -> None:
     text = Registry(syntax=XmlTagSyntax(), blocks=ARTIFACT_BLOCKS).to_grammar(dialect=GBNF)
     lines = text.splitlines()
-    assert lines[0] == "root ::= (block | text-line)*"
+    assert lines[0] == "root ::= (block | text-line)* last-line?"
     assert "block ::= block-file | block-patch | block-document" in lines
     assert any(line.startswith('block-file ::= "<artifact type=\\"file\\" id=\\"" identifier') for line in lines)
     assert '("create" | "overwrite")' in text
@@ -271,3 +272,42 @@ def test_accepts_matches_what_the_sampler_produces() -> None:
     assert accepts(grammar, "")
     assert not accepts(grammar, '<artifact type="file" id="a">\nx\n</artifact>\n')
     assert not accepts(grammar, '<artifact type="file" id="a" path="a.py">\nx\n')
+
+
+@pytest.mark.parametrize("syntax", [XmlTagSyntax(), DelimiterFrontmatterSyntax()])
+@pytest.mark.parametrize("allow_text", [True, False])
+def test_min_blocks_requires_blocks(syntax: Any, allow_text: bool) -> None:
+    registry = Registry(syntax=syntax, blocks=ARTIFACT_BLOCKS)
+    block = registry.serialize_block(FileArtifact.get_examples()[0]) + "\n"
+    grammar = build_grammar(registry, allow_text=allow_text, min_blocks=REQUIRED_BLOCKS)
+
+    assert not accepts(grammar, "")
+    assert not accepts(grammar, block)
+    assert accepts(grammar, block * REQUIRED_BLOCKS)
+    assert accepts(grammar, block * (REQUIRED_BLOCKS + 1))
+    assert accepts(grammar, f"Sure.\n{block}and\n{block}Done.\n") is allow_text
+    assert not accepts(grammar, "Only prose.\n")
+
+    rng = Random(SEED)
+    for _ in range(SAMPLES):
+        ended = [e for e in _events(registry, sample(grammar, rng)) if isinstance(e, BlockEndEvent)]
+        assert len(ended) >= REQUIRED_BLOCKS
+
+
+def test_min_blocks_must_not_be_negative() -> None:
+    registry = Registry(syntax=XmlTagSyntax(), blocks=ARTIFACT_BLOCKS)
+    with pytest.raises(GrammarError, match="min_blocks"):
+        registry.to_grammar(min_blocks=-1)
+
+
+@pytest.mark.parametrize("syntax", [XmlTagSyntax(), DelimiterFrontmatterSyntax()])
+def test_last_text_line_may_be_unterminated(syntax: Any) -> None:
+    """A model that stops right after its last word must not be forced to keep writing."""
+    registry = Registry(syntax=syntax, blocks=ARTIFACT_BLOCKS)
+    grammar = build_grammar(registry)
+    block = registry.serialize_block(FileArtifact.get_examples()[0])
+
+    assert accepts(grammar, "Done.")
+    assert accepts(grammar, f"Here you go:\n{block}\nDone.")
+    assert not accepts(grammar, f"Here you go:\n{block}")
+    assert not accepts(build_grammar(registry, allow_text=False), f"{block}\nDone.")

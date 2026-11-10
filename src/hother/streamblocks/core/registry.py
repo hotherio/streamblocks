@@ -132,7 +132,7 @@ class Registry:
         """Read-only view of registered block types mapped to block classes."""
         return MappingProxyType(self._block_classes)
 
-    def to_grammar(self, *, dialect: str = GBNF, allow_text: bool = True) -> str:
+    def to_grammar(self, *, dialect: str = GBNF, allow_text: bool = True, min_blocks: int = 0) -> str:
         """Generate a grammar that constrains a model to this registry's blocks.
 
         Pass the result to a server that supports grammar-constrained decoding
@@ -144,6 +144,8 @@ class Registry:
             dialect: Grammar dialect (``"gbnf"``)
             allow_text: Allow free text around blocks. Disable to force the
                 output to consist of blocks only.
+            min_blocks: Number of blocks the output must contain at least.
+                Without it a model is free to answer in plain text only.
 
         Returns:
             The grammar text
@@ -152,7 +154,7 @@ class Registry:
             GrammarError: If no block is registered or the dialect is unknown
             NotImplementedError: If the syntax does not support grammars
         """
-        return compile_grammar(self, dialect=dialect, allow_text=allow_text)
+        return compile_grammar(self, dialect=dialect, allow_text=allow_text, min_blocks=min_blocks)
 
     def to_prompt(self, *, include_examples: bool = True, template_version: str = "default") -> str:
         """Generate an LLM system prompt documenting all registered blocks.
