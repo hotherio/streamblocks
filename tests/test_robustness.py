@@ -67,3 +67,13 @@ def test_raising_validator_becomes_block_error() -> None:
 def test_chunking_does_not_change_blocks(lines: list[str], cuts: list[int]) -> None:
     text = "\n".join(lines)
     assert _outcomes(_run(text, tuple(cuts))) == _outcomes(_run(text))
+
+
+def test_event_ids_are_unique_uuids() -> None:
+    from uuid import UUID
+
+    from hother.streamblocks.core.types import TextContentEvent
+
+    ids = {TextContentEvent(content="", line_number=1).event_id for _ in range(100)}
+    assert len(ids) == 100
+    assert all(UUID(i) for i in ids)

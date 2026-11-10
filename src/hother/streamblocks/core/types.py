@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import itertools
+import os
 import time
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, Self
 from uuid import uuid4
@@ -195,6 +198,25 @@ class SectionType(StrEnum):
 # ============== Base Event ==============
 
 
+class _EventIdFactory:
+    """UUID-shaped ids from a random per-process prefix and a counter (uuid4() per event was a hotspot)."""
+
+    def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        self._prefix = str(uuid4())[:24]
+        self._counter = itertools.count()
+
+    def __call__(self) -> str:
+        return f"{self._prefix}{next(self._counter):012x}"
+
+
+_new_event_id = _EventIdFactory()
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_new_event_id.reset)
+
+
 class BaseEvent(BaseModel):
     """Base class for all StreamBlocks events.
 
@@ -208,7 +230,7 @@ class BaseEvent(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     timestamp: int = Field(default_factory=lambda: int(time.time() * 1000))
-    event_id: str = Field(default_factory=lambda: str(uuid4()))
+    event_id: str = Field(default_factory=_new_event_id)
     raw_event: Any | None = None
 
 
@@ -460,7 +482,8 @@ Event = Annotated[
 # ============== Detection/Parse Results ==============
 
 
-class DetectionResult(BaseModel):
+@dataclass(slots=True)
+class DetectionResult:
     """Result from syntax detection attempt."""
 
     is_opening: bool = False

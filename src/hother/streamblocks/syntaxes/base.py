@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+import functools
 import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
@@ -11,6 +13,7 @@ from pydantic import ValidationError
 
 # Import BaseMetadata at module level for runtime isinstance checks
 from hother.streamblocks.core.types import BaseMetadata, ParseResult
+from hother.streamblocks.core.utils import load_yaml
 
 if TYPE_CHECKING:
     from hother.streamblocks.core.models import Block, BlockCandidate, ExtractedBlock
@@ -18,6 +21,15 @@ if TYPE_CHECKING:
 
 # Module-level logger for debugging YAML parsing failures
 _logger = logging.getLogger(__name__)
+
+
+@functools.lru_cache(maxsize=8)
+def _load_metadata_yaml(text: str) -> tuple[Any, yaml.YAMLError | None]:
+    """Parse metadata once even though syntaxes ask for it several times per block."""
+    try:
+        return load_yaml(text) or {}, None
+    except yaml.YAMLError as e:
+        return {}, e
 
 
 class YAMLFrontmatterMixin:
@@ -47,17 +59,11 @@ class YAMLFrontmatterMixin:
         if not metadata_lines:
             return None
         yaml_content = "\n".join(metadata_lines)
-        try:
-            return yaml.safe_load(yaml_content) or {}
-        except yaml.YAMLError as e:
-            # Log parse failure for debugging
-            _logger.debug(
-                "YAML parse failed: %s (lines=%d, preview=%s)",
-                str(e),
-                len(metadata_lines),
-                yaml_content[:100] if yaml_content else "",
-            )
+        data, error = _load_metadata_yaml(yaml_content)
+        if error:
+            _logger.debug("YAML parse failed: %s (lines=%d)", error, len(metadata_lines))
             return None
+        return copy.deepcopy(data)
 
     def _parse_yaml_metadata_strict(self, metadata_lines: list[str]) -> tuple[dict[str, Any], Exception | None]:
         """Parse YAML, returning both result and exception.
@@ -72,11 +78,8 @@ class YAMLFrontmatterMixin:
         """
         if not metadata_lines:
             return {}, None
-        yaml_content = "\n".join(metadata_lines)
-        try:
-            return yaml.safe_load(yaml_content) or {}, None
-        except yaml.YAMLError as e:
-            return {}, e
+        data, error = _load_metadata_yaml("\n".join(metadata_lines))
+        return copy.deepcopy(data), error
 
 
 class BaseSyntax(ABC):
