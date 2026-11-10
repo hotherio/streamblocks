@@ -484,12 +484,23 @@ Event = Annotated[
 
 @dataclass(slots=True)
 class DetectionResult:
-    """Result from syntax detection attempt."""
+    """Result from syntax detection attempt.
+
+    Attributes:
+        is_opening: The line opens a new block.
+        is_closing: The line closes the active block.
+        is_metadata_boundary: The line is a metadata section boundary.
+        metadata: Inline metadata parsed from the opening line, if any.
+        remainder: Text following a closing marker on the same line (for
+            example ``Your text`` in ``!!endYour text``). It must be a suffix
+            of the line; the state machine re-processes it as a new line.
+    """
 
     is_opening: bool = False
     is_closing: bool = False
     is_metadata_boundary: bool = False
     metadata: dict[str, Any] | None = None
+    remainder: str | None = None
 
 
 class ParseResult[TMetadata: BaseMetadata, TContent: BaseContent](BaseModel):

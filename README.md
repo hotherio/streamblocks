@@ -49,38 +49,93 @@ pip install streamblocks
 
 ```python
 import asyncio
-from streamblocks import BlockRegistry, DelimiterPreambleSyntax, StreamBlockProcessor, EventType
-from streamblocks.content import FileOperationsContent, FileOperationsMetadata
+from collections.abc import AsyncIterator
 
-async def main():
-    registry = BlockRegistry()
-    syntax = DelimiterPreambleSyntax(
-        metadata_class=FileOperationsMetadata,
-        content_class=FileOperationsContent,
-    )
-    registry.register_syntax(syntax, block_types=["files_operations"])
-    processor = StreamBlockProcessor(registry)
+from hother.streamblocks import BlockEndEvent, Registry, StreamBlockProcessor
 
-    async def text_stream():
-        yield "!!file01:files_operations\n"
-        yield "src/main.py:C\n"
+
+async def main() -> None:
+    # The default syntax is `!!<id>:<type>` ... `!!end`
+    processor = StreamBlockProcessor(Registry())
+
+    async def text_stream() -> AsyncIterator[str]:
+        yield "Here is the file you asked for:\n"
+        yield "!!file01:note\n"
+        yield "hello world\n"
         yield "!!end\n"
 
     async for event in processor.process_stream(text_stream()):
-        if event.type == EventType.BLOCK_END:
-            print(f"Block extracted: {event.block_id}")
+        if isinstance(event, BlockEndEvent):
+            print(f"Block extracted: {event.block_type} -> {event.content['raw_content']!r}")
+
 
 asyncio.run(main())
 ```
 
 ## More Examples
 
+### Typed Blocks
+
+Describe a block with Pydantic models and register it. Metadata and content are validated when the block closes.
+
+```python
+import asyncio
+from collections.abc import AsyncIterator
+
+from hother.streamblocks import (
+    BaseContent,
+    BaseMetadata,
+    Block,
+    BlockEndEvent,
+    DelimiterFrontmatterSyntax,
+    Registry,
+    StreamBlockProcessor,
+)
+
+
+class TaskMetadata(BaseMetadata):
+    title: str = "Untitled"
+    priority: str = "normal"
+
+
+class TaskContent(BaseContent):
+    description: str = ""
+
+    @classmethod
+    def parse(cls, raw_text: str) -> "TaskContent":
+        return cls(raw_content=raw_text, description=raw_text.strip())
+
+
+TaskBlock = Block[TaskMetadata, TaskContent]
+
+
+async def main() -> None:
+    registry = Registry(syntax=DelimiterFrontmatterSyntax())
+    registry.register("task", TaskBlock)
+    processor = StreamBlockProcessor(registry)
+
+    async def text_stream() -> AsyncIterator[str]:
+        yield "!!start\n---\nid: task-1\nblock_type: task\ntitle: Fix bug\npriority: high\n---\n"
+        yield "Fix the login issue\n!!end\n"
+
+    async for event in processor.process_stream(text_stream()):
+        if isinstance(event, BlockEndEvent):
+            block = event.get_block()
+            if block:
+                print(block.metadata.title, "-", block.content.description)
+
+
+asyncio.run(main())
+```
+
 ### Processing AI Provider Streams
 
 ```python
 from google import genai
-from streamblocks import StreamBlockProcessor
 
+from hother.streamblocks import BlockEndEvent, BlockStartEvent, Registry, StreamBlockProcessor
+
+processor = StreamBlockProcessor(Registry())
 client = genai.Client(api_key="...")
 response = await client.aio.models.generate_content_stream(
     model="gemini-2.5-flash",
@@ -89,20 +144,19 @@ response = await client.aio.models.generate_content_stream(
 
 # Adapter auto-detected for Gemini streams
 async for event in processor.process_stream(response):
-    match event.type:
-        case EventType.BLOCK_START:
-            print(f"Block started: {event.block_id}")
-        case EventType.BLOCK_END:
-            print(f"Block complete: {event.block_id}")
+    if isinstance(event, BlockStartEvent):
+        print(f"Block started: {event.block_id}")
+    elif isinstance(event, BlockEndEvent):
+        print(f"Block complete: {event.block_id}")
 ```
 
 ### Event Handling Pattern
 
 ```python
+from hother.streamblocks import EventType
+
 async for event in processor.process_stream(stream):
     match event.type:
-        case EventType.STREAM_STARTED:
-            print("Processing started")
         case EventType.TEXT_DELTA:
             print(event.delta, end="")
         case EventType.BLOCK_START:
@@ -111,25 +165,24 @@ async for event in processor.process_stream(stream):
             print(event.delta, end="")
         case EventType.BLOCK_END:
             print(f"\n[Block {event.block_id} complete]")
-        case EventType.STREAM_FINISHED:
-            print("\nDone")
+        case EventType.BLOCK_ERROR:
+            print(f"\n[Block rejected: {event.reason}]")
 ```
 
 ### Using Markdown Frontmatter Syntax
 
 ```python
-from streamblocks import MarkdownFrontmatterSyntax
+from hother.streamblocks import MarkdownFrontmatterSyntax, Registry, StreamBlockProcessor
 
-syntax = MarkdownFrontmatterSyntax(
-    metadata_class=CodeBlockMetadata,
-    content_class=CodeBlockContent,
-)
-registry.register_syntax(syntax, block_types=["python", "javascript"])
+# Each registry holds exactly one syntax
+registry = Registry(syntax=MarkdownFrontmatterSyntax(fence="```", info_string="python"))
+processor = StreamBlockProcessor(registry)
 
 # Detects blocks like:
 # ```python
 # ---
-# name: example
+# id: example
+# block_type: python
 # ---
 # print("hello")
 # ```
