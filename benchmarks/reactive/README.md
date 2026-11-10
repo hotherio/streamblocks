@@ -101,10 +101,35 @@ Hypotheses, written before the first run (15 episodes per cell, `local` cost mod
 
 Against injection: more stale actions than `turn_boundary`, or failing hypothesis 2 on both models.
 
+Run of 2026-11-10, llama.cpp, temperature 0.7, 15 episodes per cell (5 scenarios × 3 seeds), 150 jobs
+per cell. Compliant episodes, then totals over the cell: stale actions and model calls.
+
+| Model | `turn_boundary` | `cancel_resend` | `inject` |
+|---|---|---|---|
+| Gemma 4 E4B (Q4_0) | 3/15 · 36 stale · 30 calls | 3/15 · 11 stale · 36 calls | 3/15 · 15 stale · 15 calls |
+| Llama 3.1 8B (Q4_K_M) | 8/15 · 38 stale · 30 calls | 3/15 · 7 stale · 36 calls | 3/15 · 16 stale · 15 calls |
+
+- **Hypothesis 1 holds.** Reacting inside the stream cuts stale actions by more than half against
+  waiting for the end of the turn (median per episode: 1 against 2).
+- **Hypothesis 2 holds only at the floor, so it says nothing.** In every delivery the only scenario that
+  reliably passes is the cancelled job, which needs no repair.
+- **Hypothesis 3 holds.** `inject` uses one call per episode and evaluates about 270–280 prompt tokens,
+  against 720–840 for the other two.
+- **Not predicted: models told mid-stream stop using an offline worker but do not go back.** Jobs already
+  given to that worker stay there. Told at the end of the turn, Llama rewrites the plan and passes 5 of 12
+  offline episodes; interrupted or injected, neither model passes any. Reacting early prevents new
+  mistakes and does not repair old ones.
+- `cancel_resend` has fewer stale actions than `inject` on Llama (7 against 16), mostly in the scenarios
+  with two events.
+
+So the next question for this scenario is repair, not delivery: whether an event that names the jobs
+to move, or a state block listing current assignments, gets them moved.
+
 ## Limits
 
 - Five scenarios, 15 episodes per cell: enough for a go/no-go, not for effect sizes.
 - The regex check accepts a guide that mentions the new term once and avoids the old one.
+- Dispatch seeds differ little: the task leaves the model few choices, so 15 episodes are closer to 5.
 - Hosted models are not covered yet (they can only do `turn_boundary` and `cancel_resend`).
 - The Pie backend asks for one token per round trip, which keeps runs deterministic but does not use
   Pie's batching; throughput there is not measured.
