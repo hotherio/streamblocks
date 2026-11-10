@@ -20,7 +20,7 @@ steps exist and steps 3–6 follow the correction (regex check, no judge model).
 ```bash
 uv run --with llama-cpp-python python -m benchmarks.reactive.pilot --model path/to/model.gguf
 uv run --with pie-client python -m benchmarks.reactive.pilot --backend pie --model qwen3.5-4b
-uv run python -m benchmarks.reactive.pilot --summarize runs/reactive/pilot.jsonl
+uv run python -m benchmarks.reactive.pilot --summarize runs/reactive/steering.jsonl
 ```
 
 ## Backends
@@ -75,6 +75,31 @@ Same scenario on Pie 0.6.0 (WebGPU), Qwen3.5-4B, greedy, 5 episodes per cell, `l
 
 Injection works on Pie as well, with no malformed blocks. Each `begin` on Pie starts a new working set,
 so the two-call deliveries re-evaluate the whole prompt (about 560–670 tokens against 230 for `inject`).
+
+## Live dispatch
+
+Steering asks whether the model obeys. Dispatch asks what a late delivery costs. The model assigns ten
+jobs to workers, one `!!a3:assign` block per job (`J3 -> ben`), and an assignment takes effect when its
+block closes. Meanwhile the world changes at fixed times on the virtual clock: a worker goes offline, a
+job is cancelled. The three deliveries are the same as above; a model that has already ended its turn
+is woken with a new turn in all three.
+
+- **Stale action**: an assignment that closes after an event it contradicts. It cannot be taken back,
+  only corrected by assigning the job again.
+- **Compliant**: every event was delivered and every job that is not cancelled ends on an online worker.
+
+```bash
+uv run --with llama-cpp-python python -m benchmarks.reactive.pilot --scenario dispatch --model path/to/model.gguf
+```
+
+Hypotheses, written before the first run (15 episodes per cell, `local` cost model):
+
+1. `inject` and `cancel_resend` leave at most the assignment already being written when the event
+   happens: a median of one stale action or fewer. `turn_boundary` leaves more.
+2. `inject` is compliant no more than three episodes less often than `cancel_resend` (the steering gate).
+3. `inject` needs fewer model calls and fewer uncached prompt tokens than the other two.
+
+Against injection: more stale actions than `turn_boundary`, or failing hypothesis 2 on both models.
 
 ## Limits
 

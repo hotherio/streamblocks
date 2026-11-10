@@ -2,7 +2,8 @@
 
 from benchmarks.reactive.backend import ScriptedBackend
 from benchmarks.reactive.clock import COSTS
-from benchmarks.reactive.steering import SCENARIOS, Delivery, run_episode
+from benchmarks.reactive.loop import Delivery
+from benchmarks.reactive.steering import SCENARIOS, run_episode
 
 DATABASE = SCENARIOS[0]
 
