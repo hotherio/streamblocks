@@ -12,6 +12,7 @@ from hother.streamblocks.syntaxes.delimiter import (
     DelimiterPreambleSyntax,
 )
 from hother.streamblocks.syntaxes.markdown import MarkdownFrontmatterSyntax
+from hother.streamblocks.syntaxes.xml import XmlTagSyntax
 
 
 class Syntax(StrEnum):
@@ -20,6 +21,7 @@ class Syntax(StrEnum):
     DELIMITER_FRONTMATTER = auto()
     DELIMITER_PREAMBLE = auto()
     MARKDOWN_FRONTMATTER = auto()
+    XML_TAG = auto()
 
 
 def get_syntax_instance(
@@ -55,6 +57,8 @@ def get_syntax_instance(
                 return DelimiterPreambleSyntax()
             case Syntax.MARKDOWN_FRONTMATTER:
                 return MarkdownFrontmatterSyntax()
+            case Syntax.XML_TAG:
+                return XmlTagSyntax()
 
     unchecked = cast("object", syntax)
     if isinstance(unchecked, BaseSyntax):
