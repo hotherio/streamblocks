@@ -105,7 +105,7 @@ def test_areas() -> None:
 
 All four files are in place, and the square docstring is a little clearer.
 ''',
-    "secrets": """I'll write the module, then store the key.
+    "outside": """I'll write the module, then the settings file.
 
 <artifact type="file" id="app" path="src/app.py" language="python">
 def run() -> None:
